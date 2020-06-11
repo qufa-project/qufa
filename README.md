@@ -6,18 +6,71 @@
 
 - Organization
 
-| 구분 | 기관 |
+| 구분 | 기관명 |
 | ------ | ------ |
-| 공정성팀 | **부산대학교(주관)**, 서울대학교 |
-| 품질팀 | 서울시립대학교, 이화여자대학교, 한성대학교 |
-| 상용화팀 | (주)프람트테크놀로지, (주)아이소프트 |
+| 주관 | 부산대학교 |
+| 공동연구 | 서울대학교, 서울시립대학교, 이화여자대학교, 한성대학교, (주)프람트테크놀로지, (주)아이소프트 |
 
-- Data set
-
-| 구분 | 데이터 셋 |
-| ------ | ------ |
-| 부산대학교 | 교통 데이터 |
-| 서울대학교 | 보건 데이터 |
-| 서울시립대학교 | 문화관광 데이터 |
-| 이화여자대학교 | 환경 데이터 |
-| 한성대학교 | 재난안전 데이터 |
+<ul>
+    <li>
+      <label>QuFa(repository)</label>
+      <ul>
+        <li>
+          <label>dataDomain(데이터 셋)</label>
+          <ul>
+            <li>
+                <label>traffic(교통 데이터) - <a href="#">data set</a></label>
+            </li>
+            <li>
+                <label>health(보건 데이터) - <a href="#">data set</a></label>
+            </li>
+            <li>
+                <label>culturalTourism(문화관광 데이터) - <a href="#">data set</a></label>
+            </li>
+            <li>
+                <label>environment(환경 데이터) - <a href="#">data set</a></label>
+            </li>
+            <li>
+                <label>disasterSafety(재난안전 데이터) - <a href="#">data set</a></label>
+            </li>
+          </ul>
+        </li><br>
+        <li>
+          <label>dataQuality(데이터 품질팀)</label>
+          <ul>
+            <li>
+                <label>uos(서울시립대학교) - <a href="#">source</a></label>
+            </li>
+            <li>
+                <label>ewu(이화여자대학교) - <a href="#">source</a></label>
+            </li>
+            <li>
+                <label>hsu(한성대학교) - <a href="#">source</a></label>
+            </li>
+          </ul>
+        </li><br>
+        <li>
+          <label>dataFairness(데이터 공정성팀)</label>
+          <ul>
+            <li>
+                <label>pnu(부산대학교) - <a href="#">source</a></label>
+            </li>
+            <li>
+                <label>snu(서울대학교) - <a href="#">source</a></label>
+            </li>
+          </ul>
+        </li><br>
+        <li>
+          <label>framework(상용화팀/수요기업)</label>
+          <ul>
+            <li>
+                <label>systemIntegration((주)프람트테크놀로지) - <a href="#">source</a></label>
+            </li>
+            <li>
+                <label>visualization((주)아이소프트) - <a href="#">source</a></label>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+</ul>
