@@ -1,10 +1,8 @@
 - **QuFa** (Data **Qu**ality and **Fa**irness)
 
-- 데이터 품질 평가기반 데이터 고도화 및 데이터셋 보정 기술 개발
-(Development of data improvement and dataset correction technology based on data quality assessment)
+- 데이터 품질 평가기반 데이터 고도화 및 데이터셋 보정 기술 개발 (Development of data improvement and dataset correction technology based on data quality assessment)
 
-- 정보통신기획평가원, 2020 정보통신·방송 연구개발 사업
-(SW컴퓨팅산업원천기술개발 사업)
+- 정보통신기획평가원, 2020 정보통신·방송 연구개발 사업 (SW컴퓨팅산업원천기술개발 사업)
 
 - Organization
 
