@@ -41,13 +41,13 @@
           <label>dataQuality (데이터 품질팀)</label>
           <ul>
             <li>
-                <label>uos (서울시립대학교) - <a href="#">source</a></label>
+                <label>uos (서울시립대학교) - source</label>
             </li>
             <li>
-                <label>ewu (이화여자대학교) - <a href="#">source</a></label>
+                <label>ewu (이화여자대학교) - source</label>
             </li>
             <li>
-                <label>hsu (한성대학교) - <a href="#">source</a></label>
+                <label>hsu (한성대학교) - source</label>
             </li>
           </ul>
         </li><br>
@@ -55,10 +55,10 @@
           <label>dataFairness (데이터 공정성팀)</label>
           <ul>
             <li>
-                <label>pnu (부산대학교) - <a href="#">source</a></label>
+                <label>pnu (부산대학교) - source</label>
             </li>
             <li>
-                <label>snu (서울대학교) - <a href="#">source</a></label>
+                <label>snu (서울대학교) - source</label>
             </li>
           </ul>
         </li><br>
@@ -66,10 +66,10 @@
           <label>framework (상용화팀/수요기업)</label>
           <ul>
             <li>
-                <label>systemIntegration ((주)프람트테크놀로지) - <a href="#">source</a></label>
+                <label>systemIntegration ((주)프람트테크놀로지) - source</label>
             </li>
             <li>
-                <label>visualization ((주)아이소프트) - <a href="#">source</a></label>
+                <label>visualization ((주)아이소프트) - source</label>
             </li>
           </ul>
         </li>
