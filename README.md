@@ -21,7 +21,7 @@
           <label>dataDomain (데이터 셋)</label>
           <ul>
             <li>
-                <label>traffic (교통 데이터/부산대학교) - <a href="#">data set</a></label>
+                <label>traffic (교통 데이터/부산대학교) - <a href="https://gitlab.com/qufa/qufa/-/tree/master/dataDomain/traffic/dataSet">data set</a></label>
             </li>
             <li>
                 <label>health (보건 데이터/서울대학교) - <a href="#">data set</a></label>
