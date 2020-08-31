@@ -42,3 +42,17 @@
     - Rows: 11.7M
     - Columns: 19
 
+4. 2018 Yellow Taxi Trip Data NYC.zip
+
+  4.1. 파일목록
+
+    - 2018_Yellow_Taxi_Trip_Data.csv : DataSet(CSV, 9.71G)
+    - data_dictionary_trip_records_yellow.pdf : Metadata(PDF)
+    - Read.me : Reference(TXT)
+
+  4.2. 데이터설명
+
+    - 2018년 NYC 엘로우택시 여행 레코드
+    - Rows: 112M
+    - Columns: 17
+
