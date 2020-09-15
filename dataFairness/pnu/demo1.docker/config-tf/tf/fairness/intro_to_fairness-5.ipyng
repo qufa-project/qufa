@@ -9,3 +9,506 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import tensorflow as tf
+import tempfile
+!pip install seaborn==0.8.1
+import seaborn as sns
+import itertools
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import precision_recall_curve
+from google.colab import widgets
+# For facets
+from IPython.core.display import display, HTML
+import base64
+!pip install facets-overview==1.0.0
+from facets_overview.feature_statistics_generator import FeatureStatisticsGenerator
+
+import sys
+
+print(tf.__version__)
+print('Modules are imported.')
+
+"""
+COLUMNS = ["age", "workclass", "fnlwgt", "education", "education_num",
+           "marital_status", "occupation", "relationship", "race", "gender",
+           "capital_gain", "capital_loss", "hours_per_week", "native_country",
+           "income_bracket"]
+"""
+COLUMNS = ["rd_no", "report_header_id", "crash_date_est_i", "crash_date",
+           "posted_speed_limit", "traffic_control_device", "device_condition",
+           "weather_condition", "lighting_condition", "first_crash_type",
+           "trafficway_type", "lane_cnt", "alignment", "roadway_surface_cond",
+           "road_defect", "report_type", "crash_type", "intersection_related_i",
+           "not_right_of_way_i", "hit_and_run_i", "date_police_notified",
+           "prim_contributory_cause", "sec_contributory_cause", "street_no",
+           "street_direction", "street_name", "beat_of_occurrence",
+           "photos_taken_i", "statements_taken_i", "dooring_i", "work_zone_i",
+           "work_zone_type", "workers_present_i", "num_units",
+           "most_severe_injury", "injuries_total", "injuries_fatal",
+           "injuries_incapacitating", "injuries_non_incapacitating",
+           "injuries_reported_not_evident", "injuries_no_indication",
+           "injuries_unknown", "crash_hour", "crash_day_of_week", "crash_month",
+           "latitude", "longitude", "location", "location_2", "damage",
+           "damage_bracket"]
+
+train_df = pd.read_csv(
+    "http://164.125.37.222:18099/data/sample-5-train.csv",
+    names=COLUMNS,
+    sep=r'\s*,\s*',
+    engine='python',
+    na_values="?").fillna(value = "?")
+
+test_df = pd.read_csv(
+    "http://164.125.37.222:18099/data/sample-5-test.csv",
+    names=COLUMNS,
+    sep=r'\s*,\s*',
+    skiprows=[],
+    engine='python',
+    na_values="?").fillna(value = "?")
+
+# Drop rows with missing values
+train_df = train_df.dropna(how="any", axis=0)
+test_df = test_df.dropna(how="any", axis=0)
+
+#print(train_df.count())
+#print(test_df.count())
+
+# print('UCI Adult Census Income dataset loaded.')
+print('Traffic Crashes - City of Chicago dataset loaded.')
+
+#@title Visualize the Data in Facets
+fsg = FeatureStatisticsGenerator()
+dataframes = [
+    {'table': train_df, 'name': 'trainData'}]
+censusProto = fsg.ProtoFromDataFrames(dataframes)
+protostr = base64.b64encode(censusProto.SerializeToString()).decode("utf-8")
+
+
+HTML_TEMPLATE = """<script src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.3.3/webcomponents-lite.js"></script>
+        <link rel="import" href="https://raw.githubusercontent.com/PAIR-code/facets/1.0.0/facets-dist/facets-jupyter.html">
+        <facets-overview id="elem"></facets-overview>
+        <script>
+          document.querySelector("#elem").protoInput = "{protostr}";
+        </script>"""
+html = HTML_TEMPLATE.format(protostr=protostr)
+display(HTML(html))
+
+#@title Set the Number of Data Points to Visualize in Facets Dive
+
+SAMPLE_SIZE = 2500 #@param
+
+train_dive = train_df.sample(SAMPLE_SIZE).to_json(orient='records')
+
+HTML_TEMPLATE = """<script src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.3.3/webcomponents-lite.js"></script>
+        <link rel="import" href="https://raw.githubusercontent.com/PAIR-code/facets/1.0.0/facets-dist/facets-jupyter.html">
+        <facets-dive id="elem" height="600"></facets-dive>
+        <script>
+          var data = {jsonstr};
+          console.log(data);
+          document.querySelector("#elem").data = data;
+        </script>"""
+html = HTML_TEMPLATE.format(jsonstr=train_dive)
+display(HTML(html))
+# print(html)
+
+# feature = 'capital_gain / capital_loss' #@param ["", "hours_per_week", "fnlwgt", "gender", "capital_gain / capital_loss", "age"] {allow-input: false}
+feature = 'posted_speed_limit' #@param ["", "posted_speed_limit", "weather_condition", "lighting_condition", "lane_cnt", "beat_of_occurrence", "num_units", "injuries_fatal", "crash_hour", "crash_day_of_week", "crash_month"] {allow-input: false}
+
+if feature == "posted_speed_limit":
+  print(
+"""posted_speed_limit""")
+if feature == "weather_condition":
+  print(
+"""weather_condition""")
+if feature == "lighting_condition":
+  print(
+"""lighting_condition""")
+if feature == "lane_cnt":
+  print(
+"""lane_cnt""")
+if feature == "crash_type":
+  print(
+"""crash_type""")
+if feature == "beat_of_occurrence":
+  print(
+"""beat_of_occurrence""")
+if feature == "num_units":
+  print(
+"""num_units""")
+if feature == "injuries_fatal":
+  print(
+"""injuries_fatal""")
+if feature == "crash_hour":
+  print(
+"""crash_hour""")
+if feature == "crash_day_of_week":
+  print(
+"""crash_day_of_week""")
+if feature == "crash_month":
+  print(
+"""crash_month""")
+
+def csv_to_pandas_input_fn(data, batch_size=100, num_epochs=1, shuffle=False):
+#   return tf.estimator.inputs.pandas_input_fn(
+  return tf.compat.v1.estimator.inputs.pandas_input_fn(
+      x=data.drop('damage_bracket', axis=1),
+      y=data['damage_bracket'].apply(lambda x: ">500" in x).astype(int),
+      batch_size=batch_size,
+      num_epochs=num_epochs,
+      shuffle=shuffle,
+      num_threads=1)
+
+print('csv_to_pandas_input_fn() defined.')
+
+#@title Categorical Feature Columns
+
+# Since we don't know the full range of possible values with occupation and
+# native_country, we'll use categorical_column_with_hash_bucket() to help map
+# each feature string into an integer ID.
+"""
+occupation = tf.feature_column.categorical_column_with_hash_bucket(
+    "occupation", hash_bucket_size=1000)
+native_country = tf.feature_column.categorical_column_with_hash_bucket(
+    "native_country", hash_bucket_size=1000)
+"""
+rd_no = tf.feature_column.categorical_column_with_hash_bucket(
+    "rd_no", hash_bucket_size=1000)
+crash_date = tf.feature_column.categorical_column_with_hash_bucket(
+    "crash_date", hash_bucket_size=1000)
+traffic_control_device = tf.feature_column.categorical_column_with_hash_bucket(
+    "traffic_control_device", hash_bucket_size=1000)
+device_condition = tf.feature_column.categorical_column_with_hash_bucket(
+    "device_condition", hash_bucket_size=1000)
+first_crash_type = tf.feature_column.categorical_column_with_hash_bucket(
+    "first_crash_type", hash_bucket_size=1000)
+trafficway_type = tf.feature_column.categorical_column_with_hash_bucket(
+    "trafficway_type", hash_bucket_size=1000)
+date_police_notified = tf.feature_column.categorical_column_with_hash_bucket(
+    "date_police_notified", hash_bucket_size=1000)
+prim_contributory_cause = tf.feature_column.categorical_column_with_hash_bucket(
+    "prim_contributory_cause", hash_bucket_size=1000)
+sec_contributory_cause = tf.feature_column.categorical_column_with_hash_bucket(
+    "sec_contributory_cause", hash_bucket_size=1000)
+street_name = tf.feature_column.categorical_column_with_hash_bucket(
+    "street_name", hash_bucket_size=1000)
+location_2 = tf.feature_column.categorical_column_with_hash_bucket(
+    "location_2", hash_bucket_size=1000)
+
+
+# For the remaining categorical features, since we know what the possible values
+# are, we can be more explicit and use categorical_column_with_vocabulary_list()
+"""
+gender = tf.feature_column.categorical_column_with_vocabulary_list(
+    "gender", ["Female", "Male"])
+race = tf.feature_column.categorical_column_with_vocabulary_list(
+    "race", [
+        "White", "Asian-Pac-Islander", "Amer-Indian-Eskimo", "Other", "Black"
+    ])
+education = tf.feature_column.categorical_column_with_vocabulary_list(
+    "education", [
+        "Bachelors", "HS-grad", "11th", "Masters", "9th",
+        "Some-college", "Assoc-acdm", "Assoc-voc", "7th-8th",
+        "Doctorate", "Prof-school", "5th-6th", "10th", "1st-4th",
+        "Preschool", "12th"
+    ])
+marital_status = tf.feature_column.categorical_column_with_vocabulary_list(
+    "marital_status", [
+        "Married-civ-spouse", "Divorced", "Married-spouse-absent",
+        "Never-married", "Separated", "Married-AF-spouse", "Widowed"
+    ])
+relationship = tf.feature_column.categorical_column_with_vocabulary_list(
+    "relationship", [
+        "Husband", "Not-in-family", "Wife", "Own-child", "Unmarried",
+        "Other-relative"
+    ])
+workclass = tf.feature_column.categorical_column_with_vocabulary_list(
+    "workclass", [
+        "Self-emp-not-inc", "Private", "State-gov", "Federal-gov",
+        "Local-gov", "?", "Self-emp-inc", "Without-pay", "Never-worked"
+    ])
+"""
+crash_date_est_i = tf.feature_column.categorical_column_with_vocabulary_list(
+    "crash_date_est_i", ["TRUE", "FALSE", ""])
+weather_condition = tf.feature_column.categorical_column_with_vocabulary_list(
+    "weather_condition", ["CLEAR", "CLOUDY/OVERCAST", "FOG/SMOKE/HAZE", "OTHER",
+                          "RAIN", "SEVERE CROSS WIND GATE", "SLEET/HAIL",
+                          "SNOW", "UNKNOWN"])
+lighting_condition = tf.feature_column.categorical_column_with_vocabulary_list(
+    "lighting_condition", ["DARKNESS", "DARKNESS LIGHTED ROAD", "DAWN",
+                           "DAYLIGHT", "DUSK", "UNKNOWN"])
+alignment = tf.feature_column.categorical_column_with_vocabulary_list(
+    "alignment", ["CURVE LEVEL", "CURVE ON GRADE", "CURVE ON HILLCREST",
+                  "STRAIGHT AND LEVEL", "STRAIGHT ON GRADE",
+                  "STRAIGHT ON HILLCREST"])
+roadway_surface_cond = tf.feature_column.categorical_column_with_vocabulary_list(
+    "roadway_surface_cond", ["DRY", "ICE", "OTHER", "SAND MUD DIRT",
+                             "SNOW OR SLUSH", "UNKNOWN", "WET"])
+road_defect = tf.feature_column.categorical_column_with_vocabulary_list(
+    "road_defect", ["DEBRIS ON ROADWAY", "NO DEFECTS", "OTHER", "RUT HOLES",
+                    "SHOULDER DEFECT", "UNKNOWN", "WORN SURFACE"])
+report_type = tf.feature_column.categorical_column_with_vocabulary_list(
+    "report_type", ["NOT ON SCENE (DESK REPORT)", "ON SCENE", ""])
+crash_type = tf.feature_column.categorical_column_with_vocabulary_list(
+    "crash_type", ["INJURY AND / OR TOW DUE TO CRASH",
+                   "NO INJURY / DRIVE AWAY"])
+intersection_related_i = tf.feature_column.categorical_column_with_vocabulary_list(
+    "intersection_related_i", ["TRUE", "FALSE", ""])
+not_right_of_way_i = tf.feature_column.categorical_column_with_vocabulary_list(
+    "not_right_of_way_i", ["TRUE", "FALSE", ""])
+hit_and_run_i = tf.feature_column.categorical_column_with_vocabulary_list(
+    "hit_and_run_i", ["TRUE", "FALSE", ""])
+street_direction = tf.feature_column.categorical_column_with_vocabulary_list(
+    "street_direction", ["E", "W", "S", "N", ""])
+photos_taken_i = tf.feature_column.categorical_column_with_vocabulary_list(
+    "photos_taken_i", ["TRUE", "FALSE", ""])
+statements_taken_i = tf.feature_column.categorical_column_with_vocabulary_list(
+    "statements_taken_i", ["TRUE", "FALSE", ""])
+dooring_i = tf.feature_column.categorical_column_with_vocabulary_list(
+    "dooring_i", ["TRUE", "FALSE", ""])
+work_zone_i = tf.feature_column.categorical_column_with_vocabulary_list(
+    "work_zone_i", ["TRUE", "FALSE", ""])
+work_zone_type = tf.feature_column.categorical_column_with_vocabulary_list(
+    "work_zone_type", ["CONSTRUCTION", "MAINTENANCE", "UNKNOWN", "UTILITY", ""])
+workers_present_i = tf.feature_column.categorical_column_with_vocabulary_list(
+    "workers_present_i", ["TRUE", "FALSE", ""])
+most_severe_injury = tf.feature_column.categorical_column_with_vocabulary_list(
+    "most_severe_injury", ["FATAL", "INCAPACITATING INJURY",
+                           "NO INDICATION OF INJURY",
+                           "NONINCAPACITATING INJURY",
+                           "REPORTED NOT EVIDENT", ""])
+injuries_unknown = tf.feature_column.categorical_column_with_vocabulary_list(
+    "injuries_unknown", ["FALSE", ""])
+
+
+print('Categorical feature columns defined.')
+
+#@title Numeric Feature Columns
+# For Numeric features, we can just call on feature_column.numeric_column()
+# to use its raw value instead of having to create a map between value and ID.
+"""
+age = tf.feature_column.numeric_column("age")
+fnlwgt = tf.feature_column.numeric_column("fnlwgt")
+education_num = tf.feature_column.numeric_column("education_num")
+capital_gain = tf.feature_column.numeric_column("capital_gain")
+capital_loss = tf.feature_column.numeric_column("capital_loss")
+hours_per_week = tf.feature_column.numeric_column("hours_per_week")
+"""
+report_header_id = tf.feature_column.numeric_column("report_header_id")
+posted_speed_limit = tf.feature_column.numeric_column("posted_speed_limit")
+lane_cnt = tf.feature_column.numeric_column("lane_cnt")
+street_no = tf.feature_column.numeric_column("street_no")
+beat_of_occurrence = tf.feature_column.numeric_column("beat_of_occurrence")
+num_units = tf.feature_column.numeric_column("num_units")
+injuries_total = tf.feature_column.numeric_column("injuries_total")
+injuries_fatal = tf.feature_column.numeric_column("injuries_fatal")
+injuries_incapacitating = tf.feature_column.numeric_column("injuries_incapacitating")
+injuries_non_incapacitating = tf.feature_column.numeric_column("injuries_non_incapacitating")
+injuries_reported_not_evident = tf.feature_column.numeric_column("injuries_reported_not_evident")
+injuries_no_indication = tf.feature_column.numeric_column("injuries_no_indication")
+crash_hour = tf.feature_column.numeric_column("crash_hour")
+crash_day_of_week = tf.feature_column.numeric_column("crash_day_of_week")
+crash_month = tf.feature_column.numeric_column("crash_month")
+
+
+print('Numeric feature columns defined.')
+
+"""
+age_buckets = tf.feature_column.bucketized_column(
+    age, boundaries=[18, 25, 30, 35, 40, 45, 50, 55, 60, 65])
+"""
+posted_speed_limit_buckets = tf.feature_column.bucketized_column(
+    posted_speed_limit, boundaries=[10, 20, 30, 40, 50, 60, 70])
+
+# List of variables, with special handling for gender subgroup.
+"""
+variables = [native_country, education, occupation, workclass,
+             relationship, age_buckets]
+"""
+variables = [traffic_control_device, device_condition, first_crash_type,
+             trafficway_type, prim_contributory_cause, sec_contributory_cause, 
+             street_name, posted_speed_limit_buckets]
+
+"""
+subgroup_variables = [gender]
+"""
+subgroup_variables = [weather_condition]
+
+feature_columns = variables + subgroup_variables
+
+"""
+deep_columns = [
+    tf.feature_column.indicator_column(workclass),
+    tf.feature_column.indicator_column(education),
+    tf.feature_column.indicator_column(age_buckets),
+    tf.feature_column.indicator_column(gender),
+    tf.feature_column.indicator_column(relationship),
+    tf.feature_column.embedding_column(native_country, dimension=8),
+    tf.feature_column.embedding_column(occupation, dimension=8),
+]
+"""
+deep_columns = [
+    tf.feature_column.indicator_column(posted_speed_limit_buckets),
+    tf.feature_column.indicator_column(traffic_control_device),
+    tf.feature_column.indicator_column(device_condition),
+    tf.feature_column.indicator_column(weather_condition),
+    tf.feature_column.indicator_column(first_crash_type),
+    tf.feature_column.indicator_column(trafficway_type),
+    tf.feature_column.embedding_column(prim_contributory_cause, dimension=8),
+    tf.feature_column.embedding_column(sec_contributory_cause, dimension=8),
+    tf.feature_column.indicator_column(street_name)
+]
+
+print(deep_columns)
+print('Deep columns created.')
+
+#@title Define Deep Neural Net Model
+
+HIDDEN_UNITS = [1024, 512] #@param
+LEARNING_RATE = 0.1 #@param
+L1_REGULARIZATION_STRENGTH = 0.0001 #@param
+L2_REGULARIZATION_STRENGTH = 0.0001 #@param
+
+#################################
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+#################################
+
+model_dir = tempfile.mkdtemp()
+single_task_deep_model = tf.estimator.DNNClassifier(
+    feature_columns=deep_columns,
+    hidden_units=HIDDEN_UNITS,
+    optimizer=tf.train.ProximalAdagradOptimizer(
+#     optimizer=tf.compat.v1.train.ProximalAdagradOptimizer(
+      learning_rate=LEARNING_RATE,
+      l1_regularization_strength=L1_REGULARIZATION_STRENGTH,
+      l2_regularization_strength=L2_REGULARIZATION_STRENGTH),
+    model_dir=model_dir)
+
+#################################
+import tensorflow as tf
+#################################
+
+print('Deep neural net model defined.')
+
+#@title Fit Deep Neural Net Model to the Adult Training Dataset
+
+STEPS = 1000 #@param
+
+single_task_deep_model.train(
+    input_fn=csv_to_pandas_input_fn(train_df, num_epochs=None, shuffle=True),
+    steps=STEPS);
+
+print('Deep neural net model is done fitting.')
+
+#@title Evaluate Deep Neural Net Performance
+
+results = single_task_deep_model.evaluate(
+    input_fn=csv_to_pandas_input_fn(test_df, num_epochs=1, shuffle=False),
+    steps=None)
+print("model directory = %s" % model_dir)
+print("---- Results ----")
+for key in sorted(results):
+  print("%s: %s" % (key, results[key]))
+
+#@test {"output": "ignore"}
+#@title Define Function to Compute Binary Confusion Matrix Evaluation Metrics
+def compute_eval_metrics(references, predictions):
+  tn, fp, fn, tp = confusion_matrix(references, predictions).ravel()
+  precision = tp / float(tp + fp)
+  recall = tp / float(tp + fn)
+  false_positive_rate = fp / float(fp + tn)
+  false_omission_rate = fn / float(tn + fn)
+  return precision, recall, false_positive_rate, false_omission_rate
+
+print('Binary confusion matrix and evaluation metrics defined.')
+
+#@title Define Function to Visualize Binary Confusion Matrix
+def plot_confusion_matrix(confusion_matrix, class_names, figsize = (6,12)):
+    # We're taking our calculated binary confusion matrix that's already in form
+    # of an array and turning it into a Pandas DataFrame because it's a lot
+    # easier to work with when visualizing a heat map in Seaborn.
+    df_cm = pd.DataFrame(
+        confusion_matrix, index=class_names, columns=class_names,
+    )
+    fig = plt.figure(figsize=figsize)
+
+    # Combine the instance (numercial value) with its description
+    strings = np.asarray([['True Positives', 'False Negatives'],
+                          ['False Positives', 'True Negatives']])
+    labels = (np.asarray(
+        ["{0:d}\n{1}".format(value, string) for string, value in zip(
+            strings.flatten(), confusion_matrix.flatten())])).reshape(2, 2)
+
+    heatmap = sns.heatmap(df_cm, annot=labels, fmt="");
+    heatmap.yaxis.set_ticklabels(
+        heatmap.yaxis.get_ticklabels(), rotation=0, ha='right')
+    heatmap.xaxis.set_ticklabels(
+        heatmap.xaxis.get_ticklabels(), rotation=45, ha='right')
+    plt.ylabel('References')
+    plt.xlabel('Predictions')
+    return fig
+
+print('Binary confusion matrix visualization defined.')
+
+#@title Visualize Binary Confusion Matrix and Compute Evaluation Metrics Per Subgroup
+"""
+# CATEGORY = "gender"
+# SUBGROUP = "Male"
+"""
+CATEGORY  =  "weather_condition" #@param {type:"string"}
+SUBGROUP =  "CLEAR" #@param {type:"string"}
+
+# Given define subgroup, generate predictions and obtain its corresponding
+# ground truth.
+predictions_dict = single_task_deep_model.predict(input_fn=csv_to_pandas_input_fn(
+    test_df.loc[test_df[CATEGORY] == SUBGROUP], num_epochs=1, shuffle=False))
+predictions = []
+for prediction_item, in zip(predictions_dict):
+    predictions.append(prediction_item['class_ids'][0])
+actuals = list(
+    test_df.loc[test_df[CATEGORY] == SUBGROUP]['damage_bracket'].apply(
+        lambda x: '>500' in x).astype(int))
+classes = ['Over $500', 'Less than $500']
+
+# To stay consistent, we have to flip the confusion
+# matrix around on both axes because sklearn's confusion matrix module by
+# default is rotated.
+rotated_confusion_matrix = np.fliplr(confusion_matrix(actuals, predictions))
+rotated_confusion_matrix = np.flipud(rotated_confusion_matrix)
+
+tb = widgets.TabBar(['Confusion Matrix', 'Evaluation Metrics'], location='top')
+
+with tb.output_to('Confusion Matrix'):
+  plot_confusion_matrix(rotated_confusion_matrix, classes);
+
+with tb.output_to('Evaluation Metrics'):
+  grid = widgets.Grid(2,4)
+
+  p, r, fpr, fomr = compute_eval_metrics(actuals, predictions)
+
+  with grid.output_to(0, 0):
+    print(' Precision ')
+  with grid.output_to(1, 0):
+    print(' %.4f ' % p)
+
+  with grid.output_to(0, 1):
+    print(' Recall ')
+  with grid.output_to(1, 1):
+    print(' %.4f ' % r)
+
+  with grid.output_to(0, 2):
+    print(' False Positive Rate ')
+  with grid.output_to(1, 2):
+    print(' %.4f ' % fpr)
+
+  with grid.output_to(0, 3):
+    print(' False Omission Rate ')
+  with grid.output_to(1, 3):
+    print(' %.4f ' % fomr)
+
