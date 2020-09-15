@@ -62,7 +62,7 @@ train_df = pd.read_csv(
     names=COLUMNS,
     sep=r'\s*,\s*',
     engine='python',
-    na_values="?").fillna(value = "?")
+    na_values="\?")
 
 test_df = pd.read_csv(
     "http://164.125.37.222:18099/data/sample-5-test.csv",
@@ -70,7 +70,7 @@ test_df = pd.read_csv(
     sep=r'\s*,\s*',
     skiprows=[],
     engine='python',
-    na_values="?").fillna(value = "?")
+    na_values="\?")
 
 # Drop rows with missing values
 train_df = train_df.dropna(how="any", axis=0)
@@ -80,7 +80,7 @@ print('train rows: ', train_df.shape[0], ' cells: ', train_df.shape[1])
 print('test rows: ', test_df.shape[0], ' cells: ', test_df.shape[1])
 
 # print('UCI Adult Census Income dataset loaded.')
-print('Traffic Crashes - City of Chicago dataset loaded.')
+print('Traffic Crashes City of Chicago dataset loaded.')
 
 #@title Visualize the Data in Facets
 fsg = FeatureStatisticsGenerator()
@@ -197,9 +197,6 @@ sec_contributory_cause = tf.feature_column.categorical_column_with_hash_bucket(
     "sec_contributory_cause", hash_bucket_size=1000)
 street_name = tf.feature_column.categorical_column_with_hash_bucket(
     "street_name", hash_bucket_size=1000)
-location_2 = tf.feature_column.categorical_column_with_hash_bucket(
-    "location_2", hash_bucket_size=1000)
-
 
 # For the remaining categorical features, since we know what the possible values
 # are, we can be more explicit and use categorical_column_with_vocabulary_list()
@@ -285,7 +282,6 @@ most_severe_injury = tf.feature_column.categorical_column_with_vocabulary_list(
 injuries_unknown = tf.feature_column.categorical_column_with_vocabulary_list(
     "injuries_unknown", ["FALSE", ""])
 
-
 print('Categorical feature columns defined.')
 
 #@title Numeric Feature Columns
@@ -314,7 +310,6 @@ injuries_no_indication = tf.feature_column.numeric_column("injuries_no_indicatio
 crash_hour = tf.feature_column.numeric_column("crash_hour")
 crash_day_of_week = tf.feature_column.numeric_column("crash_day_of_week")
 crash_month = tf.feature_column.numeric_column("crash_month")
-
 
 print('Numeric feature columns defined.')
 
