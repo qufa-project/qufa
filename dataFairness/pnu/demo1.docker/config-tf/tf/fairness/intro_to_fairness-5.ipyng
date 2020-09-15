@@ -76,8 +76,8 @@ test_df = pd.read_csv(
 train_df = train_df.dropna(how="any", axis=0)
 test_df = test_df.dropna(how="any", axis=0)
 
-#print(train_df.count())
-#print(test_df.count())
+print('train rows: ', train_df.shape[0], ' cells: ', train_df.shape[1])
+print('test rows: ', test_df.shape[0], ' cells: ', test_df.shape[1])
 
 # print('UCI Adult Census Income dataset loaded.')
 print('Traffic Crashes - City of Chicago dataset loaded.')
