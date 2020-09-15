@@ -231,7 +231,7 @@ workclass = tf.feature_column.categorical_column_with_vocabulary_list(
     ])
 """
 crash_date_est_i = tf.feature_column.categorical_column_with_vocabulary_list(
-    "crash_date_est_i", ["TRUE", "FALSE", ""])
+    "crash_date_est_i", ["TRUE", "FALSE", "?"])
 weather_condition = tf.feature_column.categorical_column_with_vocabulary_list(
     "weather_condition", ["CLEAR", "CLOUDY/OVERCAST", "FOG/SMOKE/HAZE", "OTHER",
                           "RAIN", "SEVERE CROSS WIND GATE", "SLEET/HAIL",
@@ -250,37 +250,37 @@ road_defect = tf.feature_column.categorical_column_with_vocabulary_list(
     "road_defect", ["DEBRIS ON ROADWAY", "NO DEFECTS", "OTHER", "RUT HOLES",
                     "SHOULDER DEFECT", "UNKNOWN", "WORN SURFACE"])
 report_type = tf.feature_column.categorical_column_with_vocabulary_list(
-    "report_type", ["NOT ON SCENE (DESK REPORT)", "ON SCENE", ""])
+    "report_type", ["NOT ON SCENE (DESK REPORT)", "ON SCENE", "?"])
 crash_type = tf.feature_column.categorical_column_with_vocabulary_list(
     "crash_type", ["INJURY AND / OR TOW DUE TO CRASH",
                    "NO INJURY / DRIVE AWAY"])
 intersection_related_i = tf.feature_column.categorical_column_with_vocabulary_list(
-    "intersection_related_i", ["TRUE", "FALSE", ""])
+    "intersection_related_i", ["TRUE", "FALSE", "?"])
 not_right_of_way_i = tf.feature_column.categorical_column_with_vocabulary_list(
-    "not_right_of_way_i", ["TRUE", "FALSE", ""])
+    "not_right_of_way_i", ["TRUE", "FALSE", "?"])
 hit_and_run_i = tf.feature_column.categorical_column_with_vocabulary_list(
-    "hit_and_run_i", ["TRUE", "FALSE", ""])
+    "hit_and_run_i", ["TRUE", "FALSE", "?"])
 street_direction = tf.feature_column.categorical_column_with_vocabulary_list(
-    "street_direction", ["E", "W", "S", "N", ""])
+    "street_direction", ["E", "W", "S", "N", "?"])
 photos_taken_i = tf.feature_column.categorical_column_with_vocabulary_list(
-    "photos_taken_i", ["TRUE", "FALSE", ""])
+    "photos_taken_i", ["TRUE", "FALSE", "?"])
 statements_taken_i = tf.feature_column.categorical_column_with_vocabulary_list(
-    "statements_taken_i", ["TRUE", "FALSE", ""])
+    "statements_taken_i", ["TRUE", "FALSE", "?"])
 dooring_i = tf.feature_column.categorical_column_with_vocabulary_list(
-    "dooring_i", ["TRUE", "FALSE", ""])
+    "dooring_i", ["TRUE", "FALSE", "?"])
 work_zone_i = tf.feature_column.categorical_column_with_vocabulary_list(
-    "work_zone_i", ["TRUE", "FALSE", ""])
+    "work_zone_i", ["TRUE", "FALSE", "?"])
 work_zone_type = tf.feature_column.categorical_column_with_vocabulary_list(
-    "work_zone_type", ["CONSTRUCTION", "MAINTENANCE", "UNKNOWN", "UTILITY", ""])
+    "work_zone_type", ["CONSTRUCTION", "MAINTENANCE", "UNKNOWN", "UTILITY", "?"])
 workers_present_i = tf.feature_column.categorical_column_with_vocabulary_list(
-    "workers_present_i", ["TRUE", "FALSE", ""])
+    "workers_present_i", ["TRUE", "FALSE", "?"])
 most_severe_injury = tf.feature_column.categorical_column_with_vocabulary_list(
     "most_severe_injury", ["FATAL", "INCAPACITATING INJURY",
                            "NO INDICATION OF INJURY",
                            "NONINCAPACITATING INJURY",
-                           "REPORTED NOT EVIDENT", ""])
+                           "REPORTED NOT EVIDENT", "?"])
 injuries_unknown = tf.feature_column.categorical_column_with_vocabulary_list(
-    "injuries_unknown", ["FALSE", ""])
+    "injuries_unknown", ["FALSE", "?"])
 
 print('Categorical feature columns defined.')
 
@@ -318,7 +318,7 @@ age_buckets = tf.feature_column.bucketized_column(
     age, boundaries=[18, 25, 30, 35, 40, 45, 50, 55, 60, 65])
 """
 posted_speed_limit_buckets = tf.feature_column.bucketized_column(
-    posted_speed_limit, boundaries=[10, 20, 30, 40, 50, 60, 70])
+    posted_speed_limit, boundaries=[10, 20, 30, 35, 40, 45, 50, 55, 60, 65, 70])
 
 # List of variables, with special handling for gender subgroup.
 """
