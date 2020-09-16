@@ -61,6 +61,7 @@ train_df = pd.read_csv(
     "http://164.125.37.222:18099/data/sample-5-train.csv",
     names=COLUMNS,
     sep=r'\s*,\s*',
+    skiprows=[0],
     engine='python',
     na_values="\?")
 
@@ -68,7 +69,7 @@ test_df = pd.read_csv(
     "http://164.125.37.222:18099/data/sample-5-test.csv",
     names=COLUMNS,
     sep=r'\s*,\s*',
-    skiprows=[],
+    skiprows=[0],
     engine='python',
     na_values="\?")
 
@@ -158,7 +159,7 @@ def csv_to_pandas_input_fn(data, batch_size=100, num_epochs=1, shuffle=False):
 #   return tf.estimator.inputs.pandas_input_fn(
   return tf.compat.v1.estimator.inputs.pandas_input_fn(
       x=data.drop('damage_bracket', axis=1),
-      y=data['damage_bracket'].apply(lambda x: ">500" in x).astype(int),
+      y=data['damage_bracket'].apply(lambda x: ">=500" in x).astype(int),
       batch_size=batch_size,
       num_epochs=num_epochs,
       shuffle=shuffle,
@@ -468,7 +469,7 @@ for prediction_item, in zip(predictions_dict):
     predictions.append(prediction_item['class_ids'][0])
 actuals = list(
     test_df.loc[test_df[CATEGORY] == SUBGROUP]['damage_bracket'].apply(
-        lambda x: '>500' in x).astype(int))
+        lambda x: '>=500' in x).astype(int))
 classes = ['Over $500', 'Less than $500']
 
 # To stay consistent, we have to flip the confusion
