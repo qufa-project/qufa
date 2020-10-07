@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Data compensation</title>
+    <link rel="stylesheet" href="/dist/bootstrap/css/bootstrap.css"/>
+    <link rel="stylesheet" href="/dist/fontawesome/css/all.min.css"/>
+<!--    <link rel="stylesheet" href="/dist/charts/Chart.min.css"/>-->
+    <link rel="stylesheet" href="/common/css/main.css"/>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div class="container">
+    <h1>Data compensation</h1>
+    <form id="form-upload" class="form-inline" method="post" enctype="multipart/form-data" onsubmit="return onUpload()">
+        <div class="form-group mb-2">
+            <label for="file1-title" class="sr-only">Data file</label>
+            <input type="text" readonly class="form-control-plaintext" id="file1-title" value="Data file input">
+        </div>
+        <div class="form-group mx-sm-3 mb-2">
+            <label for="file1-title" class="sr-only">Data file input</label>
+            <input type="file" class="form-control-file" id="file1" name="file" required>
+        </div>
+        <div class="form-group form-check mx-sm-3 mb-2">
+            <input type="checkbox" name="except" value="true" id="except" onclick="syncExcept()" checked>
+            <label class="form-check-label" for="except">Except first row</label>
+        </div>
+        <button type="submit" id="btn-upload" class="btn btn-primary mb-2">Upload</button>
+    </form>
+    <div id="timeline-container">
+        <hr>
+        <div id="timeline"></div>
+        <div class="d-flex flex-row-reverse mr-1">
+            <p id="count-rows"></p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-outline-primary btn-lg mt-3 float-left" onclick="onModal1Show()">
+                <i class="fas fa-plus"></i> Add
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-lg mt-3 ml-3 float-left" onclick="onReset()">
+                <i class="fas fa-undo"></i> Reset
+            </button>
+            <!--
+            <button type="button" class="btn btn-primary btn-lg mt-3 float-right" onclick="onDownloadV2()">
+                Download
+            </button>
+            -->
+            <button type="button" class="btn btn-primary btn-lg mt-3 float-right" onclick="onConvertRun()">
+                <i class="fas fa-play"></i> Run
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- modal button -->
+<div class="modal-buttons">
+    <button id="modal-1-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-1">
+        Launch modal-1
+    </button>
+    <button id="modal-2-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-2">
+        Launch modal-2
+    </button>
+    <button id="modal-3-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-3">
+        Launch modal-3
+    </button>
+    <button id="modal-4-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-4">
+        Launch modal-4
+    </button>
+    <button id="modal-5-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-5">
+        Launch modal-5
+    </button>
+    <button id="modal-6-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-6">
+        Launch modal-6
+    </button>
+</div>
+
+<!-- modal popup -->
+<div class="modal fade" id="modal-1" tabindex="-1" role="dialog" aria-labelledby="modal-1" aria-hidden="true"
+     data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <form id="modal-1-form" class="form-inline" method="post" onsubmit="return addConvertData()">
+            <input type="hidden" name="origin" id="origin">
+            <input type="hidden" name="filename" id="filename">
+            <input type="hidden" name="except" id="except2" value="true">
+            <input type="hidden" name="select" id="select">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-1-title"></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-striped" style="margin-bottom: -1rem;">
+                        <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">#<br>
+                                <span style="font-size: x-small; font-style: italic"> &nbsp; </span>
+                            </th>
+                            <th scope="col">Column<br>
+                                <input type="checkbox" id="toggle-checkbox" name="select-toggle" class="form-control"
+                                       onclick="toggleColumnAll()" checked>
+                            </th>
+                            <th scope="col">Example<br>
+                                <span style="font-size: x-small; font-style: italic"> &nbsp; </span>
+                            </th>
+                            <th scope="col">Exclude<br>
+                                <span style="font-size: x-small; font-style: italic">String1{:Number1}, String2{:Number2}, ...</span>
+                            </th>
+                            <th scope="col">Include<br>
+                                <span style="font-size: x-small; font-style: italic">String1{:Number1}, String2{:Number2}, ...</span>
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody id="modal-1-tbody">
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <td colspan="3"></td>
+                            <td style="text-align: right">
+                                <span>Limit total rows</span>
+                            </td>
+                            <td>
+                                <input type="number" name="limit" class="form-control" placeholder="Limit">
+                            </td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div id="modal-1-progress"></div>
+                <div class="modal-footer">
+                    <span class="mr-auto" id="modal-1-processing"><kbd>0 Added.</kbd></span>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="modal-1-close">Close
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal fade" id="modal-2" tabindex="-1" role="dialog" aria-labelledby="modal-2" aria-hidden="true"
+     data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Warning</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to reset?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="onResetAction()">Reset</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="modal-2-close">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modal-3" tabindex="-1" role="dialog" aria-labelledby="modal-3" aria-hidden="true"
+     data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Info</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>There is no data on download.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modal-4" tabindex="-1" role="dialog" aria-labelledby="modal-4" aria-hidden="true"
+     data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Warning</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove?</p>
+            </div>
+            <div class="modal-footer">
+                <input type="hidden" name="remove-row-index" id="remove-row-index">
+                <button type="button" class="btn btn-danger" onclick="removeRowTimeline()">Remove</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="modal-4-close">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modal-5" tabindex="-1" role="dialog" aria-labelledby="modal-5" aria-hidden="true"
+     data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Info</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>There is no data on run. Add please.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modal-6" tabindex="-1" role="dialog" aria-labelledby="modal-6" aria-hidden="true"
+     data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center">
+            <p class="mt-3" id="running"></p>
+        </div>
+    </div>
+</div>
+
+<script src="/dist/jquery/jquery-3.5.1.min.js"></script>
+<script src="/dist/jquery/jquery.form.js"></script>
+<script src="/dist/popper/popper.min.js"></script>
+<script src="/dist/bootstrap/js/bootstrap.js"></script>
+<script src="/dist/charts/loader.js"></script>
+<!--<script src="/dist/charts/Chart.min.js"></script>-->
+<script src="/common/js/main.js"></script>
+</body>
+</html>
