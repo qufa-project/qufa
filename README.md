@@ -55,7 +55,7 @@
           <label>dataFairness (데이터 공정성팀)</label>
           <ul>
             <li>
-                <label>pnu (부산대학교) - source code</label>
+                <label>pnu (부산대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataFairness/pnu>source code</a></label>
             </li>
             <li>
                 <label>snu (서울대학교) - source code</label>
