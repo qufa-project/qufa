@@ -27,13 +27,13 @@
                 <label>health (보건 데이터/서울대학교) - <a href="https://gitlab.com/qufa/qufa/-/tree/master/dataDomain/health/dataSet">data set</a></label>
             </li>
             <li>
-                <label>culturalTourism (문화관광 데이터/서울시립대학교) - <a href="#">data set</a></label>
+                <label>culturalTourism (문화관광 데이터/서울시립대학교) - <a href="https://gitlab.com/qufa/qufa/-/tree/master/dataDomain/culturalTourism/dataSet">data set</a></label>
             </li>
             <li>
-                <label>environment (환경 데이터/이화여자대학교) - <a href="#">data set</a></label>
+                <label>environment (환경 데이터/이화여자대학교) - <a href="https://gitlab.com/qufa/qufa/-/tree/master/dataDomain/environment/dataSet">data set</a></label>
             </li>
             <li>
-                <label>disasterSafety (재난안전 데이터/한성대학교) - <a href="#">data set</a></label>
+                <label>disasterSafety (재난안전 데이터/한성대학교) - <a href="https://gitlab.com/qufa/qufa/-/tree/master/dataDomain/disasterSafety/dataSet">data set</a></label>
             </li>
           </ul>
         </li><br>
