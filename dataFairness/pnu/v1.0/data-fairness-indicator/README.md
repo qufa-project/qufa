@@ -8,5 +8,5 @@ definition: 보호된 그룹과 보호되지 않은 그룹은 참긍정(True Pos
 damage field 에서 미화 1,500 달러 이하와 미화 1,500 달러 초과 확인을 위한 Prediction
 Category weather_condition 중 Subgroup CLEAR 입력에 따른 TPR, FNR 과 Subgroup RAIN 입력에 따른 TPR, FNR 이 같아야만 균등 승률(Equalized odds)을 만족
 
-* "2020_qufa_fairness_indicator_v0_1.ipynb" 실행 환경: <a href=https://colab.research.google.com/notebooks/intro.ipynb>Google Colaboratory</a>
-* https://colab.research.google.com
+* "2020_qufa_fairness_indicator_v0_1.ipynb" 실행 환경: <a href=https://colab.research.google.com>Google Colaboratory</a>
+* <a href=https://colab.research.google.com/github/google/eng-edu/blob/master/ml/cc/exercises/intro_to_ml_fairness.ipynb?utm_source=mlcc&utm_campaign=colab-external&utm_medium=referral&utm_content=fairness-colab&hl=ko>Source</a>
