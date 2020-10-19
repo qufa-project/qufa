@@ -1,4 +1,4 @@
 - 부산대학교
 - 데이터 공정성팀
 - demo1.docker: Jupyter Notebook Demo
-- v1.0: 데이터보정모듈
+- v1.0: 데이터보정모듈(Data compensation) 및 공정성지표(Google Colaboratory Notebook file)
