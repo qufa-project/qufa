@@ -1,8 +1,6 @@
 환경 분야 데이터 품질 지표 연구용 자료
 ============================
 
-자료는 git으로 관리하지 않고, [구글 드라이브 폴더](https://drive.google.com/drive/folders/15-z-NWTicGJeEkYsbKUXaoBcwZJT9IKC?usp=sharing)로 공유합니다.
-
 확보 데이터
 -------------
 
