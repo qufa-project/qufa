@@ -5,11 +5,11 @@ from datetime import datetime
 import arisuq
 
 class ArisuData:
-    checker_names = []
-    arisuqs = []
-
-    __reader = None
-    __drop_loss_item = False
+    def __init__(self):
+        self.checker_names = []
+        self.arisuqs = []
+        self.__reader = None
+        self.__drop_loss_item = False
 
     def load(self, path, drop_loss_item=False):
         try:

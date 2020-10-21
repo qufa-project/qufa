@@ -39,6 +39,33 @@ class ArisuQ:
             self.is_loss = True
             return float('nan')
 
+    def get_features(self):
+        return [self.turbidity, self.ph, self.chlorine, self.temperature, self.conductivity]
+
+    def get_lossy_features(self):
+        if math.isnan(self.turbidity):
+            return [1, [self.ph, self.chlorine, self.temperature, self.conductivity]]
+        elif math.isnan(self.ph):
+            return [2, [self.turbidity, self.chlorine, self.temperature, self.conductivity]]
+        elif math.isnan(self.chlorine):
+            return [3, [self.turbidity, self.ph, self.temperature, self.conductivity]]
+        elif math.isnan(self.temperature):
+            return [4, [self.turbidity, self.ph, self.chlorine, self.conductivity]]
+        else:
+            return [5, [self.turbidity, self.ph, self.chlorine, self.temperature]]
+
+    def set_feature(self, idx, val):
+        if (idx == 1):
+            self.turbidity = val
+        elif (idx == 2):
+            self.ph = val
+        elif (idx == 3):
+            self.chlorine = val
+        elif (idx == 4):
+            self.temperature = val
+        elif (idx == 5):
+            self.conductivity = val
+
     def __str__(self):
         str = "<{}>".format(self.dt)
 
