@@ -12,6 +12,9 @@ Usage: getloss.py [-e <max error>] <path> [<original>]
 """)
 
 class GetLoss:
+    def __init__(self, err_rate):
+        self.__err_rate = err_rate
+
     def run(self, path, path_org):
         data = arisu_data.ArisuData()
         if not data.load(path):
@@ -52,11 +55,11 @@ class GetLoss:
             fs2 = aq_org.get_features()
 
             for i in range(0, 5):
-                if abs(fs1[i] - fs2[i]) > fs1[i] * err_rate:
+                if abs(fs1[i] - fs2[i]) > fs1[i] * self.__err_rate:
                     return True
         return False
 
-err_rate = 0.1
+err_rate = 0.3
 
 def parseArgs():
     global      err_rate, args
@@ -90,5 +93,5 @@ if __name__ == "__main__":
     if len(args) == 2:
         path_org = args[1]
 
-    gl = getloss.GetLoss()
+    gl = getloss.GetLoss(err_rate)
     exit(gl.run(args[0], path_org))
