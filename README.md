@@ -58,7 +58,7 @@
                 <label>pnu (부산대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataFairness/pnu>source code</a></label>
             </li>
             <li>
-                <label>snu (서울대학교) - source code</label>
+                <label>snu (서울대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataFairness/snu>source code</a></label>
             </li>
           </ul>
         </li><br>
@@ -66,7 +66,7 @@
           <label>framework (상용화팀/수요기업)</label>
           <ul>
             <li>
-                <label>systemIntegration ((주)프람트테크놀로지) - source code</label>
+                <label>systemIntegration ((주)프람트테크놀로지) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/framework/systemIntegration>source code</a></label>
             </li>
             <li>
                 <label>visualization ((주)아이소프트) - source code</label>
