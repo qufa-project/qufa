@@ -60,7 +60,8 @@ class ArisuData:
     def __load_data(self):
         for row in self.__reader:
             aq = arisuq.ArisuQ(row)
-            self.arisuqs.append(aq)
+            if not self.__drop_loss_item or not aq.is_loss:
+                self.arisuqs.append(aq)
 
     def save(self, path):
         with open(path, "w") as fw:
