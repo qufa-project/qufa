@@ -8,15 +8,16 @@
 
 ## Development
 
-### 폴더 및 파일 구조
-* css/
-    - qupa.css
-* js/
-    - facets.html
-    - facets.html.js
-    - qupa.js
-    - worker.js
-* index.html
+### 웹 폴더 및 파일 구조
+* /root
+    + /css
+        - qupa.css
+    + /js
+        - facets.html
+        - facets.html.js
+        - qupa.js
+        - worker.js
+    - index.html
 
 ### 개발 환경
 * Browser :
@@ -33,4 +34,4 @@
     - Google Facets
 
 ## Comment
-* 현재 상기 폴더 및 파일 다운로드 후 진입 파일(index.html)로 웹브라우저(Chrome에서만 동작)에서 실행 가능
+* 현재 프로젝트 파일 다운로드 후 진입 파일(index.html)로 웹브라우저(Chrome에서만 동작)에서 실행 가능
