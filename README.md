@@ -8,7 +8,7 @@
 
 | 구분 | 기관명 |
 | ------ | ------ |
-| 전담기관 | 정보통신기획평가원 (IITP) |
+| 전문기관 | 정보통신기획평가원 (IITP) |
 | 주관기관 | 부산대학교 |
 | 공동연구기관 | 서울대학교, 서울시립대학교, 이화여자대학교, 한성대학교, (주)프람트테크놀로지, (주)아이소프트 |
 | 수요기업 | (주)프람트테크놀로지, (주)아이소프트 |
@@ -43,10 +43,10 @@
           <label>dataFairness (데이터 공정성팀)</label>
           <ul>
             <li>
-                <label>PNU (부산대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataFairness/pnu>source code</a></label>
+                <label>pnu (부산대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataFairness/pnu>source code</a></label>
             </li>
             <li>
-                <label>SNU (서울대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataFairness/snu>source code</a></label>
+                <label>snu (서울대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataFairness/snu>source code</a></label>
             </li>
           </ul>
         </li><br>
@@ -54,13 +54,13 @@
           <label>dataQuality (데이터 품질팀)</label>
           <ul>
             <li>
-                <label>UOS (서울시립대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataQuality/uos>source code</a></label>
+                <label>uos (서울시립대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataQuality/uos>source code</a></label>
             </li>
             <li>
-                <label>EWU (이화여자대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataQuality/ewu>source code</a></label>
+                <label>ewu (이화여자대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataQuality/ewu>source code</a></label>
             </li>
             <li>
-                <label>HSU (한성대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataQuality/hsu>source code</a></label>
+                <label>hsu (한성대학교) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/dataQuality/hsu>source code</a></label>
             </li>
           </ul>
         </li><br>
@@ -71,7 +71,7 @@
                 <label>PromptTechnology ((주)프람트테크놀로지) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/businessDevelopment/PromptTechnology>source code</a></label>
             </li>
             <li>
-                <label>I-Soft ((주)아이소프트) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/businessDevelopment/I-Soft>source code</a></label>
+                <label>i-Soft ((주)아이소프트) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/businessDevelopment/I-Soft>source code</a></label>
             </li>
           </ul>
         </li>
@@ -79,14 +79,15 @@
     </li>
 </ul>
 
-
-
 ##
 - Status of QuFa Repository (Last update: Nov. 20, 2020)
 
 | Name | Description of key features  | Link |
 | ------ | ------ | ------ |
 | QuFa | **※ Official repo. of QuFa**<br> - 도메인별 데이터셋 및 데이터 품질/공정성/통합(QuFa Framework) 구현 | - |
-| Qufa_dataHunter | - 원천 데이터를 프로젝트 DB내에 로드<br> - 원천 데이터의 Meta data reading | <a href=https://gitlab.com/qufa/qufa_datahunter>Go</a> |
-| QuFa_dataReviewerServer | - 피드백 지원도구(백엔드)<br> - REST API 활용<br> - 파일 데이터, Database 정보를 통해 데이터를 API로 자동 변환 | <a href=https://gitlab.com/qufa/qufa_datareviewerserver>Go</a> |
-| QuFa_dataReviewerClient | - 피드백 지원도구(프론트엔드)<br> - Designer-Server와 연동<br> - React Framework 기반의 Web Frontend 프로젝트 | <a href=https://gitlab.com/qufa/qufa_datareviewerclient>Go</a> |
+| Qufa_dataHunter | - 원천 데이터를 프로젝트 DB내에 로드<br> - 원천 데이터의 Meta data reading | <a href=https://gitlab.com/qufa/qufa_datahunter target="_blank">Go</a> |
+| QuFa_dataReviewerServer | - 피드백 지원도구(백엔드)<br> - REST API 활용<br> - 파일 데이터, Database 정보를 통해 데이터를 API로 자동 변환 | <a href=https://gitlab.com/qufa/qufa_datareviewerserver target="_blank">Go</a> |
+| QuFa_dataReviewerClient | - 피드백 지원도구(프론트엔드)<br> - Designer-Server와 연동<br> - React Framework 기반의 Web Frontend 프로젝트 | <a href=https://gitlab.com/qufa/qufa_datareviewerclient target="_blank">Go</a> |
+
+##
+<div align="center"><strong>by QuFa consortium</strong></div>
