@@ -43,6 +43,8 @@ $(document).ready(function()
             }
         });
     });
+    
+    $(".sticky-header").floatThead({position:'fixed', top:60, zIndex:100});
 });
 $(document).on('click', 'a[href*=\\#]', function(event)
 {

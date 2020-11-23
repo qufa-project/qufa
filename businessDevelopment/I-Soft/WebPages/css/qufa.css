@@ -253,6 +253,10 @@ button:focus
     z-index: 2;
     background:#CCCCCC;
 }
+.sticky-header
+{
+    background:#FFFFFF;
+}
 .td-sm
 {
     font-size: 12px;
