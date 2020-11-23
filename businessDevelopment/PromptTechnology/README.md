@@ -5,8 +5,8 @@
 
 ## Architecture
  * [Data Hunter](https://gitlab.com/qufa/qufa_datahunter) - 데이터 수집 및 적재
- * [Data Reviewer - Server](https://github.com/Data-Infuser/Designer-Server) - 피드백 지원도구(백엔드)
- * [Data Reviewer - Client](https://github.com/Data-Infuser/Designer-Client) - 피드백 지원도구(프론트엔드)
+ * [Data Reviewer - Server](https://gitlab.com/qufa/qufa_datareviewerserver) - 피드백 지원도구(백엔드)
+ * [Data Reviewer - Client](https://gitlab.com/qufa/qufa_datareviewerclient) - 피드백 지원도구(프론트엔드)
  * [Author](https://github.com/Data-Infuser/Author) - 통합시스템 인증 모듈
 
 ## Meta
