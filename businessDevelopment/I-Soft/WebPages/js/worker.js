@@ -18,13 +18,13 @@ importScripts('https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js');
 var readFiles = function (files, columns, whendone)
 {
     var sColumns = columns[0];
-    for (var i = 1; i < columns.length; i++)
+    for (var nIdxC = 1; nIdxC < columns.length; nIdxC++)
     {
-        sColumns += ("," + columns[i]);
+        sColumns += ("," + columns[nIdxC]);
     }
     sColumns += "\n";
 
-    var count = files.length;
+    var nIdxF = 0;
     var datasetsList = [];
     var readFile = function (file)
     {
@@ -49,13 +49,22 @@ var readFiles = function (files, columns, whendone)
         });
         datasetsList.push({ data: parsedData, name: file.name });
 
-        if ( !--count ) { whendone(datasetsList); }        
+        if ( nIdxF == files.length )
+        {
+            whendone(datasetsList);
+        }
     };
-    for (var i = 0; i < count; i++) { readFile(files[i]); }
+    while (nIdxF < files.length)
+    {
+        readFile(files[nIdxF++]);
+    }
 }
 self.addEventListener('message', function (e)
 {
     var files = e.data.files;
     var columns = e.data.columns;
-    readFiles(files, columns, function (datasetsList) { postMessage(datasetsList); });
+    readFiles(files, columns, function (datasetsList)
+    {
+        postMessage(datasetsList);
+    });
 }, false);
