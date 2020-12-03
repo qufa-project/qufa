@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns="http://eobjects.org/analyzerbeans/configuration/1.0">
+    <datastore-catalog>
+        <jdbc-datastore name="dataStore">
+            <url>jdbc:mariadb://localhost:3307/profiler?characterEncoding=UTF-8&amp;serverTimezone=Asia/Seoul</url>
+            <driver>org.mariadb.jdbc.Driver</driver>
+            <username>root</username>
+            <password>1234</password>
+            <multiple-connections>true</multiple-connections>
+        </jdbc-datastore>
+
+        <jdbc-datastore name="test">
+            <url>jdbc:mariadb://13.125.199.14:3306/author?characterEncoding=UTF-8&amp;serverTimezone=Asia/Seoul</url>
+            <driver>org.mariadb.jdbc.Driver</driver>
+            <username>ptech</username>
+            <password>ptech6441</password>
+            <multiple-connections>true</multiple-connections>
+        </jdbc-datastore>
+    </datastore-catalog>
+</configuration>
