@@ -1,0 +1,15 @@
+spring:
+  profiles:
+    active: local
+
+---
+spring:
+  profiles: local
+
+---
+spring:
+  profiles: test
+
+---
+spring:
+  profiles: prod
