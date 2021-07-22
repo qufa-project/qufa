@@ -35,7 +35,7 @@ public class ProfileService {
      *
      */
     private final ActiveProfileProperty activeProfileProperty;
-    private final ProfileTableResult profileTableResult = new ProfileTableResult();
+    private ProfileTableResult profileTableResult = new ProfileTableResult();
     private ProfileColumnResult profileColumnResult = new ProfileColumnResult();
 
     @Autowired
@@ -58,13 +58,15 @@ public class ProfileService {
     }
 
     public ProfileTableResult profileLocalCSV(String path){
-        ProfileTableResult profileTableResult = new ProfileTableResult();
+        //ProfileTableResult profileTableResult = new ProfileTableResult();
         try {
             CSVReader csvReader = new CSVReader(new FileReader(path));
 
             List<String> header = Arrays.asList(csvReader.readNext().clone());
 
-            profileTableResult = profileLocalColumns(path,header);
+            profileLocalColumns(path,header);
+
+            csvReader.close();
 
         } catch(Exception e){
             e.printStackTrace();
@@ -102,12 +104,14 @@ public class ProfileService {
         return profileTableResult;
     }
 
-    public ProfileTableResult profileLocalColumns(String path, List<String> columnNames) { //
+    public void profileLocalColumns(String path, List<String> columnNames) {
+        profileTableResult = new ProfileTableResult();
         System.out.println(path);
         //파일이름만 분리
         String[] split = path.split("\\\\");
         String filename = split[split.length-1].split("\\.")[0];
         System.out.println("filename:"+filename);
+
         //CsvDatastore
         DataStoreService.createLocalDataStore(path);
 
@@ -123,8 +127,6 @@ public class ProfileService {
             this.profileSingleColumn(filename, columnName);
             profileTableResult.getResults().add(profileColumnResult);
         }
-
-        return profileTableResult;
     }
 
     /**
