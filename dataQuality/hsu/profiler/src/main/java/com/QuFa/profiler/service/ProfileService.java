@@ -23,6 +23,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -40,6 +44,70 @@ public class ProfileService {
 
     @Autowired
     private final DataStoreService dataStoreService;
+
+    public String typeDetection(String filename, String columnName) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader("./src/main/resources/targetfiles/" + filename + ".csv"));
+        List<String> header = Arrays.asList(csvReader.readNext().clone());
+        String[] nextLine;
+        List<String> rowValues = new ArrayList<>();
+        Map<String, String> rowType = new HashMap<>();
+        while ((nextLine = csvReader.readNext()) != null) {
+            if(nextLine.length == header.size())
+                rowValues.add(nextLine[header.indexOf(columnName)]);
+        }
+
+        int i = 0;
+
+        for(String rowVal : rowValues) {
+            if (rowVal.trim().equals("")) continue;
+            List<DateFormat> dfs = new ArrayList<>();
+            dfs.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+            dfs.add(new SimpleDateFormat("yyyy-MM-dd"));
+            dfs.add(new SimpleDateFormat("MM/dd/yyyy"));
+            dfs.add(new SimpleDateFormat("HH:mm:ss"));
+            Date date;
+            for(DateFormat df : dfs) {
+                try {
+                    date = df.parse(rowVal);
+                    rowType.put(rowVal, "DATE");
+                    break;
+                } catch (ParseException e) {
+                    try {
+                        Double.parseDouble(rowVal);
+                        rowType.put(rowVal, "NUMBER");
+                    } catch (NumberFormatException ex) {
+                        rowType.put(rowVal, "STRING");
+                    }
+
+                }
+            }
+            if(i<=99)
+                System.out.println(rowVal + " : " + rowType.get(rowVal));
+            i++;
+        }
+        i = 0;
+        int n;
+        Map<String, Integer> vdTypes = new HashMap<>();
+        vdTypes.put("STRING", 0);
+        vdTypes.put("NUMBER", 0);
+        vdTypes.put("DATE", 0);
+        for(String t : rowType.values()){
+            if(i >= 99) break;
+            n = vdTypes.get(t) + 1;
+            vdTypes.put(t, n);
+            i++;
+        }
+
+        int maxVal =  Collections.max(vdTypes.values());
+
+        for(String key : vdTypes.keySet()){
+            if(vdTypes.get(key).equals(maxVal))
+                return key;
+        }
+
+        return "STRING";
+
+    }
 
     public ProfileTableResult profileCSV(MultipartFile file){
         ProfileTableResult profileTableResult = new ProfileTableResult();
@@ -123,7 +191,11 @@ public class ProfileService {
             profileColumnResult = new ProfileColumnResult();
             profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
             profileColumnResult.setColumn_name(columnName);
-            profileColumnResult.setColumn_type("STRING");
+            try {
+                profileColumnResult.setColumn_type(typeDetection(filename, columnName));
+            } catch(IOException e){
+                e.printStackTrace();
+            }
             this.profileSingleColumn(filename, columnName);
             profileTableResult.getResults().add(profileColumnResult);
         }
