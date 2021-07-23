@@ -10,9 +10,12 @@ import org.datacleaner.api.InputColumn;
 import org.datacleaner.beans.*;
 import org.datacleaner.beans.valuedist.ValueDistributionAnalyzer;
 import org.datacleaner.beans.valuedist.ValueDistributionAnalyzerResult;
+import org.datacleaner.components.convert.ConvertToDateTransformer;
+import org.datacleaner.components.convert.ConvertToNumberTransformer;
 import org.datacleaner.job.AnalysisJob;
 import org.datacleaner.job.builder.AnalysisJobBuilder;
 import org.datacleaner.job.builder.AnalyzerComponentBuilder;
+import org.datacleaner.job.builder.TransformerComponentBuilder;
 import org.datacleaner.job.runner.AnalysisResultFuture;
 import org.datacleaner.job.runner.AnalysisRunner;
 import org.datacleaner.job.runner.AnalysisRunnerImpl;
@@ -106,7 +109,6 @@ public class ProfileService {
         }
 
         return "STRING";
-
     }
 
     public ProfileTableResult profileCSV(MultipartFile file){
@@ -211,12 +213,23 @@ public class ProfileService {
 
         String inputColumnName = tableName + "." + columnName;
         System.out.println("inputColumnName : " + inputColumnName);
-
+        String type = profileColumnResult.getColumn_type();
         //DataStoreService.setDataStore2(activeProfileProperty.getActive());
         DataStoreService.setDataStore("CSVDS");
         AnalysisJobBuilder builder = DataStoreService.getBuilder();
         builder.addSourceColumns(columnName);
         InputColumn<?> targetInputColumn = builder.getSourceColumnByName(columnName);
+
+        //Convert column data type
+        if (type.equals("NUMBER")){
+            TransformerComponentBuilder<ConvertToNumberTransformer> ctn = builder.addTransformer(ConvertToNumberTransformer.class);
+            ctn.addInputColumns(targetInputColumn);
+            targetInputColumn = ctn.getOutput()[0];
+        } else if (type.equals("DATE")){
+            TransformerComponentBuilder<ConvertToDateTransformer> ctd = builder.addTransformer(ConvertToDateTransformer.class);
+            ctd.addInputColumns(targetInputColumn);
+            targetInputColumn = ctd.getOutput()[0];
+        }
         System.out.println(targetInputColumn); // null로 나옴
 
 
@@ -227,27 +240,40 @@ public class ProfileService {
         valDistAnalyzer.setConfiguredProperty(ValueDistributionAnalyzer.PROPERTY_RECORD_UNIQUE_VALUES, true);
         valDistAnalyzer.setConfiguredProperty(ValueDistributionAnalyzer.PROPERTY_RECORD_DRILL_DOWN_INFORMATION, true);
 
-        // str
-        if (targetInputColumn.getDataType().getTypeName().equals("java.lang.String")) {
+
+        //Column data type과 매핑되는 analyzer config
+        if (type.equals("STRING")) {
             AnalyzerComponentBuilder<StringAnalyzer> stringAnalyzer = builder.addAnalyzer(StringAnalyzer.class);
             stringAnalyzer.addInputColumn(targetInputColumn);
-
-            // stringAnalyzer.setConfiguredProperty("Descriptive statistics", false);
-        } else if (targetInputColumn.getDataType().getTypeName().equals("java.util.Date") ||
-                targetInputColumn.getDataType().getTypeName().equals("java.time.Instant")) {
-            AnalyzerComponentBuilder<DateAndTimeAnalyzer> numberAnalyzer = builder.addAnalyzer(DateAndTimeAnalyzer.class);
-            numberAnalyzer.addInputColumn(targetInputColumn);
-        } else if (targetInputColumn.getDataType().getTypeName().equals("java.lang.Boolean")) {
-            // do something
-        } else if (targetInputColumn.getDataType().getTypeName().equals("java.lang.Number") ||
-                targetInputColumn.getDataType().getTypeName().equals("java.lang.Integer") ||
-                targetInputColumn.getDataType().getTypeName().equals("java.lang.Doulbe") ||
-                targetInputColumn.getDataType().getTypeName().equals("java.lang.Float") ||
-                targetInputColumn.getDataType().getTypeName().equals("java.lang.BigInteger")) {
+        } else if (type.equals("NUMBER")) {
             AnalyzerComponentBuilder<NumberAnalyzer> numberAnalyzer = builder.addAnalyzer(NumberAnalyzer.class);
             numberAnalyzer.setConfiguredProperty("Descriptive statistics", true);
             numberAnalyzer.addInputColumn(targetInputColumn);
+        } else if (type.equals("DATE")) {
+            AnalyzerComponentBuilder<DateAndTimeAnalyzer> dateAnalyzer = builder.addAnalyzer(DateAndTimeAnalyzer.class);
+            dateAnalyzer.addInputColumn(targetInputColumn);
         }
+//        // str
+//        if (targetInputColumn.getDataType().getTypeName().equals("java.lang.String")) {
+//            AnalyzerComponentBuilder<StringAnalyzer> stringAnalyzer = builder.addAnalyzer(StringAnalyzer.class);
+//            stringAnalyzer.addInputColumn(targetInputColumn);
+//
+//            // stringAnalyzer.setConfiguredProperty("Descriptive statistics", false);
+//        } else if (targetInputColumn.getDataType().getTypeName().equals("java.util.Date") ||
+//                targetInputColumn.getDataType().getTypeName().equals("java.time.Instant")) {
+//            AnalyzerComponentBuilder<DateAndTimeAnalyzer> numberAnalyzer = builder.addAnalyzer(DateAndTimeAnalyzer.class);
+//            numberAnalyzer.addInputColumn(targetInputColumn);
+//        } else if (targetInputColumn.getDataType().getTypeName().equals("java.lang.Boolean")) {
+//            // do something
+//        } else if (targetInputColumn.getDataType().getTypeName().equals("java.lang.Number") ||
+//                targetInputColumn.getDataType().getTypeName().equals("java.lang.Integer") ||
+//                targetInputColumn.getDataType().getTypeName().equals("java.lang.Doulbe") ||
+//                targetInputColumn.getDataType().getTypeName().equals("java.lang.Float") ||
+//                targetInputColumn.getDataType().getTypeName().equals("java.lang.BigInteger")) {
+//            AnalyzerComponentBuilder<NumberAnalyzer> numberAnalyzer = builder.addAnalyzer(NumberAnalyzer.class);
+//            numberAnalyzer.setConfiguredProperty("Descriptive statistics", true);
+//            numberAnalyzer.addInputColumn(targetInputColumn);
+//        }
 
         // job build run & result
         AnalysisJob analysisJob = builder.toAnalysisJob();
