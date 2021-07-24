@@ -227,6 +227,9 @@ public class ProfileService {
             targetInputColumn = ctn.getOutput()[0];
         } else if (type.equals("DATE")){
             TransformerComponentBuilder<ConvertToDateTransformer> ctd = builder.addTransformer(ConvertToDateTransformer.class);
+            ctd.setConfiguredProperty("Time zone","Asia/Seoul");
+//            Date DateNullReplacement = new Date();
+//            ctd.setConfiguredProperty("Null replacement", DateNullReplacement);
             ctd.addInputColumns(targetInputColumn);
             targetInputColumn = ctd.getOutput()[0];
         }
@@ -251,6 +254,7 @@ public class ProfileService {
             numberAnalyzer.addInputColumn(targetInputColumn);
         } else if (type.equals("DATE")) {
             AnalyzerComponentBuilder<DateAndTimeAnalyzer> dateAnalyzer = builder.addAnalyzer(DateAndTimeAnalyzer.class);
+            dateAnalyzer.setConfiguredProperty("Descriptive statistics", true);
             dateAnalyzer.addInputColumn(targetInputColumn);
         }
 //        // str
@@ -330,9 +334,6 @@ public class ProfileService {
         basicProfile.setNull_cnt(0);
         stringProfile.setBlank_cnt(0);
 
-        //TODO: COLUMN COMMENT 가져오기
-//        resultModel.setColumnDesc(columnInfo.getColumnDesc());
-
         for (AnalyzerResult result : results) {
             if (result instanceof ValueDistributionAnalyzerResult) {
                 if (((ValueDistributionAnalyzerResult) result).getNullCount() > 0) {
@@ -347,15 +348,12 @@ public class ProfileService {
                     if (vf.getChildren() != null) {
                         Collection<ValueFrequency> vfChildren = vf.getChildren();
                         for (ValueFrequency vfChild : vfChildren) {
-                            //TODO: COLUMN COMMENT 가져오기
-//                            resultVFModel.setColumnDesc(columnInfo.getColumnDesc());
-
-                            vfModelList.put(vfChild.getValue(),vfChild.getCount());
+                            if(vfChild.getValue() != null)
+                                vfModelList.put(vfChild.getValue(),vfChild.getCount());
                         }
                     } else {
-                        //TODO: COLUMN COMMENT 가져오기
-//                        resultVFModel.setColumnDesc(columnInfo.getColumnDesc());
-                        vfModelList.put(vf.getValue(),vf.getCount());
+                        if(vf.getValue() != null)
+                            vfModelList.put(vf.getValue(),vf.getCount());
                     }
                 }
 
@@ -414,10 +412,11 @@ public class ProfileService {
                 //}
             }
 
-            if (result instanceof DateAndTimeAnalyzer) {
+            if (result instanceof DateAndTimeAnalyzerResult) {
                 if (((DateAndTimeAnalyzerResult) result).getNullCount(targetInputColumn) > 0 && basicProfile.getNull_cnt() == 0) {
                     basicProfile.setNull_cnt(((DateAndTimeAnalyzerResult) result).getNullCount(targetInputColumn));
                 }
+                basicProfile.setValue_distribution(vfModelList);
             }
         }
 
@@ -430,9 +429,12 @@ public class ProfileService {
 //        this.profileTargetService.addProfileValue(vfModelList, tableName);
 
         profileColumnResult.getProfiles().put("basic_profile", basicProfile);
-        profileColumnResult.getProfiles().put("number_profile", numberProfile);
-        profileColumnResult.getProfiles().put("string_profile", stringProfile);
-//        profileColumnResult.getProfiles().put("date_profile", dateProfile);
+        if(profileColumnResult.getColumn_type().equals("NUMBER"))
+            profileColumnResult.getProfiles().put("number_profile", numberProfile);
+        if(profileColumnResult.getColumn_type().equals("STRING"))
+            profileColumnResult.getProfiles().put("string_profile", stringProfile);
+        if(profileColumnResult.getColumn_type().equals("DATE"))
+            profileColumnResult.getProfiles().put("date_profile", dateProfile);
     }
 
 //    /**
