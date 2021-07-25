@@ -11,6 +11,7 @@ import org.datacleaner.beans.*;
 import org.datacleaner.beans.valuedist.MonthDistributionAnalyzer;
 import org.datacleaner.beans.valuedist.ValueDistributionAnalyzer;
 import org.datacleaner.beans.valuedist.ValueDistributionAnalyzerResult;
+import org.datacleaner.beans.valuedist.YearDistributionAnalyzer;
 import org.datacleaner.components.convert.ConvertToDateTransformer;
 import org.datacleaner.components.convert.ConvertToNumberTransformer;
 import org.datacleaner.job.AnalysisJob;
@@ -258,8 +259,11 @@ public class ProfileService {
             dateAnalyzer.setConfiguredProperty("Descriptive statistics", true);
             dateAnalyzer.addInputColumn(targetInputColumn);
 
-            AnalyzerComponentBuilder<MonthDistributionAnalyzer> monDistAnalyzer = builder.addAnalyzer(MonthDistributionAnalyzer.class);
-            monDistAnalyzer.addInputColumns(targetInputColumn);
+            AnalyzerComponentBuilder<MonthDistributionAnalyzer> monthDistAnalyzer = builder.addAnalyzer(MonthDistributionAnalyzer.class);
+            monthDistAnalyzer.addInputColumns(targetInputColumn);
+
+            AnalyzerComponentBuilder<YearDistributionAnalyzer> yearDistAnalyzer = builder.addAnalyzer(YearDistributionAnalyzer.class);
+            yearDistAnalyzer.addInputColumns(targetInputColumn);
         }
 //        // str
 //        if (targetInputColumn.getDataType().getTypeName().equals("java.lang.String")) {
@@ -340,12 +344,13 @@ public class ProfileService {
 
         Map<Object, Object> vfModelList = new HashMap<>();
         Map<Object, Object> monthList = new HashMap<>();
+        Map<Object, Object> yearList = new HashMap<>();
 
         basicProfile.setNull_cnt(0);
         stringProfile.setBlank_cnt(0);
 
         for (AnalyzerResult result : results) {
-            System.out.println(result.getClass());
+            //System.out.println(result.getClass());
             if (result instanceof ValueDistributionAnalyzerResult) {
                 if (((ValueDistributionAnalyzerResult) result).getNullCount() > 0) {
                     basicProfile.setNull_cnt(((ValueDistributionAnalyzerResult) result).getNullCount());
@@ -372,20 +377,33 @@ public class ProfileService {
             }
             if (profileColumnResult.getColumn_type().equals("DATE") && result instanceof CrosstabResult &&
                     !(result instanceof DateAndTimeAnalyzerResult)){
-                CrosstabDimension ctr = ((CrosstabResult) result).getCrosstab().getDimension("Month");
-                for(String c : ctr.getCategories()){
+                CrosstabDimension ctr = ((CrosstabResult) result).getCrosstab().getDimension(1);
+                String dimension = "";
+
+                if(ctr.getName().equals("Month"))
+                    dimension = "Month";
+                else
+                    dimension = "Year";
+
+                for(String category : ctr.getCategories()){
                     Object value = ((CrosstabResult) result).getCrosstab().where("Column",
-                            targetInputColumn.getName()).where("Month", c)
+                            targetInputColumn.getName()).where(dimension, category)
                             .safeGet(null);
                     if(value == null)
                         value = 0;
-                    monthList.put(c, value);
+
+                    if(dimension.equals("Month"))
+                        monthList.put(category, value);
+                    else
+                        yearList.put(category, value);
                 }
             }
         }
         //basicProfile.setValue_distribution(vfModelList);
-        if(profileColumnResult.getColumn_type().equals("DATE"))
+        if(profileColumnResult.getColumn_type().equals("DATE")) {
             dateProfile.setMonth_distribution(monthList);
+            dateProfile.setYear_distribution(yearList);
+        }
 
         for (AnalyzerResult result : results) {
             if (result instanceof StringAnalyzerResult) {
