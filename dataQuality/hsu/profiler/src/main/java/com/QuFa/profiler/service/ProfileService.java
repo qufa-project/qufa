@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.datacleaner.api.AnalyzerResult;
 import org.datacleaner.api.InputColumn;
 import org.datacleaner.beans.*;
+import org.datacleaner.beans.valuedist.MonthDistributionAnalyzer;
 import org.datacleaner.beans.valuedist.ValueDistributionAnalyzer;
 import org.datacleaner.beans.valuedist.ValueDistributionAnalyzerResult;
 import org.datacleaner.components.convert.ConvertToDateTransformer;
@@ -19,14 +20,14 @@ import org.datacleaner.job.builder.TransformerComponentBuilder;
 import org.datacleaner.job.runner.AnalysisResultFuture;
 import org.datacleaner.job.runner.AnalysisRunner;
 import org.datacleaner.job.runner.AnalysisRunnerImpl;
-import org.datacleaner.result.AnalysisResult;
-import org.datacleaner.result.ValueFrequency;
+import org.datacleaner.result.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -256,6 +257,9 @@ public class ProfileService {
             AnalyzerComponentBuilder<DateAndTimeAnalyzer> dateAnalyzer = builder.addAnalyzer(DateAndTimeAnalyzer.class);
             dateAnalyzer.setConfiguredProperty("Descriptive statistics", true);
             dateAnalyzer.addInputColumn(targetInputColumn);
+
+            AnalyzerComponentBuilder<MonthDistributionAnalyzer> monDistAnalyzer = builder.addAnalyzer(MonthDistributionAnalyzer.class);
+            monDistAnalyzer.addInputColumns(targetInputColumn);
         }
 //        // str
 //        if (targetInputColumn.getDataType().getTypeName().equals("java.lang.String")) {
@@ -311,6 +315,11 @@ public class ProfileService {
         }
     }
 
+    private String SerialNumberToDate(Number num){
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                .format(new Date((Integer)num * 86400000L));
+    }
+
     /**
      * 프로파일 결과를 추출하여 DB에 저장하는 메소드
      *
@@ -330,11 +339,13 @@ public class ProfileService {
         int totalCnt = 0;
 
         Map<Object, Object> vfModelList = new HashMap<>();
+        Map<Object, Object> monthList = new HashMap<>();
 
         basicProfile.setNull_cnt(0);
         stringProfile.setBlank_cnt(0);
 
         for (AnalyzerResult result : results) {
+            System.out.println(result.getClass());
             if (result instanceof ValueDistributionAnalyzerResult) {
                 if (((ValueDistributionAnalyzerResult) result).getNullCount() > 0) {
                     basicProfile.setNull_cnt(((ValueDistributionAnalyzerResult) result).getNullCount());
@@ -359,8 +370,22 @@ public class ProfileService {
 
                 totalCnt = ((ValueDistributionAnalyzerResult) result).getTotalCount();
             }
+            if (profileColumnResult.getColumn_type().equals("DATE") && result instanceof CrosstabResult &&
+                    !(result instanceof DateAndTimeAnalyzerResult)){
+                CrosstabDimension ctr = ((CrosstabResult) result).getCrosstab().getDimension("Month");
+                for(String c : ctr.getCategories()){
+                    Object value = ((CrosstabResult) result).getCrosstab().where("Column",
+                            targetInputColumn.getName()).where("Month", c)
+                            .safeGet(null);
+                    if(value == null)
+                        value = 0;
+                    monthList.put(c, value);
+                }
+            }
         }
         //basicProfile.setValue_distribution(vfModelList);
+        if(profileColumnResult.getColumn_type().equals("DATE"))
+            dateProfile.setMonth_distribution(monthList);
 
         for (AnalyzerResult result : results) {
             if (result instanceof StringAnalyzerResult) {
@@ -415,6 +440,24 @@ public class ProfileService {
             if (result instanceof DateAndTimeAnalyzerResult) {
                 if (((DateAndTimeAnalyzerResult) result).getNullCount(targetInputColumn) > 0 && basicProfile.getNull_cnt() == 0) {
                     basicProfile.setNull_cnt(((DateAndTimeAnalyzerResult) result).getNullCount(targetInputColumn));
+                }
+                if (((DateAndTimeAnalyzerResult) result).getHighestDate(targetInputColumn) != null) {
+                    dateProfile.setHighest_date(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getHighestDate(targetInputColumn)));
+                }
+                if (((DateAndTimeAnalyzerResult) result).getLowestDate(targetInputColumn) != null) {
+                    dateProfile.setLowest_date(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getLowestDate(targetInputColumn)));
+                }
+                if (((DateAndTimeAnalyzerResult) result).getMean(targetInputColumn) != null) {
+                    dateProfile.setMean_date(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getMean(targetInputColumn)));
+                }
+                if (((DateAndTimeAnalyzerResult) result).getMedian(targetInputColumn) != null) {
+                    dateProfile.setMedian_date(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getMedian(targetInputColumn)));
+                }
+                if (((DateAndTimeAnalyzerResult) result).getPercentile25(targetInputColumn) != null) {
+                    dateProfile.setPercentile_25th(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getPercentile25(targetInputColumn)));
+                }
+                if (((DateAndTimeAnalyzerResult) result).getPercentile75(targetInputColumn) != null) {
+                    dateProfile.setPercentile_75th(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getPercentile75(targetInputColumn)));
                 }
                 basicProfile.setValue_distribution(vfModelList);
             }
