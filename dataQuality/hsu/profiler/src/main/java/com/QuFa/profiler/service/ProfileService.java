@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Serializable;
@@ -185,13 +186,19 @@ public class ProfileService {
         String[] split = path.split("\\\\");
         String filename = split[split.length-1].split("\\.")[0];
         System.out.println("filename:"+filename);
-
         //CsvDatastore
         DataStoreService.createLocalDataStore(path);
 
+
         profileTableResult.setDataset_name(filename);
-        profileTableResult.setDataset_column_cnt(columnNames.size());
         profileTableResult.setDataset_type("csv");
+
+        File file = new File(path);
+        profileTableResult.setDataset_size((int)file.length());
+        file = null;
+
+        profileTableResult.setDataset_column_cnt(columnNames.size());
+
 
         for (String columnName : columnNames) {
             profileColumnResult = new ProfileColumnResult();
