@@ -190,7 +190,7 @@ public class ProfileService {
         DataStoreService.createLocalDataStore(path);
 
         profileTableResult.setDataset_name(filename);
-        profileTableResult.setDataset_column_cnt(20);
+        profileTableResult.setDataset_column_cnt(columnNames.size());
         profileTableResult.setDataset_type("csv");
 
         for (String columnName : columnNames) {
@@ -366,6 +366,9 @@ public class ProfileService {
 
                 int distinct_cnt = ((ValueDistributionAnalyzerResult) result).getDistinctCount();
                 int row_cnt = ((ValueDistributionAnalyzerResult) result).getTotalCount();
+
+                profileTableResult.setDataset_row_cnt(row_cnt);
+                //TODO: if(header=yes) Table row cnt=row_cnt+1
 
                 basicProfile.setDistinct_cnt(distinct_cnt);
                 basicProfile.setRow_cnt(row_cnt);
