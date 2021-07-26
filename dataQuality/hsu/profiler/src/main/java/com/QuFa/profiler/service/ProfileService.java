@@ -364,8 +364,13 @@ public class ProfileService {
                     basicProfile.setNull_cnt(((ValueDistributionAnalyzerResult) result).getNullCount());
                 }
 
-                basicProfile.setDistinct_cnt(((ValueDistributionAnalyzerResult) result).getDistinctCount());
-                basicProfile.setRow_cnt(((ValueDistributionAnalyzerResult) result).getTotalCount());
+                int distinct_cnt = ((ValueDistributionAnalyzerResult) result).getDistinctCount();
+                int row_cnt = ((ValueDistributionAnalyzerResult) result).getTotalCount();
+
+                basicProfile.setDistinct_cnt(distinct_cnt);
+                basicProfile.setRow_cnt(row_cnt);
+                basicProfile.setUnique_cnt(((ValueDistributionAnalyzerResult) result).getUniqueCount());
+                basicProfile.setDistinctness((double) distinct_cnt / row_cnt);
 
                 Collection<ValueFrequency> vfList = ((ValueDistributionAnalyzerResult) result).getValueCounts();
                 for (ValueFrequency vf : vfList) {
