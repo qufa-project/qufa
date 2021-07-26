@@ -12,6 +12,8 @@ import org.datacleaner.beans.valuedist.MonthDistributionAnalyzer;
 import org.datacleaner.beans.valuedist.ValueDistributionAnalyzer;
 import org.datacleaner.beans.valuedist.ValueDistributionAnalyzerResult;
 import org.datacleaner.beans.valuedist.YearDistributionAnalyzer;
+import org.datacleaner.beans.valuematch.ValueMatchAnalyzer;
+import org.datacleaner.beans.valuematch.ValueMatchAnalyzerResult;
 import org.datacleaner.components.convert.ConvertToDateTransformer;
 import org.datacleaner.components.convert.ConvertToNumberTransformer;
 import org.datacleaner.job.AnalysisJob;
@@ -227,6 +229,12 @@ public class ProfileService {
             TransformerComponentBuilder<ConvertToNumberTransformer> ctn = builder.addTransformer(ConvertToNumberTransformer.class);
             ctn.addInputColumns(targetInputColumn);
             targetInputColumn = ctn.getOutput()[0];
+
+            AnalyzerComponentBuilder<ValueMatchAnalyzer> vma = builder.addAnalyzer(ValueMatchAnalyzer.class);
+            vma.addInputColumn(targetInputColumn);
+            String[] expected_values = { "0" };
+            vma.setConfiguredProperty("Expected values", expected_values);
+
         } else if (type.equals("DATE")){
             TransformerComponentBuilder<ConvertToDateTransformer> ctd = builder.addTransformer(ConvertToDateTransformer.class);
             ctd.setConfiguredProperty("Time zone","Asia/Seoul");
@@ -450,9 +458,12 @@ public class ProfileService {
                 if (((NumberAnalyzerResult) result).getPercentile75(targetInputColumn) != null) {
                     numberProfile.setPercentile_75th((Double) ((NumberAnalyzerResult) result).getPercentile75(targetInputColumn));
                 }
-                //if (((NumberAnalyzerResult) result).getStandardDeviation(targetInputColumn) != null) {
-                numberProfile.setZero_cnt(0);
-                //}
+            }
+
+            if (result instanceof ValueMatchAnalyzerResult) {
+                if (((ValueMatchAnalyzerResult) result).getCount("0") != null) {
+                    numberProfile.setZero_cnt(((ValueMatchAnalyzerResult) result).getCount("0"));
+                }
             }
 
             if (result instanceof DateAndTimeAnalyzerResult) {
