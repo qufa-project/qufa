@@ -8,7 +8,7 @@ import java.util.Map;
 @Getter
 public class Local {
     private String path;
-    private String header;
+    private boolean header = false;
     private List<String> profiling;
-    private Map<String,String> coltype;
+    private Map<String, String> coltype;
 }
