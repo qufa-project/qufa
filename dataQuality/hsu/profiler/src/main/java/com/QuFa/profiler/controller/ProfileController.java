@@ -29,18 +29,22 @@ public class ProfileController {
 //            @RequestParam(value = "profiling", defaultValue = "all") String profiling,
 //            @RequestParam(value = "header", defaultValue = "no") String header,
 //            @RequestParam(value = "coltype", defaultValue = "default") String coltype) {
-//        System.out.println("server Profiling");
+//        System.out.println("Server Profiling");
 //        return new ResponseEntity<>(profileService.profileCSV(file), HttpStatus.OK);
 //    }
 
     @PostMapping("/local")
     public ResponseEntity<ProfileTableResult> localProfile(
             @RequestBody Local local) {
-        System.out.println("local Profiling");
+        System.out.println("Local Profiling");
+        System.out.println("===================");
+        System.out.println("===================");
+
         System.out.println(local.getPath());
-        System.out.println(local.getHeader());
-        System.out.println(local.getProfiling());
+        System.out.println(local.isHeader());
         System.out.println(local.getColtype());
+        System.out.println(local.getProfiling());
+
         return new ResponseEntity<>(profileService.profileLocalCSV(local.getPath()), HttpStatus.OK);
     }
 }
