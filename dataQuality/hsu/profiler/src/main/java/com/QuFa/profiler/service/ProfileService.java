@@ -77,14 +77,14 @@ public class ProfileService {
             for(DateFormat df : dfs) {
                 try {
                     date = df.parse(rowVal);
-                    rowType.put(rowVal, "DATE");
+                    rowType.put(rowVal, "date");
                     break;
                 } catch (ParseException e) {
                     try {
                         Double.parseDouble(rowVal);
-                        rowType.put(rowVal, "NUMBER");
+                        rowType.put(rowVal, "number");
                     } catch (NumberFormatException ex) {
-                        rowType.put(rowVal, "STRING");
+                        rowType.put(rowVal, "string");
                     }
 
                 }
@@ -96,9 +96,9 @@ public class ProfileService {
         i = 0;
         int n;
         Map<String, Integer> vdTypes = new HashMap<>();
-        vdTypes.put("STRING", 0);
-        vdTypes.put("NUMBER", 0);
-        vdTypes.put("DATE", 0);
+        vdTypes.put("string", 0);
+        vdTypes.put("number", 0);
+        vdTypes.put("date", 0);
         for(String t : rowType.values()){
             if(i >= 99) break;
             n = vdTypes.get(t) + 1;
@@ -113,7 +113,7 @@ public class ProfileService {
                 return key;
         }
 
-        return "STRING";
+        return "string";
     }
 
     public ProfileTableResult profileCSV(MultipartFile file){
@@ -232,7 +232,7 @@ public class ProfileService {
         InputColumn<?> targetInputColumn = builder.getSourceColumnByName(columnName);
 
         //Convert column data type
-        if (type.equals("NUMBER")){
+        if (type.equals("number")){
             TransformerComponentBuilder<ConvertToNumberTransformer> ctn = builder.addTransformer(ConvertToNumberTransformer.class);
             ctn.addInputColumns(targetInputColumn);
             targetInputColumn = ctn.getOutput()[0];
@@ -242,7 +242,7 @@ public class ProfileService {
             String[] expected_values = { "0" };
             vma.setConfiguredProperty("Expected values", expected_values);
 
-        } else if (type.equals("DATE")){
+        } else if (type.equals("date")){
             TransformerComponentBuilder<ConvertToDateTransformer> ctd = builder.addTransformer(ConvertToDateTransformer.class);
             ctd.setConfiguredProperty("Time zone","Asia/Seoul");
 //            Date DateNullReplacement = new Date();
@@ -262,14 +262,14 @@ public class ProfileService {
 
 
         //Column data type과 매핑되는 analyzer config
-        if (type.equals("STRING")) {
+        if (type.equals("string")) {
             AnalyzerComponentBuilder<StringAnalyzer> stringAnalyzer = builder.addAnalyzer(StringAnalyzer.class);
             stringAnalyzer.addInputColumn(targetInputColumn);
-        } else if (type.equals("NUMBER")) {
+        } else if (type.equals("number")) {
             AnalyzerComponentBuilder<NumberAnalyzer> numberAnalyzer = builder.addAnalyzer(NumberAnalyzer.class);
             numberAnalyzer.setConfiguredProperty("Descriptive statistics", true);
             numberAnalyzer.addInputColumn(targetInputColumn);
-        } else if (type.equals("DATE")) {
+        } else if (type.equals("date")) {
             AnalyzerComponentBuilder<DateAndTimeAnalyzer> dateAnalyzer = builder.addAnalyzer(DateAndTimeAnalyzer.class);
             dateAnalyzer.setConfiguredProperty("Descriptive statistics", true);
             dateAnalyzer.addInputColumn(targetInputColumn);
@@ -280,7 +280,6 @@ public class ProfileService {
             AnalyzerComponentBuilder<YearDistributionAnalyzer> yearDistAnalyzer = builder.addAnalyzer(YearDistributionAnalyzer.class);
             yearDistAnalyzer.addInputColumns(targetInputColumn);
         }
-
 
         // job build run & result
         AnalysisJob analysisJob = builder.toAnalysisJob();
@@ -378,7 +377,7 @@ public class ProfileService {
 
                 totalCnt = ((ValueDistributionAnalyzerResult) result).getTotalCount();
             }
-            if (profileColumnResult.getColumn_type().equals("DATE") && result instanceof CrosstabResult &&
+            if (profileColumnResult.getColumn_type().equals("date") && result instanceof CrosstabResult &&
                     !(result instanceof DateAndTimeAnalyzerResult)){
                 CrosstabDimension ctr = ((CrosstabResult) result).getCrosstab().getDimension(1);
                 String dimension = "";
@@ -404,12 +403,13 @@ public class ProfileService {
         }
 
         /*
-        *
-        *
-         */basicProfile.setValue_distribution(vfModelList);
+         *
+         *
+//         */
+        basicProfile.setValue_distribution(vfModelList);
 
 
-        if(profileColumnResult.getColumn_type().equals("DATE")) {
+        if(profileColumnResult.getColumn_type().equals("date")) {
             dateProfile.setMonth_distribution(monthList);
             dateProfile.setYear_distribution(yearList);
         }
@@ -494,12 +494,11 @@ public class ProfileService {
         }
 
         profileColumnResult.getProfiles().put("basic_profile", basicProfile);
-        if(profileColumnResult.getColumn_type().equals("NUMBER"))
+        if(profileColumnResult.getColumn_type().equals("number"))
             profileColumnResult.getProfiles().put("number_profile", numberProfile);
-        if(profileColumnResult.getColumn_type().equals("STRING"))
+        if(profileColumnResult.getColumn_type().equals("string"))
             profileColumnResult.getProfiles().put("string_profile", stringProfile);
-        if(profileColumnResult.getColumn_type().equals("DATE"))
+        if(profileColumnResult.getColumn_type().equals("date"))
             profileColumnResult.getProfiles().put("date_profile", dateProfile);
     }
-
 }
