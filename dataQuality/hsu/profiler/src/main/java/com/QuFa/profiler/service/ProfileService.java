@@ -280,27 +280,7 @@ public class ProfileService {
             AnalyzerComponentBuilder<YearDistributionAnalyzer> yearDistAnalyzer = builder.addAnalyzer(YearDistributionAnalyzer.class);
             yearDistAnalyzer.addInputColumns(targetInputColumn);
         }
-//        // str
-//        if (targetInputColumn.getDataType().getTypeName().equals("java.lang.String")) {
-//            AnalyzerComponentBuilder<StringAnalyzer> stringAnalyzer = builder.addAnalyzer(StringAnalyzer.class);
-//            stringAnalyzer.addInputColumn(targetInputColumn);
-//
-//            // stringAnalyzer.setConfiguredProperty("Descriptive statistics", false);
-//        } else if (targetInputColumn.getDataType().getTypeName().equals("java.util.Date") ||
-//                targetInputColumn.getDataType().getTypeName().equals("java.time.Instant")) {
-//            AnalyzerComponentBuilder<DateAndTimeAnalyzer> numberAnalyzer = builder.addAnalyzer(DateAndTimeAnalyzer.class);
-//            numberAnalyzer.addInputColumn(targetInputColumn);
-//        } else if (targetInputColumn.getDataType().getTypeName().equals("java.lang.Boolean")) {
-//            // do something
-//        } else if (targetInputColumn.getDataType().getTypeName().equals("java.lang.Number") ||
-//                targetInputColumn.getDataType().getTypeName().equals("java.lang.Integer") ||
-//                targetInputColumn.getDataType().getTypeName().equals("java.lang.Doulbe") ||
-//                targetInputColumn.getDataType().getTypeName().equals("java.lang.Float") ||
-//                targetInputColumn.getDataType().getTypeName().equals("java.lang.BigInteger")) {
-//            AnalyzerComponentBuilder<NumberAnalyzer> numberAnalyzer = builder.addAnalyzer(NumberAnalyzer.class);
-//            numberAnalyzer.setConfiguredProperty("Descriptive statistics", true);
-//            numberAnalyzer.addInputColumn(targetInputColumn);
-//        }
+
 
         // job build run & result
         AnalysisJob analysisJob = builder.toAnalysisJob();
@@ -422,7 +402,13 @@ public class ProfileService {
                 }
             }
         }
-        //basicProfile.setValue_distribution(vfModelList);
+
+        /*
+        *
+        *
+         */basicProfile.setValue_distribution(vfModelList);
+
+
         if(profileColumnResult.getColumn_type().equals("DATE")) {
             dateProfile.setMonth_distribution(monthList);
             dateProfile.setYear_distribution(yearList);
@@ -503,17 +489,9 @@ public class ProfileService {
                 if (((DateAndTimeAnalyzerResult) result).getPercentile75(targetInputColumn) != null) {
                     dateProfile.setPercentile_75th(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getPercentile75(targetInputColumn)));
                 }
-                basicProfile.setValue_distribution(vfModelList);
+                //basicProfile.setValue_distribution(vfModelList);
             }
         }
-
-//        basicProfile.setDuplicateCnt(totalCnt - basicProfile.getDistinctCnt());
-//        basicProfile.setFrquentMaxVal(findFrequentMaxVal(vfModelList));
-//        basicProfile.setFrquentMinVal(findFrequentMinVal(vfModelList));
-
-        // add Results to ProfileTarget instance
-//        this.profileTargetService.addProfileDetail(basicProfile, tableName);
-//        this.profileTargetService.addProfileValue(vfModelList, tableName);
 
         profileColumnResult.getProfiles().put("basic_profile", basicProfile);
         if(profileColumnResult.getColumn_type().equals("NUMBER"))
@@ -524,67 +502,4 @@ public class ProfileService {
             profileColumnResult.getProfiles().put("date_profile", dateProfile);
     }
 
-//    /**
-//     * Value Frequency 분석값 중 최다 빈도값을 찾는 메소드
-//     *
-//     * @param profileValues Value Frequency 분석에 대한 Resultset
-//     * @return 최다 빈도수 데이터 반환
-//     */
-//    private String findFrequentMaxVal(List<ProfileValue> profileValues) {
-//        int max = 0;
-//        int index = -1;
-//
-//        if (profileValues.size() == 0 || (profileValues.size() == 1 && StringUtils.isBlank(profileValues.get(0).getColumnGroupVal())))
-//            return null;
-//
-//        for (int i = 0; i < profileValues.size(); i++) {
-//            String val = profileValues.get(i).getColumnGroupVal();
-//            if (StringUtils.isBlank(val)) {
-//                continue;
-//            }
-//
-//            if (max < profileValues.get(i).getColumnGroupCount()) {
-//                max = profileValues.get(i).getColumnGroupCount();
-//                index = i;
-//            }
-//        }
-//
-//        return profileValues.get(index).getColumnGroupVal();
-//    }
-//
-//    /**
-//     * Value Frequency 분석값 중 최소 빈도값을 찾는 메소드
-//     *
-//     * @param profileValues Value Frequency 분석에 대한 Resultset
-//     * @return 최다 빈도수 데이터 반환
-//     */
-//    private String findFrequentMinVal(List<ProfileValue> profileValues) {
-//        int min = Integer.MAX_VALUE;
-//        int index = -1;
-//
-//        if (profileValues.size() == 0 || (profileValues.size() == 1 && StringUtils.isBlank(profileValues.get(0).getColumnGroupVal())))
-//            return null;
-//
-//        for (int i = 0; i < profileValues.size(); i++) {
-//            String val = profileValues.get(i).getColumnGroupVal();
-//            if (StringUtils.isBlank(val)) {
-//                continue;
-//            }
-//
-//            if (min > profileValues.get(i).getColumnGroupCount()) {
-//                min = profileValues.get(i).getColumnGroupCount();
-//                index = i;
-//            }
-//        }
-//        return profileValues.get(index).getColumnGroupVal();
-//    }
-
-//    private boolean isRemovalColumn(String tableName, String columnName, Map<String, Set<String>> removals) {
-//        if (!removals.containsKey(tableName)) {
-//            return false;
-//        }
-//
-//        Set<String> removalColumns = removals.get(tableName);
-//        return removalColumns.contains(columnName);
-//    }
 }
