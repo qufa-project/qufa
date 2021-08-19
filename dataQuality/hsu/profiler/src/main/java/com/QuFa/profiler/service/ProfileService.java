@@ -2,6 +2,7 @@ package com.QuFa.profiler.service;
 
 
 import com.QuFa.profiler.config.ActiveProfileProperty;
+import com.QuFa.profiler.model.Local;
 import com.QuFa.profiler.model.profile.*;
 import com.opencsv.CSVReader;
 import lombok.RequiredArgsConstructor;
@@ -132,21 +133,29 @@ public class ProfileService {
         return profileTableResult;
     }
 
-    public ProfileTableResult profileLocalCSV(String path){
+    public ProfileTableResult profileLocalCSV(Local local){
         //ProfileTableResult profileTableResult = new ProfileTableResult();
-        try {
-            CSVReader csvReader = new CSVReader(new FileReader(path));
 
-            List<String> header = Arrays.asList(csvReader.readNext().clone());
+        if(local.getSource().getType().equals("path")) {
+            String path = local.getSource().getPath();
+            try {
+                CSVReader csvReader = new CSVReader(new FileReader(path));
 
-            profileLocalColumns(path,header);
+                List<String> header = Arrays.asList(csvReader.readNext().clone());
 
-            csvReader.close();
+                profileLocalColumns(path, header);
 
-        } catch(Exception e){
-            e.printStackTrace();
+                csvReader.close();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return profileTableResult;
         }
-        return profileTableResult;
+        else if(local.getSource().getType().equals("url")){
+            //TODO:url로 요청시 코드
+        }
+        return null;
     }
 
     //    /**

@@ -47,6 +47,6 @@ public class ProfileController {
         for(String key : local.getProfiles().keySet())
             System.out.println(key + local.getProfiles().get(key));
 
-        return new ResponseEntity<>(profileService.profileLocalCSV(local.getSource().getPath()), HttpStatus.OK);
+        return new ResponseEntity<>(profileService.profileLocalCSV(local), HttpStatus.OK);
     }
 }
