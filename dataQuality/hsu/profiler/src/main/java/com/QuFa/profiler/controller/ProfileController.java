@@ -40,11 +40,13 @@ public class ProfileController {
         System.out.println("===================");
         System.out.println("===================");
 
-        System.out.println(local.getPath());
+        System.out.println(local.getSource().getType());
+        System.out.println(local.getSource().getPath());
+        System.out.println(local.getSource().getUrl());
         System.out.println(local.isHeader());
-        System.out.println(local.getColtype());
-        System.out.println(local.getProfiling());
+        for(String key : local.getProfiles().keySet())
+            System.out.println(key + local.getProfiles().get(key));
 
-        return new ResponseEntity<>(profileService.profileLocalCSV(local.getPath()), HttpStatus.OK);
+        return new ResponseEntity<>(profileService.profileLocalCSV(local.getSource().getPath()), HttpStatus.OK);
     }
 }

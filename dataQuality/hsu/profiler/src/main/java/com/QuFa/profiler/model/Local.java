@@ -7,8 +7,12 @@ import java.util.Map;
 
 @Getter
 public class Local {
-    private String path;
+    private Source source;
     private boolean header = false;
-    private List<String> profiling;
-    private Map<String, String> coltype;
+    private Map<String, List<Integer>> profiles;
+
+
+    //private boolean header = false;
+    //private List<String> profiling;
+    //private Map<String, String> coltype;
 }
