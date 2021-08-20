@@ -115,22 +115,6 @@ public class ProfileService {
         return "string";
     }
 
-    public ProfileTableResult profileCSV(MultipartFile file){
-        ProfileTableResult profileTableResult = new ProfileTableResult();
-        try {
-            dataStoreService.storeFile(file);
-            CSVReader csvReader = new CSVReader(new FileReader("./src/main/resources/targetfiles/" + file.getOriginalFilename()));
-
-            List<String> header = Arrays.asList(csvReader.readNext().clone());
-
-            profileTableResult = profileColumns(file,header);
-
-        } catch(Exception e){
-            e.printStackTrace();
-        }
-        return profileTableResult;
-    }
-
     public ProfileTableResult profileLocalCSV(Local local){
         //ProfileTableResult profileTableResult = new ProfileTableResult();
 
@@ -171,36 +155,6 @@ public class ProfileService {
             return profileTableResult;
         }
         return null;
-    }
-
-    //    /**
-//     * 타겟 테이블의 모든 컬럼에 대해 프로파일을 수행하는 메소드
-//     *
-//     * @param tableName   타겟 테이블명
-//     * @param columnNames 타겟 테이블의 컬럼리스트
-//     */
-    public ProfileTableResult profileColumns(MultipartFile file, List<String> columnNames) { //
-
-        //파일이름만 분리
-        String filename = file.getOriginalFilename().split("\\.")[0];
-
-        //CsvDatastore
-        DataStoreService.createDataStore(filename);
-
-        profileTableResult.setDataset_name(filename);
-        profileTableResult.setDataset_column_cnt(20);
-        profileTableResult.setDataset_type("csv");
-
-        for (String columnName : columnNames) {
-            profileColumnResult = new ProfileColumnResult();
-            profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
-            profileColumnResult.setColumn_name(columnName);
-            profileColumnResult.setColumn_type("STRING");
-            this.profileSingleColumn(filename, columnName);
-            profileTableResult.getResults().add(profileColumnResult);
-        }
-
-        return profileTableResult;
     }
 
     public void profileLocalColumns(String path, List<String> columnNames) {
