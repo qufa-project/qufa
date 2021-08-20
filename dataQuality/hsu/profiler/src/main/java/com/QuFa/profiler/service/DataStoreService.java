@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -62,6 +63,17 @@ public class DataStoreService {
         }catch(Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public void storeUrlFile(URL url) {
+        try(InputStream in = url.openStream()) {
+            String[] split = url.getFile().split("/");
+            String filename = split[split.length-1].split("\\.")[0];
+            Files.copy(in, Paths.get("./src/main/resources/targetfiles/" + filename + ".csv"),
+                    StandardCopyOption.REPLACE_EXISTING);
+        }catch(Exception e) {
+            e.printStackTrace();
         }
     }
 
