@@ -125,7 +125,7 @@ public class ProfileService {
 
                 List<String> header = Arrays.asList(csvReader.readNext().clone());
 
-                profileLocalColumns(path, header);
+                profileLocalColumns("path", path, header);
 
                 csvReader.close();
 
@@ -145,7 +145,7 @@ public class ProfileService {
                 List<String> header = Arrays.asList(reader.readLine().split(","));
                 System.out.println("header : " + header);
 
-                profileLocalColumns(url, header);
+                profileLocalColumns("url", url, header);
 
                 reader.close();
 
@@ -157,17 +157,26 @@ public class ProfileService {
         return null;
     }
 
-    public void profileLocalColumns(String path, List<String> columnNames) {
+    public void profileLocalColumns(String type, String path, List<String> columnNames) {
         profileTableResult = new ProfileTableResult();
         System.out.println(path);
+
         //파일이름만 분리
-        //String[] split = path.split("\\\\");
-        String[] split = path.split("/");
+        String[] split = null;
+        if(type.equals("path"))
+            split = path.split("\\\\");
+        else if(type.equals("url"))
+            split = path.split("/");
         String filename = split[split.length-1].split("\\.")[0];
         System.out.println("filename:"+filename);
+
         //CsvDatastore
-        path="./src/main/resources/targetfiles/" + filename + ".csv";
-        DataStoreService.createLocalDataStore(path);
+        if(type.equals("path"))
+            DataStoreService.createLocalDataStore(path);
+        else if(type.equals("url")) {
+            path = "./src/main/resources/targetfiles/" + filename + ".csv";
+            DataStoreService.createLocalDataStore(path);
+        }
 
 
         profileTableResult.setDataset_name(filename);
