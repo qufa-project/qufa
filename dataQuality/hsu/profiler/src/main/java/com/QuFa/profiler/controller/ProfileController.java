@@ -23,16 +23,6 @@ public class ProfileController {
         this.dataStoreService = dataStoreService;
     }
 
-//    @PostMapping("/server")
-//    public ResponseEntity<ProfileTableResult> serverProfile(
-//            @RequestParam("targetfile") MultipartFile file,
-//            @RequestParam(value = "profiling", defaultValue = "all") String profiling,
-//            @RequestParam(value = "header", defaultValue = "no") String header,
-//            @RequestParam(value = "coltype", defaultValue = "default") String coltype) {
-//        System.out.println("Server Profiling");
-//        return new ResponseEntity<>(profileService.profileCSV(file), HttpStatus.OK);
-//    }
-
     @PostMapping("/local")
     public ResponseEntity<ProfileTableResult> localProfile(
             @RequestBody Local local) {

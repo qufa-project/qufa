@@ -154,6 +154,9 @@ public class ProfileService {
             }
             return profileTableResult;
         }
+        else{
+            //TODO:type에러 추가
+        }
         return null;
     }
 
