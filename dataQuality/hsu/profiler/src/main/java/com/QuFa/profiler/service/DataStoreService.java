@@ -30,8 +30,6 @@ import java.nio.file.StandardCopyOption;
 @Component
 public class DataStoreService {
 
-    private final Path fileLocation = Paths.get("./src/main/resources/targetfiles");
-
     public static char quote_char = '\"';
     public static char separator_char = ',';
     public static String csvEncoding = "UTF-8";
@@ -47,25 +45,6 @@ public class DataStoreService {
     private static AnalysisJobBuilder builder;
     private static Datastore dataStore;
 
-    public String storeFile(MultipartFile file) {
-        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-
-        try {
-            // 파일명에 부적합 문자가 있는지 확인한다.
-            if(fileName.contains(".."))
-                throw new FileUploadException("파일명에 부적합 문자가 포함되어 있습니다. " + fileName);
-
-            Path targetLocation = this.fileLocation.resolve(fileName);
-
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-
-            return fileName;
-        }catch(Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
     public void storeUrlFile(URL url) {
         try(InputStream in = url.openStream()) {
             String[] split = url.getFile().split("/");
@@ -76,7 +55,6 @@ public class DataStoreService {
             e.printStackTrace();
         }
     }
-
 
     /**
      * Configuration파일을 파싱하여 DB를 연결하는 메소드
