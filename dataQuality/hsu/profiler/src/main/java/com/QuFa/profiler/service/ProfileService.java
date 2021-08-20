@@ -52,8 +52,8 @@ public class ProfileService {
     @Autowired
     private final DataStoreService dataStoreService;
 
-    public String typeDetection(String filename, String columnName) throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader("./src/main/resources/targetfiles/" + filename + ".csv"));
+    public String typeDetection(String path, String columnName) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader(path));
         List<String> header = Arrays.asList(csvReader.readNext().clone());
         String[] nextLine;
         List<String> rowValues = new ArrayList<>();
@@ -194,7 +194,7 @@ public class ProfileService {
             profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
             profileColumnResult.setColumn_name(columnName);
             try {
-                profileColumnResult.setColumn_type(typeDetection(filename, columnName));
+                profileColumnResult.setColumn_type(typeDetection(path, columnName));
             } catch(IOException e){
                 e.printStackTrace();
             }
