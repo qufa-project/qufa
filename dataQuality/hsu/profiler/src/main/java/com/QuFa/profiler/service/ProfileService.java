@@ -29,10 +29,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -153,7 +151,24 @@ public class ProfileService {
             return profileTableResult;
         }
         else if(local.getSource().getType().equals("url")){
-            //TODO:url로 요청시 코드
+            String url = local.getSource().getUrl();
+            try {
+                URL file = new URL(url);
+                dataStoreService.storeUrlFile(file);
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(file.openStream()));
+
+                List<String> header = Arrays.asList(reader.readLine().split(","));
+                System.out.println("header : " + header);
+
+                profileLocalColumns(url, header);
+
+                reader.close();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return profileTableResult;
         }
         return null;
     }
@@ -192,10 +207,12 @@ public class ProfileService {
         profileTableResult = new ProfileTableResult();
         System.out.println(path);
         //파일이름만 분리
-        String[] split = path.split("\\\\");
+        //String[] split = path.split("\\\\");
+        String[] split = path.split("/");
         String filename = split[split.length-1].split("\\.")[0];
         System.out.println("filename:"+filename);
         //CsvDatastore
+        path="./src/main/resources/targetfiles/" + filename + ".csv";
         DataStoreService.createLocalDataStore(path);
 
 
