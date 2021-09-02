@@ -72,6 +72,8 @@ public class ProfileService {
             dfs.add(new SimpleDateFormat("yyyy-MM-dd"));
             dfs.add(new SimpleDateFormat("MM/dd/yyyy"));
             dfs.add(new SimpleDateFormat("HH:mm:ss"));
+            dfs.add(new SimpleDateFormat("dd/MM/yyyy HH:mm"));
+            dfs.add(new SimpleDateFormat("dd/MM/yy HH:mm"));
             Date date;
             for(DateFormat df : dfs) {
                 try {
@@ -88,9 +90,9 @@ public class ProfileService {
 
                 }
             }
-            if(i<=99)
-                System.out.println(rowVal + " : " + rowType.get(rowVal));
-            i++;
+//            if(i<=99)
+//                System.out.println(rowVal + " : " + rowType.get(rowVal));
+//            i++;
         }
         i = 0;
         int n;
@@ -305,9 +307,9 @@ public class ProfileService {
         }
     }
 
-    private String SerialNumberToDate(Number num){
+    private String SerialNumberToDate(long num){
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                .format(new Date((Integer)num * 86400000L));
+                .format(new Date(num * 86400000L));
     }
 
     /**
@@ -460,27 +462,54 @@ public class ProfileService {
             }
 
             if (result instanceof DateAndTimeAnalyzerResult) {
+                Object value;
+
                 if (((DateAndTimeAnalyzerResult) result).getNullCount(targetInputColumn) > 0 && basicProfile.getNull_cnt() == 0) {
                     basicProfile.setNull_cnt(((DateAndTimeAnalyzerResult) result).getNullCount(targetInputColumn));
                 }
-                if (((DateAndTimeAnalyzerResult) result).getHighestDate(targetInputColumn) != null) {
-                    dateProfile.setHighest_date(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getHighestDate(targetInputColumn)));
-                }
-                if (((DateAndTimeAnalyzerResult) result).getLowestDate(targetInputColumn) != null) {
-                    dateProfile.setLowest_date(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getLowestDate(targetInputColumn)));
-                }
-                if (((DateAndTimeAnalyzerResult) result).getMean(targetInputColumn) != null) {
-                    dateProfile.setMean_date(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getMean(targetInputColumn)));
-                }
-                if (((DateAndTimeAnalyzerResult) result).getMedian(targetInputColumn) != null) {
-                    dateProfile.setMedian_date(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getMedian(targetInputColumn)));
-                }
-                if (((DateAndTimeAnalyzerResult) result).getPercentile25(targetInputColumn) != null) {
-                    dateProfile.setPercentile_25th(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getPercentile25(targetInputColumn)));
-                }
-                if (((DateAndTimeAnalyzerResult) result).getPercentile75(targetInputColumn) != null) {
-                    dateProfile.setPercentile_75th(SerialNumberToDate(((DateAndTimeAnalyzerResult) result).getPercentile75(targetInputColumn)));
-                }
+
+                value = ((CrosstabResult) result).getCrosstab().where("Column", targetInputColumn.getName()).where("Measure", "Highest date")
+                        .safeGet(null);
+                if(value!=null)
+                    dateProfile.setHighest_date((String)value);
+                else
+                    dateProfile.setHighest_date("-");
+
+                value = ((CrosstabResult) result).getCrosstab().where("Column", targetInputColumn.getName()).where("Measure", "Lowest date")
+                        .safeGet(null);
+                if(value!=null)
+                    dateProfile.setLowest_date((String)value);
+                else
+                    dateProfile.setLowest_date("-");
+
+                value = ((CrosstabResult) result).getCrosstab().where("Column", targetInputColumn.getName()).where("Measure", "Mean")
+                        .safeGet(null);
+                if(value!=null)
+                    dateProfile.setMean_date((String)value);
+                else
+                    dateProfile.setMean_date("-");
+
+                value = ((CrosstabResult) result).getCrosstab().where("Column", targetInputColumn.getName()).where("Measure", "Median")
+                        .safeGet(null);
+                if(value!=null)
+                    dateProfile.setMedian_date((String)value);
+                else
+                    dateProfile.setMedian_date("-");
+
+                value = ((CrosstabResult) result).getCrosstab().where("Column", targetInputColumn.getName()).where("Measure", "25th percentile")
+                        .safeGet(null);
+                if(value!=null)
+                    dateProfile.setPercentile_25th((String)value);
+                else
+                    dateProfile.setPercentile_25th("-");
+
+                value = ((CrosstabResult) result).getCrosstab().where("Column", targetInputColumn.getName()).where("Measure", "75th percentile")
+                        .safeGet(null);
+                if(value!=null)
+                    dateProfile.setPercentile_75th((String)value);
+                else
+                    dateProfile.setPercentile_75th("-");
+
                 //basicProfile.setValue_distribution(vfModelList);
             }
         }
