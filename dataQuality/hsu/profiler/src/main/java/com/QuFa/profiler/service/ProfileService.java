@@ -312,6 +312,23 @@ public class ProfileService {
                 .format(new Date(num * 86400000L));
     }
 
+    private Map<Object, Object> valueSort(Map<Object, Object> map){
+        List<Map.Entry<Object, Object>> list = new LinkedList<>(map.entrySet());
+        Collections.sort(list, new Comparator<Object>() {
+            @SuppressWarnings("unchecked")
+            public int compare(Object o1, Object o2) {
+                return ((Comparable<Integer>) ((Map.Entry<Integer, Integer>) (o2)).getValue()).compareTo(((Map.Entry<Integer, Integer>) (o1)).getValue());
+            }
+        });
+        Map<Object, Object> resultMap = new LinkedHashMap<>();
+        for (Iterator<Map.Entry<Object, Object>> it = list.iterator(); it.hasNext();) {
+            Map.Entry<Object, Object> entry = (Map.Entry<Object, Object>) it.next();
+            resultMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return resultMap;
+    }
+
     /**
      * 프로파일 결과를 추출하여 DB에 저장하는 메소드
      *
@@ -400,9 +417,9 @@ public class ProfileService {
          *
          *
 //         */
+        vfModelList = valueSort(vfModelList);
         basicProfile.setValue_distribution(vfModelList);
-
-
+        
         if(profileColumnResult.getColumn_type().equals("date")) {
             dateProfile.setMonth_distribution(monthList);
             dateProfile.setYear_distribution(yearList);
