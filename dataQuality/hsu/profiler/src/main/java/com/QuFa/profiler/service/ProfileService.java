@@ -329,6 +329,18 @@ public class ProfileService {
         return resultMap;
     }
 
+    private Map<Object, Object> monthSort(Map<Object, Object> map){
+        String[] months = {"January", "February", "March", "April", "May", "June", "July", "August",
+                "September", "October", "November", "December"};
+        Map<Object, Object> resultMap = new LinkedHashMap<>();
+
+        for(String month : months)
+            resultMap.put(month, map.get(month));
+
+        return resultMap;
+    }
+
+
     /**
      * 프로파일 결과를 추출하여 DB에 저장하는 메소드
      *
@@ -419,8 +431,9 @@ public class ProfileService {
 //         */
         vfModelList = valueSort(vfModelList);
         basicProfile.setValue_distribution(vfModelList);
-        
+
         if(profileColumnResult.getColumn_type().equals("date")) {
+            monthList = monthSort(monthList);
             dateProfile.setMonth_distribution(monthList);
             dateProfile.setYear_distribution(yearList);
         }
