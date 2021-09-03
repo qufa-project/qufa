@@ -340,6 +340,19 @@ public class ProfileService {
         return resultMap;
     }
 
+    private Map<Object, Object> yearSort(Map<Object, Object> map){
+        Object[] years = map.keySet().toArray();
+        Map<Object, Object> resultMap = new LinkedHashMap<>();
+
+        Arrays.sort(years);
+        for(Object year : years)
+            resultMap.put(year, map.get(year));
+
+        return resultMap;
+
+    }
+
+
 
     /**
      * 프로파일 결과를 추출하여 DB에 저장하는 메소드
@@ -435,6 +448,8 @@ public class ProfileService {
         if(profileColumnResult.getColumn_type().equals("date")) {
             monthList = monthSort(monthList);
             dateProfile.setMonth_distribution(monthList);
+            
+            yearList = yearSort(yearList);
             dateProfile.setYear_distribution(yearList);
         }
 
