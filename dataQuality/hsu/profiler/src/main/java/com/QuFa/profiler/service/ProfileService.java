@@ -312,6 +312,12 @@ public class ProfileService {
                 .format(new Date(num * 86400000L));
     }
 
+    private Map<Object, Object> getTop100(Map<Object, Object> map){
+        Map<Object, Object> top100 = new HashMap<>();
+
+        return top100;
+    }
+
     private Map<Object, Object> valueSort(Map<Object, Object> map){
         List<Map.Entry<Object, Object>> list = new LinkedList<>(map.entrySet());
         Collections.sort(list, new Comparator<Object>() {
@@ -411,6 +417,8 @@ public class ProfileService {
                     }
                 }
 
+                vfModelList = valueSort(vfModelList);
+                basicProfile.setValue_distribution(vfModelList);
                 totalCnt = ((ValueDistributionAnalyzerResult) result).getTotalCount();
             }
             if (profileColumnResult.getColumn_type().equals("date") && result instanceof CrosstabResult &&
@@ -435,6 +443,12 @@ public class ProfileService {
                     else
                         yearList.put(category, value);
                 }
+
+                monthList = monthSort(monthList);
+                dateProfile.setMonth_distribution(monthList);
+
+                yearList = yearSort(yearList);
+                dateProfile.setYear_distribution(yearList);
             }
         }
 
@@ -442,16 +456,7 @@ public class ProfileService {
          *
          *
 //         */
-        vfModelList = valueSort(vfModelList);
-        basicProfile.setValue_distribution(vfModelList);
 
-        if(profileColumnResult.getColumn_type().equals("date")) {
-            monthList = monthSort(monthList);
-            dateProfile.setMonth_distribution(monthList);
-            
-            yearList = yearSort(yearList);
-            dateProfile.setYear_distribution(yearList);
-        }
 
         for (AnalyzerResult result : results) {
             if (result instanceof StringAnalyzerResult) {
