@@ -9,6 +9,6 @@ import java.util.Map;
 @Setter
 public class VdModel {
     String type;
-    Map<String, Object> value;
-    Map<String, Object> range;
+    Map<Object, Object> value;
+    Object range;
 }

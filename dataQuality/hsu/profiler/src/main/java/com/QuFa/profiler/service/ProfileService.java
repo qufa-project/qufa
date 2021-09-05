@@ -381,6 +381,7 @@ public class ProfileService {
         Map<Object, Object> vfModelList = new HashMap<>();
         Map<Object, Object> monthList = new HashMap<>();
         Map<Object, Object> yearList = new HashMap<>();
+        VdModel vdModel = new VdModel();
 
         basicProfile.setNull_cnt(0);
         stringProfile.setBlank_cnt(0);
@@ -418,6 +419,20 @@ public class ProfileService {
                 }
 
                 vfModelList = valueSort(vfModelList);
+
+                if(distinct_cnt > 100){
+                    vdModel.setType("top100");
+                    //for(da : vfModelList)
+                    vdModel.setValue(vfModelList);
+                    vdModel.setRange("-");
+                }
+                else{
+                    vdModel.setType("all");
+                    vdModel.setValue(vfModelList);
+                    vdModel.setRange("-");
+                }
+
+
                 basicProfile.setValue_distribution(vfModelList);
                 totalCnt = ((ValueDistributionAnalyzerResult) result).getTotalCount();
             }
