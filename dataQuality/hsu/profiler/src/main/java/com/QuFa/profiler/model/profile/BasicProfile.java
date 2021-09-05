@@ -13,5 +13,5 @@ public class BasicProfile {
     int null_cnt;
     double distinctness;
     int unique_cnt;
-    Map<Object, Object> value_distribution;
+    VdModel value_distribution;
 }

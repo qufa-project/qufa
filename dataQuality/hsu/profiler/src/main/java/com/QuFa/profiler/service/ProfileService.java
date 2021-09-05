@@ -358,6 +358,75 @@ public class ProfileService {
 
     }
 
+    private Map<Object, Integer> getRange(Map<Object, Object> vfModelList){
+        Map<Object, Integer> range = new LinkedHashMap<>();
+        Map<Object, Object> ascList = yearSort(vfModelList);
+        Object[] list = ascList.keySet().toArray();
+
+        //정수실수 판별
+
+        boolean isDouble=false;
+        Object[] l = vfModelList.keySet().toArray();
+        for(int i=0; i<100; i++){
+            if(l[i].toString().contains(".")){
+                isDouble=true;
+                break;
+            }
+        }
+
+        int count=0;
+
+        String[] stringArray = Arrays.copyOf(list,list.length,String[].class);
+        //String[] array = ascList.keySet().toArray(new String[ascList.size()]);
+
+        //if(isDouble){ //실수
+            double Dmin = Double.parseDouble(stringArray[0]);
+            double Dmax = Double.parseDouble(stringArray[stringArray.length - 1]);
+            double dist = (Dmax-Dmin)/10;
+
+        System.out.println("Dmin:"+Dmin);
+        System.out.println("Dmax:"+Dmax);
+        System.out.println("dist:"+dist);
+        System.out.println("len:"+stringArray.length);
+
+
+            for(String s : stringArray){
+                double d;
+                try {
+                    d = Double.parseDouble(s);
+                } catch (NumberFormatException e) {
+                    System.out.println("[except]:"+s);
+                    continue;
+                }
+
+                if(d < Dmin+dist)
+                    count++;
+                else{
+                    range.put(Dmin, count);
+                    Dmin += dist;
+                    count = 1;
+                }
+            }
+//        }
+//        else{ //정수
+//            Integer[] IList = (Integer[])ascList.keySet().toArray();
+//            int Imin = IList[0];
+//            int Imax = IList[IList.length - 1];
+//            int dist = (Imax-Imin)/10;
+//
+//            for(int i : IList){
+//                if(i < Imin+dist)
+//                    count++;
+//                else{
+//                    range.put(Imin, count);
+//                    Imin += dist;
+//                    count = 1;
+//                }
+//            }
+//        }
+
+        return range;
+    }
 
 
     /**
@@ -429,7 +498,14 @@ public class ProfileService {
                         top.put(keys[i], vfModelList.get(keys[i]));
                     vdModel.setValue(top);
 
-                    vdModel.setRange("-");
+                    if(profileColumnResult.getColumn_type().equals("number")){
+                        Map<Object, Integer> range = getRange(vfModelList);
+
+                        vdModel.setRange(range);
+                    }
+                    else
+                        vdModel.setRange("-");
+
                 }
                 else{
                     vdModel.setType("all");
@@ -438,7 +514,7 @@ public class ProfileService {
                 }
 
 
-                basicProfile.setValue_distribution(vfModelList);
+                basicProfile.setValue_distribution(vdModel);
                 totalCnt = ((ValueDistributionAnalyzerResult) result).getTotalCount();
             }
             if (profileColumnResult.getColumn_type().equals("date") && result instanceof CrosstabResult &&
