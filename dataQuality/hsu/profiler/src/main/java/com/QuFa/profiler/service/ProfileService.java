@@ -422,8 +422,13 @@ public class ProfileService {
 
                 if(distinct_cnt > 100){
                     vdModel.setType("top100");
-                    //for(da : vfModelList)
-                    vdModel.setValue(vfModelList);
+
+                    Map<Object, Object> top = new LinkedHashMap<>();
+                    Object[] keys = vfModelList.keySet().toArray();
+                    for(int i = 0; i < 100; i++)
+                        top.put(keys[i], vfModelList.get(keys[i]));
+                    vdModel.setValue(top);
+
                     vdModel.setRange("-");
                 }
                 else{
