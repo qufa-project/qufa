@@ -30,6 +30,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -361,14 +363,14 @@ public class ProfileService {
     private Map<Object, Integer> getRange(Map<Object, Object> vfModelList){
         Map<Object, Integer> range = new LinkedHashMap<>();
         Map<Object, Object> ascList = yearSort(vfModelList);
-        Object[] list = ascList.keySet().toArray();
+        Object[] objectKeyArray = ascList.keySet().toArray();
 
         //정수실수 판별
 
         boolean isDouble=false;
-        Object[] l = vfModelList.keySet().toArray();
+        Object[] keyArray = vfModelList.keySet().toArray();
         for(int i=0; i<100; i++){
-            if(l[i].toString().contains(".")){
+            if(keyArray[i].toString().contains(".")){
                 isDouble=true;
                 break;
             }
@@ -376,35 +378,46 @@ public class ProfileService {
 
         int count=0;
 
-        String[] stringArray = Arrays.copyOf(list,list.length,String[].class);
+        String[] stringKeyArray = Arrays.copyOf(objectKeyArray,objectKeyArray.length,String[].class);
         //String[] array = ascList.keySet().toArray(new String[ascList.size()]);
 
         //if(isDouble){ //실수
-            double Dmin = Double.parseDouble(stringArray[0]);
-            double Dmax = Double.parseDouble(stringArray[stringArray.length - 1]);
-            double dist = (Dmax-Dmin)/10;
+            double Dmin = Double.parseDouble(stringKeyArray[0]);
+            double Dmax = Double.parseDouble(stringKeyArray[stringKeyArray.length - 1]);
+        BigDecimal BDmin = new BigDecimal(stringKeyArray[0]);
+        BigDecimal BDmax = new BigDecimal(stringKeyArray[stringKeyArray.length-1]);
+            BigDecimal BigDist = (BDmax.subtract(BDmin)).divide(new BigDecimal("10"), 100, RoundingMode.HALF_EVEN);
+            double dist = Double.parseDouble(BigDist.toString());
+            BigDist = new BigDecimal(""+dist);
 
         System.out.println("Dmin:"+Dmin);
         System.out.println("Dmax:"+Dmax);
         System.out.println("dist:"+dist);
-        System.out.println("len:"+stringArray.length);
+        System.out.println("len:"+stringKeyArray.length);
 
 
-            for(String s : stringArray){
-                double d;
+            for(String s : stringKeyArray){
+                BigDecimal b;
+
                 try {
-                    d = Double.parseDouble(s);
-                } catch (NumberFormatException e) {
-                    System.out.println("[except]:"+s);
+                    b=new BigDecimal(s);
+                } catch (Exception e) {
+                    System.out.println("[BigDecimal except]:"+s);
+                    e.printStackTrace();
                     continue;
                 }
 
-                if(d < Dmin+dist)
-                    count++;
+                if((b.compareTo(BDmin.add(BigDist))) < 0) {
+                    count+=Integer.parseInt(vfModelList.get(s).toString());
+                }
+                else if(stringKeyArray[stringKeyArray.length-1].equals(s)){
+                    count+= Integer.parseInt(vfModelList.get(s).toString());
+                    range.put(BDmin.toString(), count);
+                }
                 else{
-                    range.put(Dmin, count);
-                    Dmin += dist;
-                    count = 1;
+                    range.put(BDmin.toString(), count);
+                    BDmin = BDmin.add(BigDist);
+                    count = Integer.parseInt(vfModelList.get(s).toString());
                 }
             }
 //        }
@@ -579,6 +592,8 @@ public class ProfileService {
                     numberProfile.setMax((Double) ((NumberAnalyzerResult) result).getHighestValue(targetInputColumn));
                 }
                 if (((NumberAnalyzerResult) result).getSum(targetInputColumn) != null) {
+                    System.out.println("SUM::"+((NumberAnalyzerResult) result).getSum(targetInputColumn));
+                    //TODO:Sum,Median double 오차 해결
                     numberProfile.setSum((Double) ((NumberAnalyzerResult) result).getSum(targetInputColumn));
                 }
                 if (((NumberAnalyzerResult) result).getMean(targetInputColumn) != null) {
