@@ -27,7 +27,6 @@ import org.datacleaner.job.runner.AnalysisRunnerImpl;
 import org.datacleaner.result.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -320,7 +319,7 @@ public class ProfileService {
         return top100;
     }
 
-    private Map<Object, Object> valueSort(Map<Object, Object> map){
+    private Map<Object, Object> valueSortByDesc(Map<Object, Object> map){
         List<Map.Entry<Object, Object>> list = new LinkedList<>(map.entrySet());
         Collections.sort(list, new Comparator<Object>() {
             @SuppressWarnings("unchecked")
@@ -348,27 +347,51 @@ public class ProfileService {
         return resultMap;
     }
 
-    private Map<Object, Object> yearSort(Map<Object, Object> map){
-        Object[] years = map.keySet().toArray();
+    private Map<Object, Object> numberKeySortByAsc(Map<Object, Object> map, String type){
+        Object[] keyArray = map.keySet().toArray();
         Map<Object, Object> resultMap = new LinkedHashMap<>();
 
-        Arrays.sort(years);
-        for(Object year : years)
-            resultMap.put(year, map.get(year));
+        if(type.equals("int")){
+            int[] intArray = new int[keyArray.length];
+            for(int i=0; i<keyArray.length; i++){
+                intArray[i] = Integer.parseInt(keyArray[i].toString());
+            }
+
+            Arrays.sort(intArray);
+
+            for(int i : intArray)
+                resultMap.put(i, map.get(i));
+        }
+        else if(type.equals("double")){
+            double[] doubleArray = new double[keyArray.length];
+            for(int i=0; i<keyArray.length; i++){
+                doubleArray[i] = Double.parseDouble(keyArray[i].toString());
+            }
+
+            Arrays.sort(doubleArray);
+
+            for(double d : doubleArray)
+                resultMap.put(Double.toString(d), map.get(Double.toString(d)));
+        }
 
         return resultMap;
-
     }
 
     private Map<Object, Integer> getRange(Map<Object, Object> vfModelList){
         Map<Object, Integer> range = new LinkedHashMap<>();
-        Map<Object, Object> ascList = yearSort(vfModelList);
-        Object[] objectKeyArray = ascList.keySet().toArray();
+        Map<Object, Object> ascList;
+        Object[] keyArray = vfModelList.keySet().toArray();
 
-        //정수실수 판별
+        Map<Object, Object> vfModelList_copy = new LinkedHashMap<>(vfModelList);
+
+        for(Object o : vfModelList.keySet()){
+            double d = Double.parseDouble(o.toString());
+            if(!((Double.toString(d)).equals(o.toString()))){
+                vfModelList_copy.put(Double.toString(d),vfModelList_copy.remove(o));
+            }
+        }
 
         boolean isDouble=false;
-        Object[] keyArray = vfModelList.keySet().toArray();
         for(int i=0; i<100; i++){
             if(keyArray[i].toString().contains(".")){
                 isDouble=true;
@@ -376,24 +399,26 @@ public class ProfileService {
             }
         }
 
-        int count=0;
+        if(isDouble){
+            ascList = numberKeySortByAsc(vfModelList_copy, "double");}
+        else{
+            ascList = numberKeySortByAsc(vfModelList, "int");}
 
-        String[] stringKeyArray = Arrays.copyOf(objectKeyArray,objectKeyArray.length,String[].class);
-        //String[] array = ascList.keySet().toArray(new String[ascList.size()]);
 
-        //if(isDouble){ //실수
-            double Dmin = Double.parseDouble(stringKeyArray[0]);
-            double Dmax = Double.parseDouble(stringKeyArray[stringKeyArray.length - 1]);
-        BigDecimal BDmin = new BigDecimal(stringKeyArray[0]);
-        BigDecimal BDmax = new BigDecimal(stringKeyArray[stringKeyArray.length-1]);
-            BigDecimal BigDist = (BDmax.subtract(BDmin)).divide(new BigDecimal("10"), 100, RoundingMode.HALF_EVEN);
-            double dist = Double.parseDouble(BigDist.toString());
-            BigDist = new BigDecimal(""+dist);
+        Object[] objectKeyArray = ascList.keySet().toArray();
+        String[] stringKeyArray = new String[objectKeyArray.length];
+        for(int i = 0; i < stringKeyArray.length; i++)
+            stringKeyArray[i] = objectKeyArray[i].toString();
+        //String[] stringKeyArray = Arrays.copyOf(objectKeyArray,objectKeyArray.length,String[].class);
 
-        System.out.println("Dmin:"+Dmin);
-        System.out.println("Dmax:"+Dmax);
-        System.out.println("dist:"+dist);
-        System.out.println("len:"+stringKeyArray.length);
+
+        int valueSum=0;
+
+        if(isDouble){ //실수
+            BigDecimal BDmin = new BigDecimal(stringKeyArray[0]);
+            BigDecimal BDmax = new BigDecimal(stringKeyArray[stringKeyArray.length-1]);
+            BigDecimal BigDist = (BDmax.subtract(BDmin)).divide(BigDecimal.valueOf(10), 100, RoundingMode.HALF_EVEN);
+            BigDist = BigDecimal.valueOf(BigDist.doubleValue());
 
 
             for(String s : stringKeyArray){
@@ -408,35 +433,61 @@ public class ProfileService {
                 }
 
                 if((b.compareTo(BDmin.add(BigDist))) < 0) {
-                    count+=Integer.parseInt(vfModelList.get(s).toString());
+                    try{
+                        valueSum+=Integer.parseInt(ascList.get(s).toString());
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
                 }
                 else if(stringKeyArray[stringKeyArray.length-1].equals(s)){
-                    count+= Integer.parseInt(vfModelList.get(s).toString());
-                    range.put(BDmin.toString(), count);
+                    valueSum+= Integer.parseInt(ascList.get(s).toString());
+                    range.put(BDmin.toString(), valueSum);
                 }
                 else{
-                    range.put(BDmin.toString(), count);
+                    range.put(BDmin.toString(), valueSum);
                     BDmin = BDmin.add(BigDist);
-                    count = Integer.parseInt(vfModelList.get(s).toString());
+                    valueSum = Integer.parseInt(ascList.get(s).toString());
                 }
             }
-//        }
-//        else{ //정수
-//            Integer[] IList = (Integer[])ascList.keySet().toArray();
-//            int Imin = IList[0];
-//            int Imax = IList[IList.length - 1];
-//            int dist = (Imax-Imin)/10;
-//
-//            for(int i : IList){
-//                if(i < Imin+dist)
-//                    count++;
-//                else{
-//                    range.put(Imin, count);
-//                    Imin += dist;
-//                    count = 1;
-//                }
-//            }
-//        }
+        }
+        else{ //정수
+            int Imin = Integer.parseInt(stringKeyArray[0]);
+            int Imax = Integer.parseInt(stringKeyArray[stringKeyArray.length - 1]);
+            int dist = (Imax-Imin)/10;
+            int remains = (Imax-Imin)%10;
+            int isRemain;
+
+            for(String s : stringKeyArray) {
+                int i;
+
+                try {
+                    i = Integer.parseInt(s);
+                } catch (Exception e) {
+                    System.out.println("[integer parse except]:" + s);
+                    e.printStackTrace();
+                    continue;
+                }
+
+                if(remains>0)
+                    isRemain=1;
+                else
+                    isRemain=0;
+
+                if (i < (Imin + dist + isRemain)) {
+                    valueSum += Integer.parseInt(vfModelList.get(s).toString());
+                }
+                else if (stringKeyArray[stringKeyArray.length - 1].equals(s)) {
+                    valueSum += Integer.parseInt(vfModelList.get(s).toString());
+                    range.put(Integer.toString(Imin), valueSum);
+                }
+                else {
+                    range.put(Integer.toString(Imin), valueSum);
+                    Imin += dist;
+                    valueSum = Integer.parseInt(vfModelList.get(s).toString());
+                    remains--;
+                }
+            }
+        }
 
         return range;
     }
@@ -500,7 +551,7 @@ public class ProfileService {
                     }
                 }
 
-                vfModelList = valueSort(vfModelList);
+                vfModelList = valueSortByDesc(vfModelList);
 
                 if(distinct_cnt > 100){
                     vdModel.setType("top100");
@@ -513,7 +564,6 @@ public class ProfileService {
 
                     if(profileColumnResult.getColumn_type().equals("number")){
                         Map<Object, Integer> range = getRange(vfModelList);
-
                         vdModel.setRange(range);
                     }
                     else
@@ -556,7 +606,7 @@ public class ProfileService {
                 monthList = monthSort(monthList);
                 dateProfile.setMonth_distribution(monthList);
 
-                yearList = yearSort(yearList);
+                yearList = numberKeySortByAsc(yearList,"int");
                 dateProfile.setYear_distribution(yearList);
             }
         }
