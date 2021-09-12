@@ -93,7 +93,7 @@ public class ProfileService {
             sd = new SimpleDateFormat("dd/MM/yy HH:mm");
             sd.setLenient(false);
             dfs.add(sd);
-            
+
             Date date;
             for(DateFormat df : dfs) {
                 try {
@@ -379,7 +379,7 @@ public class ProfileService {
             Arrays.sort(intArray);
 
             for(int i : intArray)
-                resultMap.put(i, map.get(i));
+                resultMap.put(i, map.get(Integer.toString(i)));
         }
         else if(type.equals("double")){
             double[] doubleArray = new double[keyArray.length];
