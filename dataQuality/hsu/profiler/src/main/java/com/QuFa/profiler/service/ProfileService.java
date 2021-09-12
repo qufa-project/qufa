@@ -244,6 +244,7 @@ public class ProfileService {
         AnalysisJobBuilder builder = DataStoreService.getBuilder();
         builder.addSourceColumns(columnName);
         InputColumn<?> targetInputColumn = builder.getSourceColumnByName(columnName);
+        InputColumn<?> dateTargetInputColumn = null;
 
         //Convert column data type
         if (type.equals("number")){
@@ -262,6 +263,7 @@ public class ProfileService {
 //            Date DateNullReplacement = new Date();
 //            ctd.setConfiguredProperty("Null replacement", DateNullReplacement);
             ctd.addInputColumns(targetInputColumn);
+            dateTargetInputColumn = targetInputColumn;
             targetInputColumn = ctd.getOutput()[0];
         }
         System.out.println(targetInputColumn); // null로 나옴
@@ -270,7 +272,10 @@ public class ProfileService {
         // analyzer config
         // val
         AnalyzerComponentBuilder<ValueDistributionAnalyzer> valDistAnalyzer = builder.addAnalyzer(ValueDistributionAnalyzer.class);
-        valDistAnalyzer.addInputColumns(targetInputColumn);
+        if(type.equals("date"))
+            valDistAnalyzer.addInputColumns(dateTargetInputColumn);
+        else
+            valDistAnalyzer.addInputColumns(targetInputColumn);
         valDistAnalyzer.setConfiguredProperty(ValueDistributionAnalyzer.PROPERTY_RECORD_UNIQUE_VALUES, true);
         valDistAnalyzer.setConfiguredProperty(ValueDistributionAnalyzer.PROPERTY_RECORD_DRILL_DOWN_INFORMATION, true);
 
