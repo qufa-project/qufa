@@ -5,6 +5,7 @@ import com.QuFa.profiler.config.ActiveProfileProperty;
 import com.QuFa.profiler.model.Local;
 import com.QuFa.profiler.model.profile.*;
 import com.opencsv.CSVReader;
+import freemarker.template.SimpleDate;
 import lombok.RequiredArgsConstructor;
 import org.datacleaner.api.AnalyzerResult;
 import org.datacleaner.api.InputColumn;
@@ -69,12 +70,30 @@ public class ProfileService {
         for(String rowVal : rowValues) {
             if (rowVal.trim().equals("")) continue;
             List<DateFormat> dfs = new ArrayList<>();
-            dfs.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
-            dfs.add(new SimpleDateFormat("yyyy-MM-dd"));
-            dfs.add(new SimpleDateFormat("MM/dd/yyyy"));
-            dfs.add(new SimpleDateFormat("HH:mm:ss"));
-            dfs.add(new SimpleDateFormat("dd/MM/yyyy HH:mm"));
-            dfs.add(new SimpleDateFormat("dd/MM/yy HH:mm"));
+            SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            sd.setLenient(false);
+            dfs.add(sd);
+
+            sd = new SimpleDateFormat("yyyy-MM-dd");
+            sd.setLenient(false);
+            dfs.add(sd);
+
+            sd = new SimpleDateFormat("MM/dd/yyyy");
+            sd.setLenient(false);
+            dfs.add(sd);
+
+            sd = new SimpleDateFormat("HH:mm:ss");
+            sd.setLenient(false);
+            dfs.add(sd);
+
+            sd = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+            sd.setLenient(false);
+            dfs.add(sd);
+
+            sd = new SimpleDateFormat("dd/MM/yy HH:mm");
+            sd.setLenient(false);
+            dfs.add(sd);
+            
             Date date;
             for(DateFormat df : dfs) {
                 try {
