@@ -82,10 +82,6 @@ public class ProfileService {
             sd.setLenient(false);
             dfs.add(sd);
 
-            sd = new SimpleDateFormat("HH:mm:ss");
-            sd.setLenient(false);
-            dfs.add(sd);
-
             sd = new SimpleDateFormat("dd/MM/yyyy HH:mm");
             sd.setLenient(false);
             dfs.add(sd);
