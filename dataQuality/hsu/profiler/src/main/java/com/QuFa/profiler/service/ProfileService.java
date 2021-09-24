@@ -470,6 +470,7 @@ public class ProfileService {
                     valueSum = Integer.parseInt(ascList.get(s).toString());
                 }
             }
+            range.put(BDmax.toString(), null);
         }
         else{ //정수
             int Imin = Integer.parseInt(stringKeyArray[0]);
@@ -508,6 +509,7 @@ public class ProfileService {
                     remains--;
                 }
             }
+            range.put(Imax, null);
         }
 
 
