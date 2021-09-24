@@ -34,6 +34,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URL;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -509,6 +510,7 @@ public class ProfileService {
             }
         }
 
+
         return range;
     }
 
@@ -631,11 +633,8 @@ public class ProfileService {
             }
         }
 
-        /*
-         *
-         *
-//         */
 
+        DecimalFormat form = new DecimalFormat("#.###");
 
         for (AnalyzerResult result : results) {
             if (result instanceof StringAnalyzerResult) {
@@ -644,7 +643,7 @@ public class ProfileService {
                 }
 
                 if (((StringAnalyzerResult) result).getNullCount(targetInputColumn) < totalCnt) {
-                    stringProfile.setAvg_len(((StringAnalyzerResult) result).getAvgChars(targetInputColumn));
+                    stringProfile.setAvg_len(Double.parseDouble(form.format(((StringAnalyzerResult) result).getAvgChars(targetInputColumn))));
                     stringProfile.setMax_len(((StringAnalyzerResult) result).getMaxChars(targetInputColumn));
                     stringProfile.setMin_len(((StringAnalyzerResult) result).getMinChars(targetInputColumn));
                 }
@@ -662,27 +661,25 @@ public class ProfileService {
                     numberProfile.setMax((Double) ((NumberAnalyzerResult) result).getHighestValue(targetInputColumn));
                 }
                 if (((NumberAnalyzerResult) result).getSum(targetInputColumn) != null) {
-                    System.out.println("SUM::"+((NumberAnalyzerResult) result).getSum(targetInputColumn));
-                    //TODO:Sum,Median double 오차 해결
-                    numberProfile.setSum((Double) ((NumberAnalyzerResult) result).getSum(targetInputColumn));
+                    numberProfile.setSum(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getSum(targetInputColumn))));
                 }
                 if (((NumberAnalyzerResult) result).getMean(targetInputColumn) != null) {
-                    numberProfile.setMean((Double) ((NumberAnalyzerResult) result).getMean(targetInputColumn));
+                    numberProfile.setMean(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getMean(targetInputColumn))));
                 }
                 if (((NumberAnalyzerResult) result).getMedian(targetInputColumn) != null) {
-                    numberProfile.setMedian((Double) ((NumberAnalyzerResult) result).getMedian(targetInputColumn));
+                    numberProfile.setMedian(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getMedian(targetInputColumn))));
                 }
                 if (((NumberAnalyzerResult) result).getStandardDeviation(targetInputColumn) != null) {
-                    numberProfile.setSd((Double) ((NumberAnalyzerResult) result).getStandardDeviation(targetInputColumn));
+                    numberProfile.setSd(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getStandardDeviation(targetInputColumn))));
                 }
                 if (((NumberAnalyzerResult) result).getVariance(targetInputColumn) != null) {
-                    numberProfile.setVariance((Double) ((NumberAnalyzerResult) result).getVariance(targetInputColumn));
+                    numberProfile.setVariance(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getVariance(targetInputColumn))));
                 }
                 if (((NumberAnalyzerResult) result).getPercentile25(targetInputColumn) != null) {
-                    numberProfile.setPercentile_25th((Double) ((NumberAnalyzerResult) result).getPercentile25(targetInputColumn));
+                    numberProfile.setPercentile_25th(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getPercentile25(targetInputColumn))));
                 }
                 if (((NumberAnalyzerResult) result).getPercentile75(targetInputColumn) != null) {
-                    numberProfile.setPercentile_75th((Double) ((NumberAnalyzerResult) result).getPercentile75(targetInputColumn));
+                    numberProfile.setPercentile_75th(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getPercentile75(targetInputColumn))));
                 }
             }
 
