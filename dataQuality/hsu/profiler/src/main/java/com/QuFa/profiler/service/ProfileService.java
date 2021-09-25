@@ -539,6 +539,7 @@ public class ProfileService {
         Map<Object, Object> monthList = new HashMap<>();
         Map<Object, Object> yearList = new HashMap<>();
         VdModel vdModel = new VdModel();
+        List<Map<Object, Object>> vdValueList = new ArrayList<>();
 
         basicProfile.setNull_cnt(0);
         stringProfile.setBlank_cnt(0);
@@ -580,11 +581,13 @@ public class ProfileService {
                 if(distinct_cnt > 100){
                     vdModel.setType("top100");
 
-                    Map<Object, Object> top = new LinkedHashMap<>();
                     Object[] keys = vfModelList.keySet().toArray();
-                    for(int i = 0; i < 100; i++)
-                        top.put(keys[i], vfModelList.get(keys[i]));
-                    vdModel.setValue(top);
+                    for(int i = 0; i < 100; i++) {
+                        vdValueList.add(Map.of(
+                                keys[i], vfModelList.get(keys[i])
+                        ));
+                    }
+                    vdModel.setValue(vdValueList);
 
                     if(profileColumnResult.getColumn_type().equals("number")){
                         Map<Object, Integer> range = getRange(vfModelList);
@@ -596,7 +599,15 @@ public class ProfileService {
                 }
                 else{
                     vdModel.setType("all");
-                    vdModel.setValue(vfModelList);
+
+                    Object[] keys = vfModelList.keySet().toArray();
+                    for (Object key : keys) {
+                        vdValueList.add(Map.of(
+                                key, vfModelList.get(key)
+                        ));
+                    }
+                    vdModel.setValue(vdValueList);
+
                     vdModel.setRange("-");
                 }
 
