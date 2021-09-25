@@ -398,8 +398,9 @@ public class ProfileService {
         return resultMap;
     }
 
-    private Map<Object, Integer> getRange(Map<Object, Object> vfModelList){
-        Map<Object, Integer> range = new LinkedHashMap<>();
+    private List<Map<Object, Object>> getRange(Map<Object, Object> vfModelList){
+        List<Map<Object, Object>> range = new ArrayList<>();
+        Map<Object, Object> LastMapInRange = new HashMap<>();
         Map<Object, Object> ascList;
         Object[] keyArray = vfModelList.keySet().toArray();
 
@@ -462,15 +463,17 @@ public class ProfileService {
                 }
                 else if(stringKeyArray[stringKeyArray.length-1].equals(s)){
                     valueSum+= Integer.parseInt(ascList.get(s).toString());
-                    range.put(BDmin.toString(), valueSum);
+                    range.add(Map.of(BDmin.toString(), valueSum));
                 }
                 else{
-                    range.put(BDmin.toString(), valueSum);
+                    range.add(Map.of(BDmin.toString(), valueSum));
                     BDmin = BDmin.add(BigDist);
                     valueSum = Integer.parseInt(ascList.get(s).toString());
                 }
             }
-            range.put(BDmax.toString(), null);
+
+            LastMapInRange.put(BDmax.toString(), null);
+            range.add(LastMapInRange);
         }
         else{ //정수
             int Imin = Integer.parseInt(stringKeyArray[0]);
@@ -500,18 +503,19 @@ public class ProfileService {
                 }
                 else if (stringKeyArray[stringKeyArray.length - 1].equals(s)) {
                     valueSum += Integer.parseInt(vfModelList.get(s).toString());
-                    range.put(Integer.toString(Imin), valueSum);
+                    range.add(Map.of(Integer.toString(Imin), valueSum));
                 }
                 else {
-                    range.put(Integer.toString(Imin), valueSum);
+                    range.add(Map.of(Integer.toString(Imin), valueSum));
                     Imin += dist;
                     valueSum = Integer.parseInt(vfModelList.get(s).toString());
                     remains--;
                 }
             }
-            range.put(Imax, null);
-        }
 
+            LastMapInRange.put(Imax, null);
+            range.add(LastMapInRange);
+        }
 
         return range;
     }
@@ -590,7 +594,7 @@ public class ProfileService {
                     vdModel.setValue(vdValueList);
 
                     if(profileColumnResult.getColumn_type().equals("number")){
-                        Map<Object, Integer> range = getRange(vfModelList);
+                        List<Map<Object, Object>> range = getRange(vfModelList);
                         vdModel.setRange(range);
                     }
                     else
