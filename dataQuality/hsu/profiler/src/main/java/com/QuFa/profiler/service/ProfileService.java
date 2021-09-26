@@ -545,6 +545,7 @@ public class ProfileService {
         VdModel vdModel = new VdModel();
         List<Map<Object, Object>> vdValueList = new ArrayList<>();
         List<Map<Object, Object>> vdMonthList = new ArrayList<>();
+        List<Map<Object, Object>> vdYearList = new ArrayList<>();
 
         basicProfile.setNull_cnt(0);
         stringProfile.setBlank_cnt(0);
@@ -647,7 +648,10 @@ public class ProfileService {
                 dateProfile.setMonth_distribution(vdMonthList);
 
                 yearList = numberKeySortByAsc(yearList,"int");
-                dateProfile.setYear_distribution(yearList);
+                for(Object year : yearList.keySet().toArray()){
+                    vdYearList.add(Map.of(year, yearList.get(year)));
+                }
+                dateProfile.setYear_distribution(vdYearList);
             }
         }
 

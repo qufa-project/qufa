@@ -16,5 +16,5 @@ public class DateProfile {
     String percentile_25th;
     String percentile_75th;
     List<Map<Object, Object>> month_distribution;
-    Map<Object, Object> year_distribution;
+    List<Map<Object, Object>> year_distribution;
 }
