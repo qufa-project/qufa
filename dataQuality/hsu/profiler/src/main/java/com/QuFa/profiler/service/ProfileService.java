@@ -357,15 +357,15 @@ public class ProfileService {
         return resultMap;
     }
 
-    private Map<Object, Object> monthSort(Map<Object, Object> map){
+    private List<Map<Object, Object>> monthSort(Map<Object, Object> map){
         String[] months = {"January", "February", "March", "April", "May", "June", "July", "August",
                 "September", "October", "November", "December"};
-        Map<Object, Object> resultMap = new LinkedHashMap<>();
+        List<Map<Object, Object>> resultList = new ArrayList<>();
 
         for(String month : months)
-            resultMap.put(month, map.get(month));
+            resultList.add(Map.of(month, map.get(month)));
 
-        return resultMap;
+        return resultList;
     }
 
     private Map<Object, Object> numberKeySortByAsc(Map<Object, Object> map, String type){
@@ -544,6 +544,7 @@ public class ProfileService {
         Map<Object, Object> yearList = new HashMap<>();
         VdModel vdModel = new VdModel();
         List<Map<Object, Object>> vdValueList = new ArrayList<>();
+        List<Map<Object, Object>> vdMonthList = new ArrayList<>();
 
         basicProfile.setNull_cnt(0);
         stringProfile.setBlank_cnt(0);
@@ -642,8 +643,8 @@ public class ProfileService {
                         yearList.put(category, value);
                 }
 
-                monthList = monthSort(monthList);
-                dateProfile.setMonth_distribution(monthList);
+                vdMonthList = monthSort(monthList);
+                dateProfile.setMonth_distribution(vdMonthList);
 
                 yearList = numberKeySortByAsc(yearList,"int");
                 dateProfile.setYear_distribution(yearList);
