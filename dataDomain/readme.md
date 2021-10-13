@@ -4,10 +4,18 @@
 files: 387
 records: 3,842,543
 
+- 재난안전
+files: 2
+records: 84,540
+
 - 환경
-files: 30
-records: 1,943,625
+files: 7
+records: 30,341
+
+- 보건
+files: (1차) 3 (2차) 4
+records: (1차) 7,005 (2차) 216,219
 
 - 교통
 files: 4
-records: 155.9M
+records: 443,437
