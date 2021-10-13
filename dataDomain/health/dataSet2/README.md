@@ -44,4 +44,4 @@
 - Equality of Opportunity : 약 96% 향상
 - Equalized Odds : 약 78% 향상
 - Demographic Parity : 약 78% 향상 
-- 보정전대비 약 84% 향상
+- 보정전대비 평균 84% 향상
