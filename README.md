@@ -80,7 +80,7 @@
 </ul>
 
 ##
-- Status of QuFa Repository (Last update: Nov. 20, 2020)
+- Status of QuFa Repository (Last update: Oct. 14, 2021)
 
 | Name | Description of key features  | Link |
 | ------ | ------ | ------ |
@@ -88,6 +88,8 @@
 | Qufa_dataHunter | - 원천 데이터를 프로젝트 DB내에 로드<br> - 원천 데이터의 Meta data reading | <a href=https://gitlab.com/qufa/qufa_datahunter target="_blank">Go</a> |
 | QuFa_dataReviewerServer | - 피드백 지원도구(백엔드)<br> - REST API 활용<br> - 파일 데이터, Database 정보를 통해 데이터를 API로 자동 변환 | <a href=https://gitlab.com/qufa/qufa_datareviewerserver target="_blank">Go</a> |
 | QuFa_dataReviewerClient | - 피드백 지원도구(프론트엔드)<br> - Designer-Server와 연동<br> - React Framework 기반의 Web Frontend 프로젝트 | <a href=https://gitlab.com/qufa/qufa_datareviewerclient target="_blank">Go</a> |
+| QuFa_dataFeat | - 데이터 특징공학 툴<br> | <a href=https://github.com/oslab-ewha/qufafeat target="_blank">Go</a> |
+| QuFa_dataCloud | - 환경 데이터셋 저장소 클라우드<br> | <a href=https://drive.google.com/drive/folders/15-z-NWTicGJeEkYsbKUXaoBcwZJT9IKC target="_blank">Go</a> |
 
 ##
 <div align="center"><strong>by QuFa consortium</strong></div>
