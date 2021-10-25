@@ -36,3 +36,21 @@ definition: 보호된 그룹과 보호되지 않은 그룹은 참긍정(True Pos
 **3. 인구통계패리티 (Demographic Parity)**
 
 definition: 긍정적인 결과의 가능성은 개인이 보호된(예 : 여성) 그룹에 있는지 여부 에 관계없이 동일해야 함sex field 에서 남녀 성별 확인을 위한 PredictionCategory cva 중 Subgroup 0(뇌졸중 과거력 있음) 입력에 따른 TP+FP/TN+FN과 Subgroup 1(뇌졸중 과거력 없음) 입력에 따른 TP+FP/TN+FN이 같아야만 인구통계패리티 (Demographic Parity)을 만족
+
+> 요약
+
+**data-fairness-algorithm**
+
+performance measures 기반의 데이터 공정성 알고리즘
+
+**data-fairness-assessment**
+
+데이터셋의 보정 전/후 비교에 따른 공정성 보정률 검증 모델
+
+**data-fairness-integration**
+
+데이터셋 공정성 보정 알고리즘 + 보정률 검증 모델 통합
+
+**data-fairness-visualize**
+
+웹 기반의 고정성 보정 알고리즘 및 가시화
