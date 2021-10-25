@@ -2,3 +2,4 @@
 - 데이터 공정성팀
 - demo1.docker: Jupyter Notebook Demo
 - v1.0: 데이터보정모듈(Data compensation) 및 공정성지표(Google Colaboratory Notebook file)
+- v2.0: 데이터 공정성 보정 및 개선 검증 모듈(Data fairness improvement)(Jupyter Notebook file)
