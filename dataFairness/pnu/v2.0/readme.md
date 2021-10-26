@@ -15,6 +15,8 @@
 
 원본 데이터세트에서 ML 공정성에 영향을 미칠 수 있는 field만을 임의 선택하여 학습에 사용Binary(이진) Features
 
+**( 출처: NIA(한국지능정보사회진흥원) 빅데이터 플랫폼 및 센터 구축 사업 中 "암예방-진단 라이프스타일 데이터 센터"의 데이터 연계, http://cancerpreventionsnu.kr/ )**
+
 sex: 성별 / cva: 뇌졸중 과거력 / fcvayn: 뇌졸중 가족력
 
 _Numeric(수적) Features_ - packyear: 하루 흡연량(갑) X 흡연기간 / packyear: 일주일간 음주 빈도 / exerfq: 일주일간 운동한 총 일수
