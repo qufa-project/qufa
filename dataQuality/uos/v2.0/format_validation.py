@@ -1,124 +1,112 @@
-import pandas as pd
-import datetime 
 import re
-import numpy as np
 import argparse
 
-
-def day_check(date_text):
-  err_rate = 0
-
-  for d in date_text :
-    try :
-      datetime.datetime.strptime(str(d), "%Y-%m-%d")
-    except ValueError:
-      if(d != '0') :  
-        err_rate=err_rate+1
-     
-  print(round(err_rate/len(date_text) * 100,4),"%")
-
-def day_correct(date_text):
-  c=0
-  for d in date_text :
-    try :
-      datetime.datetime.strptime(str(d), "%Y-%m-%d")
-    except ValueError:
-      if(d != '0') :  
-        d = re.sub(r"[-=+,#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》]","",str(d))
-        d = datetime.datetime.strptime(d,"%Y%m%d")
-        d = datetime.date.strftime(d,"%Y-%m-%d")
-    
-    date_text[c] = d   
-    c+=1
+import pandas as pd
 
 
-def time_check(time_text):
-  err_rate = 0
-
-  for d in time_text :
-    try :
-      datetime.datetime.strptime(str(d), "%H:%M")
-    except ValueError:
-      if(d != '0') :
-        err_rate = err_rate+1  
-      
-  print(round(err_rate/len(time_text) * 100,4),"%")
-
-def time_correct(time_text) :
-  c=0
-  passData = ['0','상세 일정 참조','미정','프로그램별 상이','월','화','수','목','금']
-  for d in time_text :
-    try :
-      datetime.datetime.strptime(str(d), "%H:%M")
-    except ValueError:
-      if(d != '0') :
-        if(d not in passData) :  
-          if any(len(d) > 5 and i in d for i in '/~-,'):
-            d = d.replace('/','~').replace('-','~').replace(',','~')
-            dA = d.split('~')
-            time_text[c] = dA[0]
-          else : 
-            d = re.sub(r"[-=+,#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》]","",str(d))
-            if(d.isdigit()) :
-              d = datetime.datetime.strptime(d.zfill(4),"%H%M")
-              d = datetime.date.strftime(d,"%H:%M")
-    time_text[c] = d    
-    c+=1
+date_regex = re.compile(r"^(20[0-9][0-9])-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])")
+time_regex = re.compile(r"^(0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])")
+phone_regex = re.compile(r"(\d{2}-|\d{3}-)?(\d{3}|\d{4})-(\d{4})")
+number_regex = re.compile(r"\d+")
 
 
-def phone_check(phone_text):
-  err_rate = 0
-
-  errA = "[=+,#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》]"
-  for d in phone_text :
-    if(d != '0') :  
-      if any(i in d for i in errA):
-        err_rate = err_rate+1
-  print(round(err_rate/len(phone_text) * 100,4),"%")
+def get_error_rate(series, error_idxs):
+    total_count = len(series)
+    error_count = len(error_idxs)
+    error_rate = error_count / total_count * 100
+    print(round(error_rate, 4), '%')
 
 
-def phone_correct(phone_text):
-  c=0
-
-  errA = "[=+,#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》]"
-  for d in phone_text :
-    if(d != '0') :  
-      d = re.sub(r"[=+,#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》]","",str(d))
-      chk = re.findall(r"[\d]{3}-[\d]{3}-[\d]{3}", d)
-    
-    phone_text[c] = d
-    c+=1
+def date_check(date_series):
+    error_idxs = list()
+    for i, d in date_series.items():
+        if not date_regex.match(d):
+            error_idxs.append(i)
+    return error_idxs
 
 
-def formatValidation(input_fname, result_fname, func_name, col_name):
-  df = pd.read_csv(input_fname)
-  df.fillna('0', inplace=True)
+def time_check(time_series):
+    error_idxs = list()
+    for i, t in time_series.items():
+        if not time_regex.match(t):
+            error_idxs.append(i)
+    return error_idxs
 
-  if(func_name=="dayCheck") :
-    day_check(df[col_name])
-  elif (func_name=="timeCheck") :
-    time_check(df[col_name])
-  elif (func_name=="phoneCheck") :
-    phone_check(df[col_name])
-  elif(func_name=="dayCorrect") :
-    day_correct(df[col_name])
-    df.to_csv(result_fname)
-  elif (func_name=="timeCorrect") :
-    time_correct(df[col_name])
-    df.to_csv(result_fname)
-  elif (func_name=="phoneCorrect") :
-    phone_correct(df[col_name])
-    df.to_csv(result_fname)
-  else :
-    print("입력 값이 잘못되었습니다.")
- 
- 
+
+def phone_check(phone_series):
+    error_idxs = list()
+    for i, p in phone_series.items():
+        if not phone_regex.match(p):
+            error_idxs.append(i)
+    return error_idxs
+
+
+def date_correct(df, col):
+    error_idxs = date_check(df[col])
+    error_dates = df.loc[error_idxs, col].tolist()
+    clean_dates = list()
+    for error_date in error_dates:
+        numbers = number_regex.findall(error_date)
+        clean_dates.append('-'.join(numbers))
+    df.loc[error_idxs, col] = clean_dates
+    return df
+
+
+def time_correct(df, col):
+    error_idxs = time_check(df[col])
+    error_times = df.loc[error_idxs, col].tolist()
+    clean_times = list()
+    for error_time in error_times:
+        numbers = number_regex.findall(error_time)
+        clean_times.append(':'.join(numbers))
+    df.loc[error_idxs, col] = clean_times
+    return df
+
+
+def phone_correct(df, col):
+    error_idxs = phone_check(df[col])
+    error_phones = df.loc[error_idxs, col].tolist()
+    clean_phones = list()
+    for error_phone in error_phones:
+        numbers = number_regex.findall(error_phone)
+        clean_phones.append('-'.join(numbers))
+    df.loc[error_idxs, col] = clean_phones
+    return df
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_fname',default='./data/event.csv')
+    parser.add_argument('--input_fname', default='./data/event.csv')
     parser.add_argument('--result_fname', default='event-after.csv')
     parser.add_argument('--func_name')
     parser.add_argument('--col_name')
     args = parser.parse_args()
+    
+    df = pd.read_csv(args.input_fname)
+    format_type, perform_type = args.func_name.split('_')
 
-    formatValidation(input_fname=args.input_fname, result_fname=args.result_fname, func_name=args.func_name, col_name=args.col_name)
+    if perform_type == 'check':
+        series = df[args.col_name]
+        if format_type == 'date':
+            error_idxs = date_check(series)
+        elif format_type == 'time':
+            error_idxs = time_check(series)
+        elif format_type == 'phone':
+            error_idxs = phone_check(series)
+        else:
+            raise ValueError
+        get_error_rate(series, error_idxs)
+
+    elif perform_type == 'correct':
+        if format_type == 'date':
+            df_clean = date_correct(df, args.col_name)
+        elif format_type == 'time':
+            df_clean = time_correct(df, args.col_name)
+        elif format_type == 'phone':
+            df_clean = phone_correct(df, args.col_name)
+        else:
+            raise ValueError
+        df_clean.to_csv(args.result_fname, index=False)
+    else:
+        raise ValueError
+
