@@ -9,7 +9,7 @@
 </thead>
 <tbody>
 <tr><td colspan=4>source</td><td>객체 경로</td><td>1</td><td>-</td><td>프로파일링 대상 객체 정보 (local file path, URL, database connection 중 하나)</td><td>O</td></tr>
-<tr><td colspan=1></td><td colspan=3>type</td><td>객체 타입</td><td>1</td><td>local, url, db</td><td>local: 로컬 파일 경로 <br />url: 원격파일 경로에 대한 URL <br />db: database 테이블 connection 정보<br /><br />위 3가지 타입(type, url, db)에 따라 아래 항목(path, url, db) 중 하나를 반드시 사용 (one & only one)</td><td>O</td></tr>
+<tr><td colspan=1></td><td colspan=3>type</td><td>객체 타입</td><td>1</td><td>path, url, db</td><td>path: 로컬 파일 경로 <br />url: 원격파일 경로에 대한 URL <br />db: database 테이블 connection 정보<br /><br />위 3가지 타입(type, url, db)에 따라 아래 항목(path, url, db) 중 하나를 반드시 사용 (one & only one)</td><td>O</td></tr>
 <tr><td colspan=1></td><td colspan=3>path</td><td>파일 경로</td><td>0</td><td>C:\QUFA\data\sample.csv</td><td>프로파일링 대상 파일의 로컬 경로</td><td>O</td></tr>
 <tr><td colspan=1></td><td colspan=3>url</td><td>원격 파일경로에 대한 URL</td><td>0</td><td>http://qufa.com/sample.csv</td><td>프로파일링 대상 파일의 URL 경로</td><td>O</td></tr>
 <tr><td colspan=1></td><td colspan=3>db</td><td>데이터베이스 및 테이블 연결 정보</td><td>0</td><td>-</td><td>프로파일링 대상이 데이터베이스 테이블일 경우 연결 및 테이블 정보<br />* 'db'와 하위 파라미터는 2022년 지원 예정</td><td></td></tr>
