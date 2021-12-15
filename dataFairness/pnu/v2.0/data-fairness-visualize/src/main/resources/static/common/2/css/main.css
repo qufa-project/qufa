@@ -1,0 +1,153 @@
+
+html, body {
+    background: #2e4053;
+    color: #eaeaea;
+}
+
+hr {
+    height: 1px;
+}
+
+#progress {
+    display: flex;
+    position: sticky;
+    top: 0;
+    width: 0;
+    height: 5px;
+    background: red;
+    border-radius: 0;
+}
+
+.modal-buttons {
+    display: none;
+}
+
+.modal {
+    color: #2a2a2b;
+}
+
+#btn-start, #btn-reset {
+    margin-left: 1.4em;
+}
+
+section {
+    margin: 1.6em 0;
+    padding: 1.0em;
+}
+
+section:nth-child(2) {
+    background: #eaeaea;
+    color: #2a2a2b;
+}
+
+section:nth-child(n+3) {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.section-default {
+    border-left: 0;
+}
+
+.section-complete {
+    border-left: 10px solid #29a745;
+}
+
+.section-active {
+    border-left: 10px solid #dc3545;
+}
+
+#step1-table {
+    width: 100%;
+}
+
+/* Checkbox Case2
+ */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+input:disabled + .slider {
+    opacity: 0.3;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.todo {
+    color: tomato;
+    font-size: large;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/*.paging_numbers a {*/
+/*    color: white !important;*/
+/*    margin-left: 16px;*/
+/*}*/
+
+.paging_numbers a:hover { text-decoration: none; }
+.paging_numbers a:active { text-decoration: none; }
+
+.paginate_button {
+    color: white !important;
+    margin-left: 16px;
+    cursor: pointer;
+}
+
+.paginate_button.current {
+    cursor: default;
+    font-weight: bold;
+}

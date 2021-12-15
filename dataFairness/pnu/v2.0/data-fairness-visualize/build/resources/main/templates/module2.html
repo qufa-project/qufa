@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Data Fairness Improvement</title>
+    <link rel="shortcut icon" href="#">
+    <link rel="stylesheet" href="/dist/bootstrap/css/bootstrap.css"/>
+    <link rel="stylesheet" href="/dist/fontawesome/css/all.min.css"/>
+    <link rel="stylesheet" href="/dist/d3/icicle.css"/>
+    <link rel="stylesheet" href="/dist/d3/sunburst.css"/>
+    <link rel="stylesheet" href="/dist/DataTables/datatables.bootstrap4.min.css"/>
+    <link rel="stylesheet" href="/dist/loadingModal/css/jquery.loadingModal.min.css"/>
+    <link rel="stylesheet" href="/common/2/css/main.css"/>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div class="container-fluid">
+    <h1>Data Fairness Improvement <span class="h3">(v2)</span></h1>
+    <section>
+        <h4>Data</h4>
+        <p>Data Source (CSV)</p>
+        <form id="form-start" method="post" enctype="multipart/form-data" onsubmit="return onStart()">
+            <div class="row">
+                <div class="col-6">
+                    <div class="form-group">
+                        <input type="file" class="form-control-file" id="file1" name="file" required>
+                    </div>
+                </div>
+                <div class="col text-right">
+                    <button type="submit" id="btn-start" class="btn btn-info">Start</button>
+                    <button type="button" id="btn-reset" class="btn btn-danger" onclick="openModal(1)">Reset</button>
+                </div>
+            </div>
+        </form>
+    </section>
+    <section id="section1">
+        <h4>Step 1</h4>
+        <p>Binary Classification</p>
+        <div id="step1-box">
+        </div>
+    </section>
+    <section id="section2">
+        <h4>Step 2</h4>
+        <p>Source Data Structure</p>
+        <div id="step2-box">
+        </div>
+    </section>
+    <section id="section3">
+        <h4>Step 3</h4>
+        <p>Fairness Improvement</p>
+        <div id="step3-box">
+        </div>
+    </section>
+    <section id="section4">
+        <h4>Step 4</h4>
+        <p>Result Data Structure</p>
+        <div id="step4-box">
+        </div>
+    </section>
+    <section id="section5">
+        <h4>Step 5</h4>
+        <p>Download</p>
+        <div id="step5-box">
+        </div>
+    </section>
+</div>
+
+<div class="modal-buttons">
+    <button id="modal-1-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-1">
+        Launch modal-1
+    </button>
+    <button id="modal-2-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-2">
+        Launch modal-2
+    </button>
+    <button id="modal-3-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-3">
+        Launch modal-3
+    </button>
+</div>
+<div class="modal fade" id="modal-1" tabindex="-1" role="dialog" aria-labelledby="modal-1" aria-hidden="true"
+     data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Warning</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to reset?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="onReset()">Reset</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="modal-1-close">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modal-2" tabindex="-1" role="dialog" aria-labelledby="modal-2" aria-hidden="true"
+     data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Report</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-info" onclick="">OK</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="modal-2-close">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modal-3" tabindex="-1" role="dialog" aria-labelledby="modal-3" aria-hidden="true"
+     data-keyboard="false" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Error</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="error-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal" id="modal-3-close">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/dist/jquery/jquery-3.5.1.min.js"></script>
+<script src="/dist/jquery/jquery.form.js"></script>
+<script src="/dist/popper/popper.min.js"></script>
+<script src="/dist/bootstrap/js/bootstrap.js"></script>
+<script src="/dist/highcharts/highcharts.js"></script>
+<script src="/dist/highcharts/themes/dark-unica.js"></script>
+<script src="/dist/d3/d3.min.js"></script>
+<script src="/dist/d3/icicle.min.js"></script>
+<script src="/dist/d3/sunburst.min.js"></script>
+<script src="/dist/DataTables/datatables.min.js"></script>
+<script src="/dist/DataTables/datatables.bootstrap4.min.js"></script>
+<script src="/dist/loadingModal/js/jquery.loadingModal.min.js"></script>
+<script src="/common/2/js/main.js"></script>
+</body>
+</html>

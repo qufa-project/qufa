@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.datafairnessmodule.repository.MainRepository">
+    <select id="getNow2" resultType="String">
+        SELECT NOW()
+    </select>
+    <select id="v2SelectTempTable" parameterType="HashMap" resultType="String">
+        ${query}
+    </select>
+    <update id="v2DropTempTable" parameterType="HashMap">
+        ${query}
+    </update>
+    <update id="v2DeleteDataMeta" parameterType="HashMap">
+        ${query}
+    </update>
+    <update id="v2TrimColumnData" parameterType="HashMap">
+        UPDATE ${tablename} SET `${column_name}` = TRIM(`${column_name}`)
+    </update>
+    <update id="v2CreateTable" parameterType="HashMap">
+        ${query}
+    </update>
+    <insert id="v2InsertCsv" parameterType="HashMap">
+        ${query}
+    </insert>
+    <select id="v2Step2OrderByStdDev" parameterType="HashMap" resultType="HashMap">
+        ${query}
+    </select>
+    <insert id="v2Step2InsertDataMeta" parameterType="HashMap">
+        ${query}
+    </insert>
+    <select id="v2Step2OrderStdDev" parameterType="HashMap" resultType="HashMap">
+        SELECT * FROM data_meta WHERE tablename = #{tablename} ORDER BY tablename DESC LIMIT 1
+    </select>
+    <select id="v2Step2OrderColumn" parameterType="HashMap" resultType="HashMap">
+        ${query}
+    </select>
+    <select id="v2Step2TestNonNumericColumn" parameterType="HashMap" resultType="HashMap">
+        SELECT * FROM ${tablename} LIMIT #{limit}
+    </select>
+    <select id="v2Step3ColumnCategory" parameterType="HashMap" resultType="HashMap">
+        ${query}
+    </select>
+    <insert id="v2Step3SaveResult" parameterType="HashMap">
+        ${query}
+    </insert>
+    <select id="v2Step3ExportResult" parameterType="HashMap" resultType="HashMap">
+        ${query}
+    </select>
+    <select id="v2Step2SelectRows" parameterType="HashMap" resultType="HashMap">
+        SELECT COUNT(*) AS count FROM ${tablename}
+    </select>
+    <select id="v2Step1ColumnCategoryCount" parameterType="HashMap" resultType="HashMap">
+        SELECT COUNT(DISTINCT(`${columnname}`)) AS count FROM ${tablename}
+    </select>
+    <select id="v2Step2SelectChartData" parameterType="HashMap" resultType="HashMap">
+        ${query}
+    </select>
+    <select id="v2Step2SelectQuery" parameterType="HashMap" resultType="HashMap">
+        ${query}
+    </select>
+    <insert id="v2Step2InsertQuery" parameterType="HashMap">
+        ${query}
+    </insert>
+</mapper>
