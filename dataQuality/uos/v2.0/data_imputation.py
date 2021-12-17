@@ -170,12 +170,12 @@ class SelfAttentionUnit(nn.Module):
 
     def forward(self, x):
         x = x.permute(1, 0, 2)
-        res, _ = self.attn(key=x, value=x, query=x)
+        res, weight = self.attn(key=x, value=x, query=x)
         res = self.act(res)
         if self.skip_connection:
             res = res + x
         res = res.permute(1, 0, 2)
-        return self.ln(res)
+        return self.ln(res), weight
 
 
 class Featurize(nn.Module):
@@ -214,9 +214,9 @@ class Featurize(nn.Module):
     def forward(self, x_num, tokens):
         f_num = self.numeric_fc(x_num)
         f_emb = self.embed(tokens)
-        f_int = self.attn(f_emb).flatten(start_dim=1)
+        f_int, weight = self.attn(f_emb).flatten(start_dim=1)
         f_tot = torch.cat([f_num, f_int], dim=1)
-        return f_tot
+        return f_tot, weight
 
 
 class Model(nn.Module):
@@ -261,7 +261,7 @@ class Model(nn.Module):
             nn.init.xavier_uniform_(m.weight)
     
     def forward(self, x_num, tokens):
-        f_tot = self.featurizer(x_num, tokens)
+        f_tot, weight = self.featurizer(x_num, tokens)
         z = self.shared_unit(f_tot)
         outputs = []
         for i, task in enumerate(self.multi_task_mappings):
@@ -272,7 +272,7 @@ class Model(nn.Module):
                 elif output.shape[1] > 1:
                     output = torch.softmax(output, dim=-1)
             outputs.append(output)
-        return outputs
+        return outputs, weight
 
                 
 class Imputer(object):
@@ -347,7 +347,7 @@ class Imputer(object):
         masks = [m.to(DEVICE) for m in masks]
         batch_size = targets[0].shape[0]
 
-        preds = self.model(nums, tokens)
+        preds, weight = self.model(nums, tokens)
         losses, nums = self.cal_loss(preds, targets, masks)
         metric = self.cal_metric_batch(preds, targets, masks)
         
@@ -483,7 +483,7 @@ class Imputer(object):
                 nums = nums.to(DEVICE)
                 tokens = tokens.to(DEVICE)
                 
-                outputs = self.model(nums, tokens)
+                outputs, weight = self.model(nums, tokens)
                 result = self._transform(outputs)
                 X_imputed.append(result)
         
