@@ -214,7 +214,8 @@ class Featurize(nn.Module):
     def forward(self, x_num, tokens):
         f_num = self.numeric_fc(x_num)
         f_emb = self.embed(tokens)
-        f_int, weight = self.attn(f_emb).flatten(start_dim=1)
+        f_int, weight = self.attn(f_emb)
+        f_int = f_int.flatten(start_dim=1)
         f_tot = torch.cat([f_num, f_int], dim=1)
         return f_tot, weight
 
