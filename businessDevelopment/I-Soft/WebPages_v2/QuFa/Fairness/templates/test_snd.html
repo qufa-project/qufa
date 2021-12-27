@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="kr">
+
+<head>
+    <title>Send Test</title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" />
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% load static %}
+    <script src="{% static 'd3-7.0.1/d3.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'sunburst-1.15.2/sunburst.css' %}" />
+    <script src="{% static 'sunburst-1.15.2/sunburst-chart.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/qufa.css' %}">
+</head>
+
+<body>
+    <div class="container" style='width:100%;'>
+
+        <div class='row' style='height:90px;padding-top:40px;'>
+            <div class='col-4'></div>
+            <div class='col-4'>
+                <h4 class="font-weight-bold text-center text-primary">Upload Test (from local)</h4>
+            </div>
+            <div class='col-4'></div>
+        </div>
+        <div class='row'>
+            <div class='col-10'>
+                <span class='btn btn-sm btn-success fileinput-button loading'>
+                <span id='idSpanXls0'><i class='fa fa-table'></i> Set Train File</span>
+                <input type='file' id="fileupload" accept="text/csv,.csv" />
+                </span>&nbsp;
+                <input type='text' id="idFileName" style='width:100%;' readonly />
+            </div>
+            <div class='col-2 text-right'>
+                <button id='idBtnUpload0' class='btn btn-primary loading' style='width:100%;height:100%;'><i class="fas fa-upload"></i> Upload</button>
+            </div>
+        </div>
+        <div class='row' style='height:90px;padding-top:40px;'>
+            <div class='col-4'></div>
+            <div class='col-4'>
+                <h4 class="font-weight-bold text-center text-primary">Upload Test (from url)</h4>
+            </div>
+            <div class='col-4'></div>
+        </div>
+        <div class='row'>
+            <div class='col-10'>
+                <input type='text' id="idFileUrl" style='width:100%;' readonly />
+            </div>
+            <div class='col-2 text-right'>
+                <button id='idBtnUpload1' class='btn btn-primary loading' style='width:100%;height:100%;'><i class="fas fa-upload"></i> Upload</button>
+            </div>
+        </div>
+        <div class='row' style='height:90px;padding-top:40px;'>
+            <div class='col-4'></div>
+            <div class='col-4'>
+                <h4 class="font-weight-bold text-center text-primary">IsRunning Test</h4>
+            </div>
+            <div class='col-4'></div>
+        </div>
+        <div class='row'>
+            <div class='col text-center'>
+                <input type='text' id="idTxtIsRunning" style='width:100%;' readonly />
+            </div>
+        </div>
+        <div class='row' style='height:90px;padding-top:40px;'>
+            <div class='col-4'></div>
+            <div class='col-4'>
+                <h4 class="font-weight-bold text-center text-primary">Loading Test</h4>
+            </div>
+            <div class='col-4'></div>
+        </div>
+        <div class='row'>
+            <div class='col text-center'>
+                <button id='idBtnRun' class='btn btn-primary running step3' style='width:200px;height:50px;'><i class="fab fa-deezer"></i> Run</button>
+            </div>
+        </div>
+        <div class='row' style='height:400px;'>
+            <div class='col-6'>
+                <div id='idDivSbChartA' class='text-center' style='width:100%;height:100%;'></div>
+            </div>
+            <div class='col-6'>
+                <div id='idDivSbChartB' class='text-center' style='width:100%;height:100%;'></div>
+            </div>
+        </div>
+        <div class='row' style='height:50px;'>
+            <div class='col-4'></div>
+            <div class='col-4'>
+                <h4 class="font-weight-bold text-center text-primary">Graph</h4>
+            </div>
+            <div class='col-4'></div>
+        </div>
+        <div class='row'>
+            <div class='col-6'>
+                <div id='idDivGraphA0' class='text-center' style='width:100%;height:400px;'></div>
+            </div>
+            <div class='col-6'>
+                <div id='idDivGraphA1' class='text-center' style='width:100%;height:400px;'></div>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col'>
+                <div id='idDivGraphA2' class='text-center' style='width:100%;height:800px;'></div>
+            </div>
+        </div>
+        <div class='row' style='height:50px;'>
+            <div class='col-4'></div>
+            <div class='col-4'>
+                <h4 class="font-weight-bold text-center text-primary">Graph</h4>
+            </div>
+            <div class='col-4'></div>
+        </div>
+        <div class='row'>
+            <div class='col-6'>
+                <div id='idDivGraphB0' class='text-center' style='width:100%;height:400px;'></div>
+            </div>
+            <div class='col-6'>
+                <div id='idDivGraphB1' class='text-center' style='width:100%;height:400px;'></div>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col'>
+                <div id='idDivGraphB2' class='text-center' style='width:100%;height:800px;'></div>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col'>
+                <div id='idDivPerform' class='text-center' style='width:100%;height:200px;'></div>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col text-center'>
+                <button id='idBtnGet' class='btn btn-primary running step3' style='width:200px;height:50px;'><i class="fab fa-deezer"></i> Get</button>
+            </div>
+        </div>
+
+    </div>
+
+<script type="text/javascript">
+    const g_arrMLTask = 
+    [
+        { key: 'binary' , name: '이진 분류', parity: 
+        [
+            { key: 'equaloppo' , name: '균등 기회' },
+            { key: 'equalodds' , name: '균등 승률' },
+            { key: 'dmgparity' , name: '인구 통계 패리티' },
+        ] },
+        { key: 'regres' , name: '회귀 분류', parity:
+        [
+            { key: 'dmgparity' , name: '인구 통계 패리티' },
+            { key: 'bndgrplos' , name: '제한된 그룹 손실' },
+        ] },
+    ];
+    let g_oMLTaskIdx = { mltask: 0, parity: 0 };
+    const g_cD3scaleOrd = d3.scaleOrdinal(d3.schemePaired);
+
+    var url = "http://localhost:8000/";
+    // var url = "http://164.125.37.214:8000/";
+    let sKey = '';
+
+    $(document).ready(function()
+    {
+        $.ajax(
+        {
+            url: url + "Fairness/getkey/",
+            type: 'POST',
+            dataType: 'JSON',
+            success: function(res)
+            {
+                var res = JSON.parse(res);
+                if ( res.success == 'true' )
+                {
+                    sKey = res.key;
+                }
+            }
+        })
+        
+        var sFileName = '';
+
+        var objFile = null;
+        var handleFileSelect = function(e)
+        {
+            if ( !e.target.files ) return;
+            
+            objFile = e.target.files[0];
+
+            $("#idFileName").val(objFile.name);
+        }
+        $("#fileupload")[0].addEventListener('change', handleFileSelect, false);
+
+        $('#idBtnUpload0').on('click', function()
+        {
+            $('#idFileName').val('');
+            $('#fileupload').val('');
+            
+            if ( objFile != null )
+            {
+                let formData = new FormData();
+                formData.append('file', objFile);
+                formData.append('key', sKey);
+                $.ajax(
+                {
+                    url: url + "Fairness/upload/",
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res)
+                    {
+                        var res = JSON.parse(res);
+                        if ( res.success == 'true' )
+                        {
+                            sFileName = res.filename;
+
+                            $('#idFileName').val('');
+                            $('#fileupload').val('');
+                        }
+                    }
+                })
+            }
+            else
+            {
+                alert("Train 파일이 지정되지 않았습니다.");
+                return;
+            }
+        });
+
+        $('#idFileUrl').val('http://164.125.37.222:18099/data/201008/201008_origin_122219624.csv');
+        
+        $('#idBtnUpload1').on('click', function()
+        {
+            var sUrl = $('#idFileUrl').val()
+            if ( sUrl != '' )
+            {
+                $.ajax(
+                {
+                    url: url + "Fairness/upload/",
+                    type: 'POST',
+                    data: JSON.stringify({'url': sUrl}),
+                    dataType: 'JSON',
+                    success: async function(res)
+                    {
+                        var res = JSON.parse(res);
+                        if ( res.success == 'true' )
+                        {
+                            sFileName = res.filename;
+                        }
+                    }
+                })
+            }
+            else
+            {
+                alert("Train 파일이 지정되지 않았습니다.");
+                return;
+            }
+        });
+
+        $('#idBtnRun').on('click', function()
+        {
+            if ( sFileName != '' )
+            {
+                $.ajax(
+                {
+                    url: url + "Fairness/run/",
+                    type: 'POST',
+                    data: JSON.stringify({'key': sKey, 'filename': sFileName}),
+                    dataType: 'JSON',
+                    success: function(res)
+                    {
+                        var res = JSON.parse(res);
+                        if ( res.success == 'true' )
+                        {
+                            $.ajax(
+                            {
+                                url: url + "Fairness/sunburst/",
+                                type: 'POST',
+                                data: JSON.stringify({'key': sKey}),
+                                dataType: 'JSON',
+                                success: function(res)
+                                {
+                                    var json_res = JSON.parse(res);
+                                    if ( !json_res.success )
+                                    {
+                                        alert( json_res.message );
+                                        //return;
+                                    }
+                                    arrData = json_res.data;
+                                    if ( arrData.length > 0 )
+                                    {                                    
+                                        $('#idDivSbChartA').html('');
+                                        Sunburst().data(arrData[0])
+                                        .width(400)
+                                        .height(400)
+                                        .color((d, parent) => g_cD3scaleOrd(parent ? parent.data.name : null))    
+                                        .excludeRoot(true)
+                                        .radiusScaleExponent(1)
+                                        (document.getElementById('idDivSbChartA'));
+                                        
+                                        $('#idDivSbChartB').html('');
+                                        Sunburst().data(arrData[1])
+                                        .width(400)
+                                        .height(400)
+                                        .color((d, parent) => g_cD3scaleOrd(parent ? parent.data.name : null))    
+                                        .excludeRoot(true)
+                                        .radiusScaleExponent(1)
+                                        (document.getElementById('idDivSbChartB'));
+                                    }
+                                }
+                            })
+                            $.ajax(
+                            {
+                                url: url + "Fairness/getresult/",
+                                type: 'POST',
+                                data: JSON.stringify({'key': sKey}),
+                                dataType: 'JSON',
+                                success: function(res)
+                                {
+                                    var json_res = JSON.parse(res);
+                                    if ( !json_res.success )
+                                    {
+                                        alert( json_res.message );
+                                    }
+                                    else
+                                    {
+                                        $('#idDivGraphA0').html(json_res.data.htmlimg[0][0]);
+                                        $('#idDivGraphA1').html(json_res.data.htmlimg[0][1]);
+                                        if ( json_res.data.htmlimg[0].length > 2 )
+                                        {
+                                            $('#idDivGraphA2').html(json_res.data.htmlimg[0][2]);
+                                        }
+                                        $('#idDivGraphB0').html(json_res.data.htmlimg[1][0]);
+                                        $('#idDivGraphB1').html(json_res.data.htmlimg[1][1]);
+                                        if ( json_res.data.htmlimg[1].length > 2 )
+                                        {
+                                            $('#idDivGraphB2').html(json_res.data.htmlimg[1][2]);
+                                        }
+                                        var MLTask = g_arrMLTask[g_oMLTaskIdx.mltask];
+                                        var Parity = g_arrMLTask[g_oMLTaskIdx.mltask].parity[g_oMLTaskIdx.parity];
+                                        var nArrIdx = json_res.data.corrate.findIndex(x => x.key === (MLTask.key+Parity.key));
+                                        var sName = json_res.data.corrate[nArrIdx].name;
+                                        var fRate = json_res.data.corrate[nArrIdx].rate;
+                                        sTag = '<p style="font-size:48px;">보정률 ('+sName+') : '+fRate.toFixed(3)+' % </p>';
+                                        $('#idDivPerform').html(sTag);
+                                    }                                    
+                                    fnIsRunning();
+                                }
+                            })
+                        }
+                    }
+                })
+            }
+            else
+            {
+                alert("업로드 파일이 없습니다.");
+                return;
+            }
+        });
+        $('#idBtnGet').on('click', function()
+        {
+            $.ajax(
+            {
+                url: url + "Fairness/getfile/",
+                type: 'POST',
+                data: JSON.stringify({'key': sKey}),
+                success: function(res)
+                {
+                    var objFile = res;
+                }
+            })
+        });
+    
+        fnIsRunning();
+        //setInterval(fnIsRunning, 2000);
+    });
+    function fnIsRunning()
+    {
+        $.ajax(
+        {
+            url: url + "Fairness/isrunning/",
+            type: 'POST',
+            data: JSON.stringify({'key': sKey}),
+            dataType: 'JSON',
+            success: function(res)
+            {
+                var res = JSON.parse(res);
+                var str = (res.running == 'true') ? 'run' : 'idle';
+                $('#idTxtIsRunning').val(str);
+                return res.running;
+            }
+        })
+    }
+</script>
+
+</body>
+
+</html>
