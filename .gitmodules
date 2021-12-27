@@ -1,0 +1,3 @@
+[submodule "dataQuality/ewu/lossfit"]
+	path = dataQuality/ewu/lossfit
+	url = https://github.com/oslab-ewha/lossfit
