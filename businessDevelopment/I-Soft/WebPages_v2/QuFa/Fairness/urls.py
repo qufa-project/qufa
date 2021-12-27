@@ -11,8 +11,10 @@ urlpatterns = [
     path('upload/', views.upload, name="upload"),
     path('loading/', views.loading, name="loading"),
     path('overview/', views.overview, name="overview"),
-    path('indicator/', views.indicator, name="indicator"),
+    path('sunburst/', views.sunburst, name="sunburst"),
+    path('run_alg/', views.run_alg, name="run_alg"),
     path('isrunning/', views.isrunning, name="isrunning"),
     path('run/', views.run, name="run"),
     path('getresult/', views.getresult, name="getresult"),
+    path('getfile/', views.getfile, name="getfile"),
 ]

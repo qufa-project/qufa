@@ -34,17 +34,17 @@ def run_gi(dictParams, dataFrmTRN, dataFrmTST):
     SubGroupCol = dictParams['SubGroupCol'] # 'crash_type'
     SubGroupVals = dictParams['SubGroupVals'] # "crash_type items" #@param
 
-    HashBucketSize = int(dictParams['HashBucketSize']) #'1000'
-    HIDDEN_UNITS_LAYER_01 = int(dictParams['Parameters'][0]) # 128 #@param
-    HIDDEN_UNITS_LAYER_02 = int(dictParams['Parameters'][1]) # 64 #@param
-    LEARNING_RATE         = float(dictParams['Parameters'][2]) # 0.1 #@param
-    L1_REGULARIZATION_STRENGTH = float(dictParams['Parameters'][3]) # 0.001 #@param
-    L2_REGULARIZATION_STRENGTH = float(dictParams['Parameters'][4]) # 0.001 #@param
-    EPOCHS     = int(dictParams['Parameters'][5]) # 10 #@param
-    BATCH_SIZE = int(dictParams['Parameters'][6]) # 500 #@param
+    HashBucketSize = int(dictParams['AlgParameters']['HashBucketSize']) #'1000'
+    HIDDEN_UNITS_LAYER_01 = int(dictParams['AlgParameters']['Parameters'][0]) # 128 #@param
+    HIDDEN_UNITS_LAYER_02 = int(dictParams['AlgParameters']['Parameters'][1]) # 64 #@param
+    LEARNING_RATE         = float(dictParams['AlgParameters']['Parameters'][2]) # 0.1 #@param
+    L1_REGULARIZATION_STRENGTH = float(dictParams['AlgParameters']['Parameters'][3]) # 0.001 #@param
+    L2_REGULARIZATION_STRENGTH = float(dictParams['AlgParameters']['Parameters'][4]) # 0.001 #@param
+    EPOCHS     = int(dictParams['AlgParameters']['Parameters'][5]) # 10 #@param
+    BATCH_SIZE = int(dictParams['AlgParameters']['Parameters'][6]) # 500 #@param
     
-    arrCategorfeatures = dictParams['Categorfeatures'] # categorical features
-    arrNumericfeatures = dictParams['Numericfeatures'] # numeric features
+    arrCategorfeatures = dictParams['AlgParameters']['Categorfeatures'] # categorical features
+    arrNumericfeatures = dictParams['AlgParameters']['Numericfeatures'] # numeric features
 
     RANDOM_SEED = 512
     tf.random.set_seed(RANDOM_SEED)
@@ -72,10 +72,10 @@ def run_gi(dictParams, dataFrmTRN, dataFrmTST):
         feature_col = tf.feature_column.bucketized_column(numeric_col, boundaries = arrBndList)
         listColumnFeatures.append(feature_col)
     
-    listIndicatorFeatures = []
+    listDenseFeatures = []
     for col in listColumnFeatures:
-        indicator = tf.feature_column.indicator_column(col)
-        listIndicatorFeatures.append(indicator)
+        indicatorCol = tf.feature_column.indicator_column(col)
+        listDenseFeatures.append(indicatorCol)
 
     # set param & run
     METRICS = [
@@ -92,7 +92,7 @@ def run_gi(dictParams, dataFrmTRN, dataFrmTST):
     regularizer = tf.keras.regularizers.l1_l2(l1=L1_REGULARIZATION_STRENGTH, l2=L2_REGULARIZATION_STRENGTH)
 
     model = tf.keras.Sequential([
-        layers.DenseFeatures(listIndicatorFeatures),
+        layers.DenseFeatures(listDenseFeatures),
         layers.Dense(HIDDEN_UNITS_LAYER_01, activation='relu', kernel_regularizer=regularizer),
         layers.Dense(HIDDEN_UNITS_LAYER_02, activation='relu', kernel_regularizer=regularizer),
         layers.Dense(1, activation='sigmoid', kernel_regularizer=regularizer)
@@ -107,48 +107,57 @@ def run_gi(dictParams, dataFrmTRN, dataFrmTST):
     model.evaluate(x=features, y=labels)
 
     # make result
-    arrDataTpr = []
-    arrDataCMx = []
-    arrMetric = []
-    arrImgTag = []
-                    
+    arrConfMatrix = []
+    arrHMapElemnt = []
+    arrHtmlImgTag = []
+    
     for subgroup in SubGroupVals:
 
         subgroup_filter  = dataFrmTST.loc[dataFrmTST[SubGroupCol] == subgroup]
         features, labels = pandas_to_numpy(subgroup_filter, ClassifyCol, ClassifyVals[0])
         subgroup_results = model.evaluate(x=features, y=labels, verbose=0)
+        
+        TP = subgroup_results[1]
+        FP = subgroup_results[2]
+        TN = subgroup_results[3]
+        FN = subgroup_results[4]
 
-        performance_metrics = { 'TPR=TP/(TP+FN)': subgroup_results[7], 'FNR=FN/(TP+FN)': 1 - subgroup_results[7] }
-        arrMetric.append(performance_metrics)
+        performance_metrics = {
+            'TP': TP,
+            'TN': TN,
+            'FP': FP,
+            'FN': FN,
+            'TPR': TP/(TP+FN),
+            'TNR': TN/(TN+FP),
+            'FPR': FP/(FP+TN),
+            'FNR': FN/(TP+FN)
+        }
+        arrConfMatrix.append(performance_metrics)
 
-        confusion_matrix = np.array([[subgroup_results[1], subgroup_results[4]], [subgroup_results[2], subgroup_results[3]]])
-        graph = plot_confusion_matrix(confusion_matrix, ClassifyLbls, subgroup)
-
-        arrDataTpr.append(subgroup_results[7])
         dictDataCMx = {}
         dictDataCMx['title'] = 'Confusion Matrix for Performance Across ' + subgroup
         dictDataCMx['axislable'] = ['Predictions', 'References']
         dictDataCMx['ticklable'] = ClassifyLbls
-        dictDataCMx['axisvalue'] = {
-            'True Positives': subgroup_results[1], 'False Negatives':subgroup_results[4],
-            'False Positives':subgroup_results[2], 'True Negatives': subgroup_results[3] }
-        arrDataCMx.append(dictDataCMx)
+        dictDataCMx['axisvalue'] = { 'True Positives': TP, 'False Negatives': FN, 'False Positives': FP, 'True Negatives': TN }
+        arrHMapElemnt.append(dictDataCMx)
 
-        arrImgTag.append( graph )
+        confusion_matrix = np.array([[TP, FN], [FP, TN]])
+        graph = plot_confusion_matrix(confusion_matrix, ClassifyLbls, subgroup)
+        arrHtmlImgTag.append( graph )
 
-    print('gi::end', arrDataTpr)
+    print('gi::end', arrConfMatrix)
 
-    return arrDataTpr, arrDataCMx, arrMetric, arrImgTag
+    return arrConfMatrix, arrHMapElemnt, arrHtmlImgTag
 
 
 def run_sklearn(dictParams, dataFrmTRN, dataFrmTST):
     print('skl::start')
 
-    sAlgType = 'svm'
+    AlgorithmType = 'svm'
     if 'AlgorithmType' in dictParams:
-        sAlgType = dictParams['AlgorithmType'] # lr, sdg, svm
+        AlgorithmType = dictParams['AlgorithmType'] # lr, sdg, svm
         
-    print('skl::alg', sAlgType)
+    print('skl::alg', AlgorithmType)
 
     ClassifyCol = dictParams['ClassifyCol'] # 'damage'
     ClassifyVals = []
@@ -167,6 +176,10 @@ def run_sklearn(dictParams, dataFrmTRN, dataFrmTST):
         else:
              SubGroupVals.append( f"{item}" )
 
+    RunTsneUmap = 'off'
+    if 'RunTsneUmap' in dictParams:
+        RunTsneUmap = dictParams['RunTsneUmap']
+
     print(ClassifyCol)
     print(ClassifyVals)
     print(ClassifyLbls)
@@ -180,110 +193,117 @@ def run_sklearn(dictParams, dataFrmTRN, dataFrmTST):
     dfFeaturesTrn = dataFrmTRN[FeaturesCol].copy() # X
     dfClassifyTrn = dataFrmTRN[ClassifyCol].copy() # y
         
-    dictLE = {}
-    le = LabelEncoder()
-    dfClassifyTrn = le.fit_transform(dfClassifyTrn)
-    dictLE[ClassifyCol] = le
+    # dictLE = {}
+    # le = LabelEncoder()
+    # dfClassifyTrn = le.fit_transform(dfClassifyTrn)
+    # dictLE[ClassifyCol] = le
 
-    for col in dfFeaturesTrn.columns:
-        le = LabelEncoder()
-        dfFeaturesTrn.loc[:,col] = le.fit_transform(dfFeaturesTrn[col].copy())
-        dictLE[col] = le
+    # for col in dfFeaturesTrn.columns:
+    #     le = LabelEncoder()
+    #     dfFeaturesTrn.loc[:,col] = le.fit_transform(dfFeaturesTrn[col].copy())
+    #     dictLE[col] = le
     
-    # prevent unseen labels error
-    for col in dataFrmTRN.columns:
-        le = dictLE[col]
-        for label in np.unique(dataFrmTST[col]):
-            if label not in le.classes_:
-                le.classes_ = np.append(le.classes_, label)
+    # # prevent unseen labels error
+    # for col in dataFrmTRN.columns:
+    #     le = dictLE[col]
+    #     for label in np.unique(dataFrmTST[col]):
+    #         if label not in le.classes_:
+    #             le.classes_ = np.append(le.classes_, label)
     
-    for col in dataFrmTRN.columns:
-        le = dictLE[col]
-        dataFrmTST.loc[:,col] = le.transform(dataFrmTST[col].copy())
-        dataFrmTRN.loc[:,col] = le.transform(dataFrmTRN[col].copy())
+    # for col in dataFrmTRN.columns:
+    #     le = dictLE[col]
+    #     dataFrmTST.loc[:,col] = le.transform(dataFrmTST[col].copy())
+    #     dataFrmTRN.loc[:,col] = le.transform(dataFrmTRN[col].copy())
 
-    sc = MinMaxScaler()
-    sc.fit(dfFeaturesTrn)
-    dfFeaturesTrn = sc.transform(dfFeaturesTrn)
+    # sc = MinMaxScaler()
+    # sc.fit(dfFeaturesTrn)
+    # dfFeaturesTrn = sc.transform(dfFeaturesTrn)
 
     model = None
-    if sAlgType == 'lr':
+    if AlgorithmType == 'lr':
         model = LogisticRegression()
-    elif sAlgType == 'sdg':
+    elif AlgorithmType == 'sdg':
         model = SGDClassifier()
     else: # svm
         model = LinearSVC(C = 1.0)
     model.fit(dfFeaturesTrn, dfClassifyTrn)
 
     # make result
-    arrDataTpr = []
-    arrDataCMx = []
-    arrMetric = []
-    arrImgTag = []
+    arrConfMatrix = []
+    arrHMapElemnt = []
+    arrHtmlImgTag = []
 
-    index = dictLE[SubGroupCol].transform(SubGroupVals)
-    lable = dictLE[SubGroupCol].inverse_transform(index)
-    subgroups = []
-    for idx, item in enumerate(index):
-        subgroups.append( {'index': item, 'label': lable[idx]} )
+    # index = dictLE[SubGroupCol].transform(SubGroupVals)
+    # lable = dictLE[SubGroupCol].inverse_transform(index)
+    # subgroups = []
+    # for idx, item in enumerate(index):
+    #     subgroups.append( {'index': item, 'label': lable[idx]} )
 
-    for sub in subgroups:
+    # for sub in subgroups:
 
-        subfeatures = dataFrmTST.loc[dataFrmTST[SubGroupCol] == sub['index']][FeaturesCol].copy()
-        sublables   = dataFrmTST.loc[dataFrmTST[SubGroupCol] == sub['index']][ClassifyCol].copy()
+    #     subfeatures = dataFrmTST.loc[dataFrmTST[SubGroupCol] == sub['index']][FeaturesCol].copy()
+    #     sublables   = dataFrmTST.loc[dataFrmTST[SubGroupCol] == sub['index']][ClassifyCol].copy()
+    for sub in SubGroupVals:
+
+        subfeatures = dataFrmTST.loc[dataFrmTST[SubGroupCol] == sub][FeaturesCol].copy()
+        sublables   = dataFrmTST.loc[dataFrmTST[SubGroupCol] == sub][ClassifyCol].copy()
+
+        print(dataFrmTST.head())
 
         results = model.predict(subfeatures)
         print(classification_report(sublables, results))
         
+        #Accuracy = np.mean(np.equal(sublables, results))
         TP = np.sum((sublables == 1) & (results == 1))
         TN = np.sum((sublables == 0) & (results == 0))
         FP = np.sum((sublables == 0) & (results == 1))
         FN = np.sum((sublables == 1) & (results == 0))
-        #Accuracy = np.mean(np.equal(sublables, results))
 
         performance_metrics = {
+            'TP': str(TP),
+            'TN': str(TN),
+            'FP': str(FP),
+            'FN': str(FN),
             #'ACCURACY': Accuracy,
-            'TPR=TP/(TP+FN)': TP/(TP+FN),
-            'TNR=TN/(TN+FN)': TN/(TN+FP),
-            'FPR=FP/(TP+FP)': FP/(FP+TN),
-            'FNR=FN/(TP+FN)': FN/(TP+FN)
+            'TPR': str(TP/(TP+FN)),
+            'TNR': str(TN/(TN+FP)),
+            'FPR': str(FP/(FP+TN)),
+            'FNR': str(FN/(TP+FN))
         }
-        arrMetric.append(performance_metrics)
+        arrConfMatrix.append(performance_metrics)
 
-        confusion_matrix = np.array([[TP, FN], [FP, TN]])
-
-        arrDataTpr.append( performance_metrics['TPR=TP/(TP+FN)'] )
         dictDataCMx = {}
-        dictDataCMx['title'] = 'Confusion Matrix for Performance Across ' + f"{sub['label']}"
+        dictDataCMx['title'] = 'Confusion Matrix for ' + f"{SubGroupCol} {sub}" # f"{sub['label']
         dictDataCMx['axislable'] = ['Predictions', 'References']
         dictDataCMx['ticklable'] = ClassifyLbls
         dictDataCMx['axisvalue'] = {
             'True Positives': str(TP), 'False Negatives':str(FN),
             'False Positives':str(FP), 'True Negatives': str(TN) }
-        arrDataCMx.append(dictDataCMx)
+        arrHMapElemnt.append(dictDataCMx)
 
-        graph = plot_confusion_matrix(confusion_matrix, ClassifyLbls, f"{sub['label']}")
-        arrImgTag.append( graph )
+        confusion_matrix = np.array([[TP, FN], [FP, TN]])
+        graph = plot_confusion_matrix(confusion_matrix, ClassifyLbls, dictDataCMx['title'])
+        arrHtmlImgTag.append( graph )
 
     # t-SNE & UMAP
-    tsne = TSNE(n_components=2).fit_transform(dfFeaturesTrn)
-    umap = um.UMAP().fit_transform(dfFeaturesTrn)
+    if RunTsneUmap == 'on':
+        tsne = TSNE(n_components=2).fit_transform(dfFeaturesTrn)
+        umap = um.UMAP().fit_transform(dfFeaturesTrn)
 
-    dfTsneUmap = dataFrmTRN.copy()
-    dfTsneUmap["tsne_dim_1"] = tsne[:, 0]
-    dfTsneUmap["tsne_dim_2"] = tsne[:, 1]
-    dfTsneUmap["umap_dim_1"] = umap[:, 0]
-    dfTsneUmap["umap_dim_2"] = umap[:, 1]
+        dfTsneUmap = dataFrmTRN.copy()
+        dfTsneUmap["tsne_dim_1"] = tsne[:, 0]
+        dfTsneUmap["tsne_dim_2"] = tsne[:, 1]
+        dfTsneUmap["umap_dim_1"] = umap[:, 0]
+        dfTsneUmap["umap_dim_2"] = umap[:, 1]
 
-    print(dfTsneUmap.head())
+        print(dfTsneUmap.head())
 
-    graph = plot_tsne(dfTsneUmap, ClassifyCol, ClassifyLbls)
-    # graph = f'<img src = "data:image/png;base64" style="height:100%;width:100%;object-fit:contain"/>'
-    arrImgTag.append( graph )
+        graph = plot_tsne(dfTsneUmap, ClassifyCol, ClassifyLbls)
+        arrHtmlImgTag.append( graph )
 
-    print('skl::end', arrDataTpr)
+    print('skl::end', arrConfMatrix)
 
-    return arrDataTpr, arrDataCMx, arrMetric, arrImgTag
+    return arrConfMatrix, arrHMapElemnt, arrHtmlImgTag
 
     
 def pandas_to_numpy(data, colName, colValue):
@@ -296,7 +316,7 @@ def pandas_to_numpy(data, colName, colValue):
     return features, labels
 
     
-def plot_confusion_matrix(confusion_matrix, class_names, subgroup):
+def plot_confusion_matrix(confusion_matrix, class_names, title):
     
     importlib.reload(plt)
     importlib.reload(sns)
@@ -320,7 +340,7 @@ def plot_confusion_matrix(confusion_matrix, class_names, subgroup):
     plt.ylabel('References')
         
     buf = io.BytesIO()
-    st = fig.suptitle('Confusion Matrix for Performance Across ' + subgroup)
+    st = fig.suptitle(title)
     fig.savefig(buf, format='png', bbox_extra_artists=[st], bbox_inches='tight')
     buf.seek(0)
     str = base64.b64encode(buf.read())
@@ -328,7 +348,7 @@ def plot_confusion_matrix(confusion_matrix, class_names, subgroup):
     plt.close(fig)
 
     uri = 'data:image/png;base64,' + urllib.parse.quote(str)
-    html = f'<img src = "{uri}" alt="{subgroup}" style="height:100%;width:100%;object-fit:contain"/>'
+    html = f'<img src = "{uri}" style="height:100%;width:100%;object-fit:contain"/>'
 
     return html
 
@@ -340,17 +360,17 @@ def plot_tsne(df, title, labels):
     
     plt.switch_backend('agg')
     
-    fig = plt.figure(figsize=(16,10))
+    fig = plt.figure(figsize=(8,16))
 
     colors = ["#005A9C", "#FFA500"] # "dodgerblue" "orange"
     sns.set_palette(sns.color_palette(colors))
 
-    ax1 = fig.add_subplot(1,2,1)
+    ax1 = fig.add_subplot(2,1,1)
     ax1.set_title("t-SNE")
     sp1 = sns.scatterplot(data=df, x="tsne_dim_1", y="tsne_dim_2", hue=title, s=10, ax=ax1)
     # sp1.legend(loc='upper right', title=title, labels=labels)
 
-    ax2 = fig.add_subplot(1,2,2)
+    ax2 = fig.add_subplot(2,1,2)
     ax2.set_title("UMAP")
     sp2 = sns.scatterplot(data=df, x="umap_dim_1", y="umap_dim_2", hue=title, s=10, ax=ax2)
     # sp2.legend(loc='upper right', title=title, labels=labels)

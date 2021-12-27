@@ -17,17 +17,22 @@
     <!-- <script src="vendor/jquery/jquery-3.5.1.min.js"></script> -->
     <!-- <link rel="stylesheet" href="vendor/bootstrap-4.5.3/css/bootstrap.min.css"> -->
     <!-- <script src="vendor/bootstrap-4.5.3/js/bootstrap.min.js"></script> -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" />
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/floatthead/2.2.1/jquery.floatThead.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/1.3.3/webcomponents-lite.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" />
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/9.3.0/highcharts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/9.3.0/themes/dark-unica.src.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"> </script>
-    
+  
     {% load static %}
+    <script src="{% static 'd3-7.0.1/d3.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'sunburst-1.15.2/sunburst.css' %}" />
+    <script src="{% static 'sunburst-1.15.2/sunburst-chart.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/jquery.ajax-cross-origin.min.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/qufa.css' %}">
 </head>
@@ -52,35 +57,92 @@
                 </div>
                 <!-- In=page Anchor Links -->
                 <div class= "nav-links">
-                    <div class="nav-link"><a href="index#about">About</a></div>
-                    <div class="nav-link"><a id='idAStep1' href="index#loaddataset">Load Dataset</a></div>
-                    <div class="nav-link"><a id='idAStep2' href="index#facetsoverview">Overview</a></div>
-                    <div class="nav-link"><a id='idAStep3' href="index#predicting">Predicting</a></div>
-                    <div class="nav-link"><a id='idAStep4' href="index#result">Result</a></div>
+                    <div class="nav-link"><a id='idAStep1' href="index#loaddataset">Loading</a></div>
+                    <div class="nav-link"><a id='idAStep2' href="index#overview">Overview</a></div>
+                    <div class="nav-link"><a id='idAStep3' href="index#sunburst">Sunburst</a></div>
+                    <div class="nav-link"><a id='idAStep4' href="index#predicting">Predicting</a></div>
+                    <div class="nav-link"><a id='idAStep5' href="index#result">Result</a></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div><h1 class="font-weight-bold text-center text-primary">Data Fairness Improvement</h1></div>
-
-<div class="separator" id="about"><!-- separating line --></div>
+<div><h1 class="font-weight-bold text-center text-primary">기계학습 구분 기반의 공정성 검증</h1></div>
     
-<div class="title"><h1><i class="fas fa-dice-one"></i> About</h1></div>
+<div class="title"><h1><i class="fas fa-dice-one"></i> 공정성 검증 모델</h1></div>
 
     <div class="clearfix">
-        <div class="subhead">
-            <h2><span style='padding-left:30px;'></span><i class="fas fa-angle-right"></i> 목표</h2>
+        <div>
+            <h2><span style='padding-left:30px;'></span><i class="fas fa-angle-right"></i> 모델 선택</h2>
         </div>
-        <div class="desc-copy">
-            <p><i class="fas fa-angle-right"></i> 빅데이터 공정성 확보를 위한 데이터셋 검증 및 보정 기술 개발</p>
+        <div class="container" style='width:100%;'>
+            <div class='row' style='height:50px;'>
+                <div class='col-4'></div>
+                <div class='col-4'>
+                    <h4 class="font-weight-bold text-center text-primary">공정성 지표 선택</h4>
+                </div>
+                <div class='col-4'></div>
+            </div>
+            <div class='row'>
+                <div class='col-2'>
+                    <h5 class="font-weight-bold text-left text-secondary">분류</h5>
+                </div>
+                <div class='col'>
+                    <div id='idDivMLTask'></div>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-2'>
+                    <h5 class="font-weight-bold text-left text-secondary">지표</h5>
+                </div>
+                <div class='col'>
+                    <div id='idDivParity'></div>
+                </div>
+            </div>
+            <div class='row' style='padding-top:15px;'>
+                <div class='col-2'></div>
+                <div class='col'>
+                    <div class='clsbinary clsbinaryequaloppo'>
+                        <p>◎ 균등 기회 (Equality of opportunity)</br>
+                        &nbsp;&nbsp;&nbsp;: 보호 그룹과 보호되지 않은 그룹은 동일한 참 긍정(true positive)의 비율을 가져야 함</p>
+                        <p>
+                            \[P_0\space\left[C=1\middle|Y=1\right]=P_1\left[C=1\middle|Y=1\right]\]
+                        </p>
+                    </div>
+                    <div class='clsbinary clsbinaryequalodds'>
+                        <p>◎ 균등 승률 (Equalized Odds)</br>
+                        &nbsp;&nbsp;&nbsp;: 보호된 그룹과 보호되지 않은 그룹은 참 긍정(true positive)과 오탐지(false negative)에 대해 동일한 비율을 가져야함</p>
+                        <p>
+                            \[P_0\space\left[C=r\middle|Y=y\right]=P_1\left[C=r\middle|Y=y\right]\space\forall\space r,y\]
+                        </p>
+                    </div>
+                    <div class='clsbinary clsbinarydmgparity'>
+                        <p>◎ 인구통계패리티 (Demographic Parity)</br>
+                        &nbsp;&nbsp;&nbsp;: 긍정적인 결과의 가능성은 개인이 보호된(예 : 여성) 그룹에 있는지 여부 에 관계없이 동일해야 함</p>
+                        <p>
+                            \[P_0\space\left[C=c\right]=P_1\left[C=c\right]\space\forall\space c\in\{0,1\}\]
+                        </p>
+                    </div>
+                    <div class='clsregres clsregresdmgparity'>
+                        <p>◎ 인구통계패리티 (Demographic Parity)</br>
+                        &nbsp;&nbsp;&nbsp;: 긍정적인 결과의 가능성은 개인이 보호된(예 : 여성) 그룹에 있는지 여부 에 관계없이 동일해야 함</p>
+                        <p>
+                            \[P_0\space\left[C=c\right]=P_1\left[C=c\right]\space\forall\space c\in\{0,1\}\]
+                        </p>
+                    </div>
+                    <div class='clsregres clsregresbndgrplos'>
+                        <p>◎ 제한된 그룹 손실</p></br>
+                        &nbsp;&nbsp;&nbsp;Under Construction</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
 <div class="separator" id="loaddataset"><!-- separating line --></div>
 
-<div class="title"><h1><i class="fas fa-dice-two"></i> Dataset Overview</h1></div>
+<div class="title"><h1><i class="fas fa-dice-two"></i> Overview</h1></div>
 
     <div class="clearfix">
         <div>
@@ -97,7 +159,7 @@
             <div class='row'>
                 <div class='col-10'>
                     <span class='btn btn-sm btn-success fileinput-button loading'>
-                    <span id='idSpanXls0'><i class='fa fa-table'></i> Set Train File</span>
+                    <span id='idSpanXls0'><i class='fa fa-table'></i> Select Dataset File</span>
                     <input type='file' id="fileupload" accept="text/csv,.csv" />
                     </span>&nbsp;
                     <input type='text' id="idFileName" style='width:100%;' readonly />
@@ -118,47 +180,57 @@
                 <div class='col'>
                     <ul id='idUlRcvFiles' class='loading'></ul>
                     <p><i class="fas fa-angle-right"></i> Train File List: </p>
-                        <select id='idSelFileList' size='5' style='width:100%;height:200px;'>
+                        <select id='idSelFileList' size='5' style='width:100%;height:100px;'>
                         </select>
                 </div>
             </div>
             <div class='row' style='height:90px;padding-top:40px;'>
+                <div class='col-6'>
+                    <input type='checkbox' id='idChkRunTsneUmap' class='loading' checked /><label for='idChkRunTsneUmap'>&nbsp;Run t-SNE & UMAP</label>
+                </div>
+                <div class='col-6 text-right'>
+                    <input type='checkbox' id='idChkManualRun' class='loading' checked /><label for='idChkManualRun'>&nbsp;Manual Mode</label>
+                </div>
+            </div>
+            <div class='row'>
                 <div class='col text-center'>
                     <button id='idBtnLoading' class='btn btn-primary loading' style='width:100%;height:100%;'><i class="fas fa-upload"></i> Load Dataset</button>
                 </div>
             </div>
 
-            <div class='row' style='height:90px;padding-top:40px;'>
-                <div class='col-4'></div>
-                <div class='col-4'>
-                    <h4 class="font-weight-bold text-center text-primary">Data Sample</h4>
+            <div style='display:none;'>
+                <div class='row' style='height:90px;padding-top:40px;'>
+                    <div class='col-4'></div>
+                    <div class='col-4'>
+                        <h4 class="font-weight-bold text-center text-primary">Data Sample</h4>
+                    </div>
+                    <div class='col-4'></div>
                 </div>
-                <div class='col-4'></div>
-            </div>
-            <div class='row'>
-                <div class='col'style='height:300px;'>
-                    <div class='border-all' style='height:280px;overflow-y:auto;'>
-                        <table id='idTblRawData0' class='table' style='width:100%' cellspacing="0">
-                            <thead> </thead>
-                            <tbody> </tbody>
-                        </table>
+                <div class='row'>
+                    <div class='col'style='height:300px;'>
+                        <div class='border-all' style='height:280px;overflow-y:auto;'>
+                            <table id='idTblRawData0' class='table' style='width:100%' cellspacing="0">
+                                <thead> </thead>
+                                <tbody> </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class='row'>
-                <div class='col'style='height:300px;'>
-                    <div class='border-all' style='height:280px;overflow-y:auto;'>
-                        <table id='idTblRawData1' class='table' style='width:100%' cellspacing="0">
-                            <thead> </thead>
-                            <tbody> </tbody>
-                        </table>
+                <div class='row'>
+                    <div class='col'style='height:300px;'>
+                        <div class='border-all' style='height:280px;overflow-y:auto;'>
+                            <table id='idTblRawData1' class='table' style='width:100%' cellspacing="0">
+                                <thead> </thead>
+                                <tbody> </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-<div class="separator" id="facetsoverview"><!-- separating line --></div>
+<div class="separator" id="overview"><!-- separating line --></div>
         
     <div class="clearfix">
         <div class="subhead">
@@ -173,249 +245,277 @@
                 <h4 class="font-weight-bold text-center text-primary">Dataset Overview</h4>
             </div>
         </div>
+        <div class='row' style='height:25px;'>
+            <div class='col-6 text-center' style='background-color:#AAC8FF'>BEFORE</div>
+            <div class='col-6 text-center' style='background-color:#FFAAC8'>AFTER</div>
+        </div>
+        <div class='row' style='height:25px;'><div class='col'></div></div>
         <div class='row'>
-            <div class='col'>
-                <h5 class="font-weight-bold text-left text-secondary">Numeric Features</h5>
+            <div class='col-6'>
+                <div id='idDivOverview0'></div>
+            </div>
+            <div class='col-6'>
+                <div id='idDivOverview1'></div>
             </div>
         </div>
-        <div class='row'>
-            <div class='col'>
-                <div class='table-responsive'>
-                    <table id='idTblNumeric' class='table sticky-header' style='width:100%' cellspacing="0">
-                        <thead>
-                            <tr>
-                                <th class="text-center" style='width:5rem'>count</th>
-                                <th class="text-center" style='width:5rem'>mean</th>
-                                <th class="text-center" style='width:5rem'>std dev</th>
-                                <th class="text-center" style='width:5rem'>zeros</th>
-                                <th class="text-center" style='width:5rem'>min</th>
-                                <th class="text-center" style='width:5rem'>median</th>
-                                <th class="text-center" style='width:5rem'>max</th>
-                                <th class="text-center">Chart</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan=8 style='height:100px;'></td> </tr>
-                        </tbody>
-                    </table>
+        <div style='display:none;'>
+            <div class='row'>
+                <div class='col'>
+                    <h5 class="font-weight-bold text-left text-secondary">Overview Diagram</h5>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                    <div id='idDivTable' class='table-responsive'>
+                        <table id='idTblHighChart0' class='table' style='width:100%' cellspacing="0">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                        <table id='idTblHighChart1' class='table' style='width:100%' cellspacing="0">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
         <div class='row'>
-            <div class='col'>
-                <h5 class="font-weight-bold text-left text-secondary">Categorical Features</h5>
+            <div class='col text-center'>
+                * Overview 항목 내 각각의 Chart 'Click' 시 확대 표시 *
             </div>
         </div>
+    </div>
+
+<div class="separator" id="sunburst"><!-- separating line --></div>
+    
+<div class="title"><h1><i class="fas fa-dice-three"></i> Sunburst</h1></div>
+        
+    <div class="clearfix">
+        <div class="subhead">
+            <h2><span style='padding-left:30px;'></span><i class="fas fa-angle-right"></i> Parameter</h2>
+        </div>
+        <div class="desc-copy">
+        </div>
+    </div>
+    <div class="container" style='width:100%;'>
+        <div id='idDivParamMLT0' class='row'>
+            <div class='col'>
+                <div class='row'>
+                    <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
+                    <div class='col-2' style='text-align:right;'>Classfication Column:</div>
+                    <div class='col-3'>
+                        <select  id='idSelCol4Classify' class='running' style='width:100%;height:28px;'></select>
+                    </div>
+                    <div class='col-2'></div>
+                    <div class='col-3'>
+                        <ul id='idUlClassifyVals' class='running' hidden></ul>
+                    </div>
+                    <div class='col-1'></div>
+                </div>
+                <div class='row'>
+                    <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
+                    <div class='col-2' style='text-align:right;'>Classfication Labels:</div>
+                    <div class='col-3'>
+                        <input type='text' id='idTxtClassifyLblA' class='running' style='width:100%;height:28px;' />
+                    </div>
+                    <div class='col-2' style='text-align:center;'>
+                        <span style='padding-left:15px;'></span> /
+                    </div>
+                    <div class='col-3'>
+                        <input type='text' id='idTxtClassifyLblB' class='running' style='width:100%;height:28px;' />
+                    </div>
+                    <div class='col-1'></div>
+                </div>
+                <div class='row'>
+                    <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
+                    <div class='col-2' style='text-align:right;'>Sub Group Column:</div>
+                    <div class='col-3'>
+                        <select  id='idSelCol4SubGroup' class='running' style='width:100%;height:28px;'></select>
+                    </div>
+                    <div class='col-2'></div>
+                    <div class='col-3'>
+                        <ul id='idUlSubGroupVals' class='running' hidden></ul>
+                    </div>
+                    <div class='col-1'></div>
+                </div>
+            </div>
+        </div>
+        <div class='row' style='height:90px;padding-top:40px;'>
+            <div class='col text-center'>
+                <button id='idBtnRunSnB' class='btn btn-primary running' style='width:200px;height:50px;'><i class="fab fa-deezer"></i> Run</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="clearfix">
+        <div class="subhead">
+            <h2><span style='padding-left:30px;'></span><i class="fas fa-angle-right"></i> Result</h2>
+        </div>
+        <div class="desc-copy">
+        </div>
+    </div>
+    <div class="container" style='width:100%;'>
         <div class='row'>
             <div class='col'>
-                <div class='table-responsive'>
-                    <table id='idTblCategor' class='table sticky-header' style='width:100%' cellspacing="0">
-                        <thead>
-                            <tr>
-                                <th class="text-center" style='width:7rem'>count</th>
-                                <th class="text-center" style='width:7rem'>unique</th>
-                                <th class="text-center" style='width:7rem'>top</th>
-                                <th class="text-center" style='width:7rem'>freq top</th>
-                                <th class="text-center" style='width:7rem'>avg str len</th>
-                                <th class="text-center">Chart</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan=8 style='height:100px;'></td> </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <h4 class="font-weight-bold text-center text-primary">Chart</h4>
+            </div>
+        </div>
+        <div class='row' style='height:25px;'>
+            <div class='col-6 text-center' style='background-color:#AAC8FF'>BEFORE</div>
+            <div class='col-6 text-center' style='background-color:#FFAAC8'>AFTER</div>
+        </div>
+        <div class='row' style='height:25px;'><div class='col'></div></div>
+        <div class='row' style='height:400px;'>
+            <div class='col-6'>
+                <div id='idDivSbChartA' class='text-center' style='width:100%;height:100%;'></div>
+            </div>
+            <div class='col-6'>
+                <div id='idDivSbChartB' class='text-center' style='width:100%;height:100%;'></div>
+            </div>
+        </div>
+        <div class='row' style='height:90px;padding-top:40px;'>
+            <div class='col-6 text-center'>
+                <button id='idBtnZoomA' class='btn btn-warning' style='width:50px;height:50px;'><i class="fa fa-search-plus"></i></button>
+            </div>
+            <div class='col-6 text-center'>
+                <button id='idBtnZoomB' class='btn btn-warning' style='width:50px;height:50px;'><i class="fa fa-search-plus"></i></button>
             </div>
         </div>
     </div>
 
 <div class="separator" id="predicting"><!-- separating line --></div>
     
-<div class="title"><h1><i class="fas fa-dice-three"></i> Predicting</h1></div>
+<div class="title"><h1><i class="fas fa-dice-four"></i> Predicting</h1></div>
 
     <div class="clearfix">
         <div class="subhead">
-            <h2><span style='padding-left:30px;'></span><i class="fas fa-angle-right"></i> Set Parameters</h2>
+            <h2><span style='padding-left:30px;'></span><i class="fas fa-angle-right"></i> Predicting</h2>
         </div>
         <div class="desc-copy">
         </div>
     </div>
     <div class="container" style='width:100%;'>
+        <h5 class="font-weight-bold text-left text-secondary">
         <div class='row' style='height:50px;'>
-            <div class='col-4'></div>
-            <div class='col-4'>
-                <h4 class="font-weight-bold text-center text-primary">Set Criteria</h4>
-            </div>
-            <div class='col-4'></div>
-        </div>
-        <div id='idDivStep0' class='row'>
             <div class='col'>
-                <h5 class="font-weight-bold text-left text-secondary">
-                    <div class='row'>
-                        <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
-                        <div class='col-2' style='text-align:right;'>Criteria Column:</div>
-                        <div class='col-3'>
-                            <select  id='idSelCol4Criteria' class='running step0' style='width:100%;height:28px;'></select>
-                        </div>
-                        <div class='col-2' style='text-align:right;'>Criteria Label:</div>
-                        <div class='col-3'>
-                            <select  id='idSelCriterColLbl' class='running step0' style='width:100%;height:28px;'></select>
-                        </div>
-                        <div class='col-1'></div>
-                    </div>
-                    <div class='row'>
-                        <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
-                        <div class='col-2' style='text-align:right;'>Hash Bucket Column:</div>
-                        <div class='col-3'>
-                            <select  id='idSelCol4HashBukt' class='running step0' style='width:100%;height:28px;'></select>
-                        </div>
-                        <div class='col-2' style='text-align:right;'>
-                            <span style='padding-left:15px;'></span> Bucket Size:
-                        </div>
-                        <div class='col-3'>
-                            <input type='number' id='idTxtHashBkSize' class='running step0' style='width:60px;height:28px;' value='1000' />
-                        </div>
-                        <div class='col-1'></div>
-                    </div>
-                </h5>
+                <h4 class="font-weight-bold text-center text-primary">Parameter</h4>
             </div>
         </div>
-        <div class='row' style='height:70px;padding-top:20px;'>
-            <div class='col text-center'>
-                <button id='idBtnGoStep1' class='btn btn-warning running step0' style='width:200px;height:50px;'><i class="fa fa-arrow-right"></i> Next</button>
-            </div>
-        </div>
-        <div class='row' style='height:90px;padding-top:40px;'>
-            <div class='col-4'></div>
-            <div class='col-4'>
-                <h4 class="font-weight-bold text-center text-primary">Categorical Feature</h4>
-            </div>
-            <div class='col-4'></div>
-        </div>
-        <div id='idDivStep1' class='row'>
-            <div id='idDivItem1' class='col'></div>
-        </div>
-        <div class='row' style='height:70px;padding-top:20px;'>
-            <div class='col text-center'>
-                <button id='idBtnGoStep2' class='btn btn-warning running step1' style='width:200px;height:50px;'><i class="fa fa-arrow-right"></i> Next</button>
-            </div>
-        </div>
-        <div class='row' style='height:90px;padding-top:40px;'>
-            <div class='col-4'></div>
-            <div class='col-4'>
-                <h4 class="font-weight-bold text-center text-primary">Numeric Feature</h4>
-            </div>
-            <div class='col-4'></div>
-        </div>
-        <div id='idDivStep2' class='row'>
-            <div id='idDivItem2' class='col'></div>
-        </div>
-        <div class='row' style='height:70px;padding-top:20px;'>
-            <div class='col text-center'>
-                <button id='idBtnGoStep3' class='btn btn-warning running step2' style='width:200px;height:50px;'><i class="fa fa-arrow-right"></i> Next</button>
-            </div>
-        </div>
-        <div class='row' style='height:90px;padding-top:40px;'>
-            <div class='col-4'></div>
-            <div class='col-4'>
-                <h4 class="font-weight-bold text-center text-primary">Set Parameter</h4>
-            </div>
-            <div class='col-4'></div>
-        </div>
-        <div id='idDivStep3' class='row'>
+        <div id='idDivParamMLT1' class='row'>
             <div class='col'>
-                <h5 class="font-weight-bold text-left text-secondary">
-                    <div class='row'>
-                        <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
-                        <div class='col-2' style='text-align:right;'>Hidden Layer Unit 01:</div>
-                        <div class='col-3'>
-                            <input type='number' id='idTxtParam00' class='running step3' style='width:60px;height:28px;' value='128' />
-                        </div>
-                        <div class='col-2' style='text-align:right;'>Hidden Layer Unit 02</div>
-                        <div class='col-3'>
-                            <input type='number' id='idTxtParam01' class='running step3' style='width:60px;height:28px;' value='64' />
-                        </div>
-                        <div class='col-1'></div>
+                <div class='row'>
+                    <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
+                    <div class='col-2' style='text-align:right;'>M/L Model:</div>
+                    <div class='col-3'>
+                        <select  id='idSelMLModel' class='running' style='width:100%;height:28px;'></select>
                     </div>
-                    <div class='row'>
-                        <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
-                        <div class='col-2' style='text-align:right;'>Learning Rate:</div>
-                        <div class='col-3'>
-                            <input type='number' id='idTxtParam02' class='running step3' style='width:60px;height:28px;' value='0.1' />
-                        </div>
-                        <div class='col-6'></div>
-                    </div>
-                    <div class='row'>
-                        <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
-                        <div class='col-2' style='text-align:right;'>L1 Regularization STR:</div>
-                        <div class='col-3'>
-                            <input type='number' id='idTxtParam03' class='running step3' style='width:60px;height:28px;' value='0.001' />
-                        </div>
-                        <div class='col-2' style='text-align:right;'>
-                            <span style='padding-left:15px;'></span>L2 Regularization STR:
-                        </div>
-                        <div class='col-3'>
-                            <input type='number' id='idTxtParam04' class='running step3' style='width:60px;height:28px;' value='0.001' />
-                        </div>
-                        <div class='col-1'></div>
-                    </div>
-                    <div class='row'>
-                        <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
-                        <div class='col-2' style='text-align:right;'>Epochs:</div>
-                        <div class='col-3'>
-                            <input type='number' id='idTxtParam05' class='running step3' style='width:60px;height:28px;' value='10' />
-                        </div>
-                        <div class='col-2' style='text-align:right;'>
-                            <span style='padding-left:15px;'></span> Batch Size:
-                        </div>
-                        <div class='col-3'>
-                            <input type='number' id='idTxtParam06' class='running step3' style='width:60px;height:28px;' value='500' />
-                        </div>
-                        <div class='col-1'></div>
-                    </div>
-                    <div class='row'>
-                        <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
-                        <div class='col-2' style='text-align:right;'>Category Column:</div>
-                        <div class='col-3'>
-                            <select  id='idSelParam07' class='running step3' style='width:100%;height:28px;'></select>
-                        </div>
-                        <div class='col-2'></div>
-                        <div class='col-3'>
-                            <ul id='idUlParam08' class='running step3' hidden></ul>
-                        </div>
-                        <div class='col-1'></div>
-                    </div>
-                    <div class='row'>
-                        <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
-                        <div class='col-2' style='text-align:right;'>Classfication Labels:</div>
-                        <div class='col-3'>
-                            <input type='text' id='idTxtParam09' class='running step3' style='width:100%;height:28px;' value='Over $1,500' />
-                        </div>
-                        <div class='col-2' style='text-align:center;'>
-                            <span style='padding-left:15px;'></span> /
-                        </div>
-                        <div class='col-3'>
-                            <input type='text' id='idTxtParam0A' class='running step3' style='width:100%;height:28px;' value='Less than $1,500' />
-                        </div>
-                        <div class='col-1'></div>
-                    </div>
-                </h5>
-            </div>
-        </div>
-        <div class='row' style='height:90px;padding-top:40px;'>
-            <div class='col text-center'>
-                <button id='idBtnRun' class='btn btn-primary running step3' style='width:200px;height:50px;'><i class="fab fa-deezer"></i> Run</button>
-            </div>
-        </div>
-    </div>
+                    <div class='col-6'></div>
+                </div>
 
-<div class="separator" id="result"><!-- separating line --></div>
-    
-<div class="title"><h1><i class="fas fa-dice-four"></i> Result</h1></div>
+                <div id='idDivParamGi' class='row'>
+                    <div class='col'>
+                        <div class='row' style='height:90px;padding-top:40px;'>
+                            <div class='col-4'></div>
+                            <div class='col-4'>
+                                <h4 class="font-weight-bold text-center text-primary">Tensorflow Parameters</h4>
+                            </div>
+                            <div class='col-4'></div>
+                        </div>
+                        <div class='row'>
+                            <div class='col'>
+                                <div class='row'>
+                                    <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
+                                    <div class='col-2' style='text-align:right;'>Hidden Layer Unit 01:</div>
+                                    <div class='col-3'>
+                                        <input type='number' id='idTxtParam00' class='running' style='width:60px;height:28px;' value='128' />
+                                    </div>
+                                    <div class='col-2' style='text-align:right;'>Hidden Layer Unit 02</div>
+                                    <div class='col-3'>
+                                        <input type='number' id='idTxtParam01' class='running' style='width:60px;height:28px;' value='64' />
+                                    </div>
+                                    <div class='col-1'></div>
+                                </div>
+                                <div class='row'>
+                                    <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
+                                    <div class='col-2' style='text-align:right;'>Learning Rate:</div>
+                                    <div class='col-3'>
+                                        <input type='number' id='idTxtParam02' class='running' style='width:60px;height:28px;' value='0.1' />
+                                    </div>
+                                    <div class='col-6'></div>
+                                </div>
+                                <div class='row'>
+                                    <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
+                                    <div class='col-2' style='text-align:right;'>L1 Regularization STR:</div>
+                                    <div class='col-3'>
+                                        <input type='number' id='idTxtParam03' class='running' style='width:60px;height:28px;' value='0.001' />
+                                    </div>
+                                    <div class='col-2' style='text-align:right;'>
+                                        <span style='padding-left:15px;'></span>L2 Regularization STR:
+                                    </div>
+                                    <div class='col-3'>
+                                        <input type='number' id='idTxtParam04' class='running' style='width:60px;height:28px;' value='0.001' />
+                                    </div>
+                                    <div class='col-1'></div>
+                                </div>
+                                <div class='row'>
+                                    <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
+                                    <div class='col-2' style='text-align:right;'>Epochs:</div>
+                                    <div class='col-3'>
+                                        <input type='number' id='idTxtParam05' class='running' style='width:60px;height:28px;' value='10' />
+                                    </div>
+                                    <div class='col-2' style='text-align:right;'>
+                                        <span style='padding-left:15px;'></span> Batch Size:
+                                    </div>
+                                    <div class='col-3'>
+                                        <input type='number' id='idTxtParam06' class='running' style='width:60px;height:28px;' value='500' />
+                                    </div>
+                                    <div class='col-1'></div>
+                                </div>
+                                <div class='row'>
+                                    <div class='col-1'><i class="fas fa-angle-double-right"></i></div>
+                                    <div class='col-2' style='text-align:right;'>Hash Bucket Size:</div>
+                                    <div class='col-3'>
+                                        <input type='number' id='idTxtHashBkSize' value='1000' class='running' style='width:60px;height:28px;' />
+                                    </div>
+                                    <div class='col-6'></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class='row' style='height:90px;padding-top:40px;'>
+                            <div class='col-4'></div>
+                            <div class='col-4'>
+                                <h4 class="font-weight-bold text-center text-primary">Categorical Feature</h4>
+                            </div>
+                            <div class='col-4'></div>
+                        </div>
+                        <div class='row'>
+                            <div id='idDivItem1' class='col'></div>
+                        </div>
+                        <div class='row' style='height:90px;padding-top:40px;'>
+                            <div class='col-4'></div>
+                            <div class='col-4'>
+                                <h4 class="font-weight-bold text-center text-primary">Numeric Feature</h4>
+                            </div>
+                            <div class='col-4'></div>
+                        </div>
+                        <div class='row'>
+                            <div id='idDivItem2' class='col'></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class='row' style='height:90px;padding-top:40px;'>
+            <div class='col text-center'>
+                <button id='idBtnRunTPR' class='btn btn-primary running' style='width:200px;height:50px;'><i class="fab fa-deezer"></i> Run</button>
+            </div>
+        </div>
+        </h5>
+    </div>
     
     <div class="clearfix">
         <div class="subhead">
-            <h2><span style='padding-left:30px;'></span><i class="fas fa-angle-right"></i> Before</h2>
+            <h2><span style='padding-left:30px;'></span><i class="fas fa-angle-right"></i> Result</h2>
         </div>
         <div class="desc-copy">
         </div>
@@ -428,12 +528,17 @@
             </div>
             <div class='col-4'></div>
         </div>
+        <div class='row' style='height:25px;'>
+            <div class='col-6 text-center' style='background-color:#AAC8FF'>BEFORE</div>
+            <div class='col-6 text-center' style='background-color:#FFAAC8'>AFTER</div>
+        </div>
+        <div class='row' style='height:25px;'><div class='col'></div></div>
         <div class='row'>
             <div class='col-6'>
-                <div id='idDivMetricA0' class='text-center' style='width:100%;height:100px;'></div>
+                <div id='idDivConfMatA0' class='text-center' style='width:100%;'></div>
             </div>
             <div class='col-6'>
-                <div id='idDivMetricA1' class='text-center' style='width:100%;height:100px;'></div>
+                <div id='idDivConfMatB0' class='text-center' style='width:100%;'></div>
             </div>
         </div>
         <div class='row' style='height:50px;'>
@@ -448,18 +553,9 @@
                 <div id='idDivGraphA0' class='text-center' style='width:100%;height:400px;'></div>
             </div>
             <div class='col-6'>
-                <div id='idDivGraphA1' class='text-center' style='width:100%;height:400px;'></div>
+                <div id='idDivGraphB0' class='text-center' style='width:100%;height:400px;'></div>
             </div>
         </div>
-    </div>
-    <div class="clearfix">
-        <div class="subhead">
-            <h2><span style='padding-left:30px;'></span><i class="fas fa-angle-right"></i> After</h2>
-        </div>
-        <div class="desc-copy">
-        </div>
-    </div>
-    <div class="container" style='width:100%;'>
         <div class='row' style='height:50px;'>
             <div class='col-4'></div>
             <div class='col-4'>
@@ -467,12 +563,17 @@
             </div>
             <div class='col-4'></div>
         </div>
+        <div class='row' style='height:25px;'>
+            <div class='col-6 text-center' style='background-color:#AAC8FF'>BEFORE</div>
+            <div class='col-6 text-center' style='background-color:#FFAAC8'>AFTER</div>
+        </div>
+        <div class='row' style='height:25px;'><div class='col'></div></div>
         <div class='row'>
             <div class='col-6'>
-                <div id='idDivMetricB0' class='text-center' style='width:100%;height:100px;'></div>
+                <div id='idDivConfMatA1' class='text-center' style='width:100%;'></div>
             </div>
             <div class='col-6'>
-                <div id='idDivMetricB1' class='text-center' style='width:100%;height:100px;'></div>
+                <div id='idDivConfMatB1' class='text-center' style='width:100%;'></div>
             </div>
         </div>
         <div class='row' style='height:50px;'>
@@ -484,49 +585,165 @@
         </div>
         <div class='row'>
             <div class='col-6'>
-                <div id='idDivGraphB0' class='text-center' style='width:100%;height:400px;'></div>
+                <div id='idDivGraphA1' class='text-center' style='width:100%;height:400px;'></div>
             </div>
             <div class='col-6'>
                 <div id='idDivGraphB1' class='text-center' style='width:100%;height:400px;'></div>
             </div>
         </div>
+        <div class='row' style='height:50px;display:none;'>
+            <div class='col-4'></div>
+            <div class='col-4'>
+                <h4 class="font-weight-bold text-center text-primary">Graph</h4>
+            </div>
+            <div class='col-4'></div>
+        </div>
+        <div class='row' style='height:25px;'><div class='col'></div></div>
+        <div class='row'>
+            <div class='col-6'>
+                <div id='idDivGraphA2' class='text-center' style='width:100%;height:800px;'></div>
+            </div>
+            <div class='col-6'>
+                <div id='idDivGraphB2' class='text-center' style='width:100%;height:800px;'></div>
+            </div>
+        </div>
     </div>
+
+    <div class="separator" id="result"><!-- separating line --></div>
+    
+    <div class="title"><h1><i class="fas fa-dice-five"></i> Result</h1></div>
+
     <div class="clearfix">
         <div class="subhead">
-            <h2><span style='padding-left:30px;'></span><i class="fas fa-angle-right"></i> Fairness</h2>
+            <h2><span style='padding-left:30px;'></span><i class="fas fa-angle-right"></i> Performance</h2>
         </div>
         <div class="desc-copy">
         </div>
     </div>
     <div class="container" style='width:100%;'>
+        <div class='row' style='height:25px;'>
+            <div class='col-4'></div>
+            <div class='col-4'>
+                <h4 class="font-weight-bold text-center text-primary">Chart</h4>
+            </div>
+            <div class='col-4'></div>
+        </div>
+        <div class='row' style='height:25px;'>
+            <div class='col-6 text-center' style='background-color:#AAC8FF'>BEFORE</div>
+            <div class='col-6 text-center' style='background-color:#FFAAC8'>AFTER</div>
+        </div>
+        <div class='row' style='height:25px;'><div class='col'></div></div>
+        <div class='row'>
+            <div class='col-6'>
+                <canvas id='idCanvas0' style='width:100%;height:320px;'></canvas>
+            </div>
+            <div class='col-6'>
+                <canvas id='idCanvas1' style='width:100%;height:320px;'></canvas>
+            </div>
+        </div>
         <div class='row' style='height:50px;'>
             <div class='col-4'></div>
             <div class='col-4'>
-                <h4 class="font-weight-bold text-center text-primary">Performance</h4>
+                <h4 class="font-weight-bold text-center text-primary">Correction Rate</h4>
             </div>
             <div class='col-4'></div>
         </div>
         <div class='row'>
             <div class='col'>
-                <div id='idDivPerform' class='text-center' style='width:100%;height:200px;'></div>
+                <div id='idDivPerform' class='text-center' style='width:100%;height:80px;'></div>
             </div>
         </div>
         <div class='row'>
             <div class='col'>
-                <p>
-                    \[ \text{보정 성능} = \frac{\mathrm 1}{\mathrm n} \displaystyle\sum_{i=1}^{n} \bigg(\frac{|IFV_n - OFV_n| - |IFV_n - MFV_n|}{|IFV_n - OFV_n|}\bigg) \times 100 \]
-                </p>
-                <p>
-                    $$
-                    \begin{aligned}
-                    \text{i : 공정성 보정 지표}\hspace{3cm}  \\
-                    \text{n : 적용한 공정성 보정 지표 수} \hspace{1cm} \\
-                    \text{IFV(Ideal Fair Value) : 공정성 지표별 기준 값} \hspace{2cm} \\
-                    \text{OFV(Original Fair Value) : 보정 전 공정성 지표 값} \hspace{1.9cm} \\
-                    \text{MFV(Mitigated Fair Value) : 보정 후 공정성 지표 값} \hspace{1.9cm} \\
-                    \end{aligned}
-                    $$
-                </p>
+                <div>
+                    <p>◎ Formula</p>
+                    <p>
+\[\text{보정률}=\bigg(\space\frac{|\space\text{보정 전 공정성 지표 값}\space|
+-|\space\text{보정 후 공정성 지표 값}\space|}{|\space\text{보정 전 공정성 지표 값}\space|}\space\bigg)\times100\]
+                    </p>
+                </div>
+                <div class='clsbinary clsbinaryequaloppo'>
+                    <p>◎ 균등 기회 (Equality of opportunity)</p>
+                    <p>
+\[\text{rate}=\bigg(\space\frac{|\space^\text{pre }\mathtt{TPR}_\text{ subgroupA}
+-^\text{pre }\mathtt{TPR}_\text{ subgroupB}\space|-|\space^\text{post }\mathtt{TPR}_\text{ subgroupA}
+-^\text{post }\mathtt{TPR}_\text{ subgroupB}\space|}{|\space^\text{pre }\mathtt{TPR}_\text{ subgroupA}
+-^\text{pre }\mathtt{TPR}_\text{ subgroupB}\space|}\space\bigg)\times100\]
+                    </p>
+                </div>
+                <div class='clsbinary clsbinaryequalodds'>
+                    <p>◎ 균등 승률 (Equalized Odds)</p>
+                    <p>
+\[\text{rate}=\Bigg(\space\frac{\Big(\space\frac{|\space^\text{pre }\mathtt{TPR}_\text{ subgroupA}
+-^\text{pre }\mathtt{TPR}_\text{ subgroupB}\space|-|\space^\text{post }\mathtt{TPR}_\text{ subgroupA}
+-^\text{post }\mathtt{TPR}_\text{ subgroupB}\space|}{|\space^\text{pre }\mathtt{TPR}_\text{ subgroupA}
+-^\text{pre }\mathtt{TPR}_\text{ subgroupB}\space|}\space\Big)
++\Big(\space\frac{|\space^\text{pre }\mathtt{FPR}_\text{ subgroupA}
+-^\text{pre }\mathtt{FPR}_\text{ subgroupB}\space|-|\space^\text{post }\mathtt{FPR}_\text{ subgroupA}
+-^\text{post }\mathtt{FPR}_\text{ subgroupB}\space|}{|\space^\text{pre }\mathtt{FPR}_\text{ subgroupA}
+-^\text{pre }\mathtt{FPR}_\text{ subgroupB}\space|}\space\Big)}{2}\space\Bigg)\times100\]
+                    </p>
+                </div>
+                <div class='clsbinary clsbinarydmgparity'>
+                    <p>◎ 인구통계패리티 (Demographic Parity)</p>
+                    <p>
+\[^\text{pre }\mathtt{NpP}_\text{ subgroupA}=\frac{\big(\space^\text{pre }\mathtt{TN}_\text{ subgroupA}
++^\text{pre }\mathtt{FN}_\text{ subgroupA}\space\big)}{\big(\space^\text{pre }\mathtt{TP}_\text{ subgroupA}
++^\text{pre }\mathtt{FP}_\text{ subgroupA}\space\big)}\]
+                    </p><p>
+\[^\text{pre }\mathtt{NpP}_\text{ subgroupB}=\frac{\big(\space^\text{pre }\mathtt{TN}_\text{ subgroupB}
++^\text{pre }\mathtt{FN}_\text{ subgroupB}\space\big)}{\big(\space^\text{pre }\mathtt{TP}_\text{ subgroupB}
++^\text{pre }\mathtt{FP}_\text{ subgroupB}\space\big)}\]
+                    </p><p>
+\[^\text{post }\mathtt{NpP}_\text{ subgroupA}=\frac{\big(\space^\text{post }\mathtt{TN}_\text{ subgroupA}
++^\text{post }\mathtt{FN}_\text{ subgroupA}\space\big)}{\big(\space^\text{post }\mathtt{TP}_\text{ subgroupA}
++^\text{post }\mathtt{FP}_\text{ subgroupA}\space\big)}\]
+                    </p><p>
+\[^\text{post }\mathtt{NpP}_\text{ subgroupB}=\frac{\big(\space^\text{post }\mathtt{TN}_\text{ subgroupB}
++^\text{post }\mathtt{FN}_\text{ subgroupB}\space\big)}{\big(\space^\text{post }\mathtt{TP}_\text{ subgroupB}
++^\text{post }\mathtt{FP}_\text{ subgroupB}\space\big)}\]
+                    </p><p>
+\[\text{rate}=\bigg(\space\frac{|\space^\text{pre }\mathtt{NpP}_\text{ subgroupA}
+-^\text{pre }\mathtt{NpP}_\text{ subgroupB}\space|-|\space^\text{post }\mathtt{NpP}_\text{ subgroupA}
+-^\text{post }\mathtt{NpP}_\text{ subgroupB}\space|}{|\space^\text{pre }\mathtt{NpP}_\text{ subgroupA}
+-^\text{pre }\mathtt{NpP}_\text{ subgroupB}\space|}\space\bigg)\times100\]
+                    </p>
+                </div>
+                <div class='clsregres clsregresdmgparity'>
+                    <p>◎ 인구통계패리티 (Demographic Parity)</p>
+                    <p>
+\[^\text{pre }\mathtt{NpP}_\text{ subgroupA}=\frac{\big(\space^\text{pre }\mathtt{TN}_\text{ subgroupA}
++^\text{pre }\mathtt{FN}_\text{ subgroupA}\space\big)}{\big(\space^\text{pre }\mathtt{TP}_\text{ subgroupA}
++^\text{pre }\mathtt{FP}_\text{ subgroupA}\space\big)}\]
+                    </p><p>
+\[^\text{pre }\mathtt{NpP}_\text{ subgroupB}=\frac{\big(\space^\text{pre }\mathtt{TN}_\text{ subgroupB}
++^\text{pre }\mathtt{FN}_\text{ subgroupB}\space\big)}{\big(\space^\text{pre }\mathtt{TP}_\text{ subgroupB}
++^\text{pre }\mathtt{FP}_\text{ subgroupB}\space\big)}\]
+                    </p><p>
+\[^\text{post }\mathtt{NpP}_\text{ subgroupA}=\frac{\big(\space^\text{post }\mathtt{TN}_\text{ subgroupA}
++^\text{post }\mathtt{FN}_\text{ subgroupA}\space\big)}{\big(\space^\text{post }\mathtt{TP}_\text{ subgroupA}
++^\text{post }\mathtt{FP}_\text{ subgroupA}\space\big)}\]
+                    </p><p>
+\[^\text{post }\mathtt{NpP}_\text{ subgroupB}=\frac{\big(\space^\text{post }\mathtt{TN}_\text{ subgroupB}
++^\text{post }\mathtt{FN}_\text{ subgroupB}\space\big)}{\big(\space^\text{post }\mathtt{TP}_\text{ subgroupB}
++^\text{post }\mathtt{FP}_\text{ subgroupB}\space\big)}\]
+                    </p><p>
+\[\text{rate}=\bigg(\space\frac{|\space^\text{pre }\mathtt{NpP}_\text{ subgroupA}
+-^\text{pre }\mathtt{NpP}_\text{ subgroupB}\space|-|\space^\text{post }\mathtt{NpP}_\text{ subgroupA}
+-^\text{post }\mathtt{NpP}_\text{ subgroupB}\space|}{|\space^\text{pre }\mathtt{NpP}_\text{ subgroupA}
+-^\text{pre }\mathtt{NpP}_\text{ subgroupB}\space|}\space\bigg)\times100\]
+                    </p>
+                </div>
+                <div class='clsregres clsregresbndgrplos'>
+                    <p>◎ 제한된 그룹 손실</p></br>
+                    &nbsp;&nbsp;&nbsp;Under Construction</p>
+                </div>
+                <div>
+                    <p>
+$$ \begin{aligned} \\ \text{pre : 원본 데이터에서의} \hspace{3.3cm} \\ \text{post : 보정 데이터에서의} \hspace{3.3cm} \\
+\text{subgroupA : 카테고리 컬럼의 서브그룹 A에 대한} \\ \text{subgroupB : 카테고리 컬럼의 서브그룹 B에 대한} \\ \end{aligned} $$
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -534,11 +751,23 @@
         <div class='col'></div>
     </div>
 
+    <div id="idDlgHighChart" title="Overview">
+        <div id='idDivHighChart' class='text-center' style='width:100%;height:100%;'></div>
+    </div>
+    <div id="idDlgOverview" title="Overview">
+        <div id='idDivCanvas' class='text-center' style='width:100%;height:100%;'>
+            <canvas id='idCanvas' class='text-center' style='width:100%;height:100%;'></canvas>
+        </div>
+    </div>
+    <div id="idDlgSunburst" title="Sunburst">
+        <div id='idDivSbChart' class='text-center' style='width:100%;height:100%;'></div>
+    </div>
+
     {% load static %}
     <script src="{% static 'js/qufa.js' %}"></script>
     <script>
         const csrfTtoken = '{{ csrf_token }}';
-        const sFilePath = "{% static 'js/worker.js' %}";
+        const strWrkPath = "{% static 'js/worker.js' %}";
     </script>
 </body>
 

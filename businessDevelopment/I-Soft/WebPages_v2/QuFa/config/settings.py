@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-ge-=8dx+(h%f^otnp%&en4@mbe++q@k%d7xs-hay$-vhi#sn+v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost','.ngrok.io']
+ALLOWED_HOSTS = ['0.0.0.0','127.0.0.1','localhost','164.125.37.214','.ngrok.io']
 
 
 # Application definition
@@ -36,12 +36,15 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    #'django.contrib.sessions.backends.cache',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Fairness.apps.FairnessConfig',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -50,6 +53,19 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
+#CORS_URLS_REGEX = True
+    
+CORS_ORIGIN_WHITELIST = ['http://localhost:8000','http://127.0.0.1:8000', 'http://164.125.37.214:8000',
+    'http://localhost:5555','http://127.0.0.1:5555', 'http://164.125.37.214:5555','http://.ngrok.io']
+
+CORS_ALLOWED_ORIGINS = ['http://localhost:8000','http://127.0.0.1:8000', 'http://164.125.37.214:8000',
+    'http://localhost:5555','http://127.0.0.1:5555', 'http://164.125.37.214:5555','http://.ngrok.io']
+
+# CORS_ALLOWED_ORIGIN_REGEXES = ['http://localhost:8000','http://127.0.0.1:8000', 'http://164.125.37.214:8000',
+#     'http://localhost:5555','http://127.0.0.1:5555', 'http://164.125.37.214:5555','http://.ngrok.io']
 
 ROOT_URLCONF = 'config.urls'
 
@@ -75,14 +91,20 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default' : {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'QuFa',
+#         'USER': 'root',
+#         'PASSWORD': 'root',
+#         'HOST': 'localhost',
+#         'PORT': '3306',
+#     }
+# }
 DATABASES = {
-    'default' : {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'QuFa',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',
-        'PORT': '3306',
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mydatabase',
     }
 }
 
@@ -123,16 +145,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, '../../data/')
 
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

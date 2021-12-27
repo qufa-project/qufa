@@ -253,25 +253,9 @@ button:focus
     z-index: 2;
     background:#CCCCCC;
 }
-.sticky-header
-{
-    background:#FFFFFF;
-}
 .td-sm
 {
     font-size: 12px;
-}
-/*--Facets Dive--*/
-.facets-dive-demo
-{
-    border: 0.5px solid #eaeaea;
-    height: 750px;
-    position: relative;
-    width: 1080;
-    overflow:auto;
-    box-shadow: 2px 2px 3px #eaeaea;
-    margin-left:0px;
-    margin-top:20px;
 }
 /*--Common--*/
 .border-all
