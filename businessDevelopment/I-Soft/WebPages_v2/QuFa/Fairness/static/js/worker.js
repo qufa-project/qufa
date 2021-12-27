@@ -1,7 +1,7 @@
 
 onmessage = function(e)
 {
-    var url = "../../Fairness/indicator/";
+    var url = "../../Fairness/run_alg/";
     var objData = e.data; 
     var xhr = new XMLHttpRequest();
     xhr.open("POST", url, false);

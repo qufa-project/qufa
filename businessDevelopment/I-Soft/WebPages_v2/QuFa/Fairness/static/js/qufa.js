@@ -1,21 +1,35 @@
-
-var arrBtnText = [];
-var strTagWork = "<span><i class='fas fa-spinner fa-spin'></i> Processing...</span>";
-var regExp = /[ \{\}\[\]\/?.,;:|\)*~`!^\-_+┼<>@\#$%&\ '\"\\(\=]/gi;
-var varTimer = 0;
-var worker = null;
-let sKey = '';
+// global variable
+let g_arrBtnText = [];
+let g_strTagWork = "<span><i class='fas fa-spinner fa-spin'></i> Processing...</span>";
+let g_strTagBusy = "<i class='fas fa-spinner fa-pulse' style='font-size:100px;color:#CCC;'></i>";
+let g_regExp = /[ \{\}\[\]\/?.,;:|\)*~`!^\-_+┼<>@\#$%&\ '\"\\(\=]/gi;
+let g_wkrAlgProc = null;
+let g_sAccessKey = '';
+let g_bManualRun = false;
+let g_bOriginData = true;
+let g_bProcDone = true;
+let g_clsDatasetFair = null;
+let g_arrDataSunburst = null;
+const g_cD3scaleOrd = d3.scaleOrdinal(d3.schemePaired);//d3.schemeCategory10);//
+const g_arrAlgType = 
+[
+    { key: 'gi' , name: 'Tensorflow Keras' },
+    { key: 'lr' , name: 'Logistic Regression' },
+    { key: 'sdg', name: 'SGD Classifier' },
+    { key: 'svm', name: 'Linear SVC' }
+];
 // for test
-var arrColVal = ['posted_speed_limit', 'weather_condition', 'lighting_condition',
+let bChicagoData = true;
+let arrColHdr0 = ['posted_speed_limit', 'weather_condition', 'lighting_condition',
                 'first_crash_type', 'roadway_surface_cond', 'crash_type', 'damage'];
+let arrClsLbl0 = ['Less than $1,500','Over $1,500'] // ['<=1500','>1500']
+let arrColHdr1 = ['sex', 'age', 'cva', 'fcvayn', 'packyear', 'sd_idr2', 'exerfq'];
+let arrClsLbl1 = ['Male','Female'] // ['0','1']
 
 $(document).on('click', 'a[href*=\\#]', function(event)
 {
     event.preventDefault();
-    $('html, body').animate(
-    {
-        scrollTop: $(this.hash).offset().top
-    }, 500);
+    $('html, body').animate({ scrollTop: $(this.hash).offset().top }, 500);
 });
 $(document).ready(function()
 {
@@ -26,15 +40,13 @@ $(document).ready(function()
     
     $(".sticky-header").floatThead({position:'fixed', top:60, zIndex:100});
     
-    arrBtnText.push( $('#idBtnLoading').html() );
-    arrBtnText.push( $('#idBtnRun').html() );
+    g_arrBtnText.push( $('#idBtnLoading').html() );
+    g_arrBtnText.push( $('#idBtnRun').html() );
     
     $('.running').prop("disabled",true).addClass('disabled');
 
-    $("#idDivStep0").hide();
-    $("#idDivStep1").hide();
-    $("#idDivStep2").hide();
-    $("#idDivStep3").hide();
+    $("#idDivParamTpr").hide();
+    $("#idDivParamGi").hide();
     
     $.ajax(
     {
@@ -46,15 +58,14 @@ $(document).ready(function()
             var res = JSON.parse(res);
             if ( res.success == 'true' )
             {
-                sKey = res.key;
+                g_sAccessKey = res.key;
             }
         }
     })
     
-    
-    var sTag = '';
-    var sVal = '';
-    var sCID = '';
+    let sTag = '';
+    let sVal = '';
+    let sCID = '';
 
     var objFile = null;
     var handleFileSelect = function(e)
@@ -67,6 +78,13 @@ $(document).ready(function()
     }
     $("#fileupload")[0].addEventListener('change', handleFileSelect, false);
 
+    $('#idChkManualRun').prop('checked', g_bManualRun);
+    $('#idChkManualRun').on('click', function(e)
+    {
+        g_bManualRun = $('#idChkManualRun').prop('checked');        
+        var html = ( g_bManualRun ) ? ' (BEFORE)' : '';
+        $('#idBtnRun').html(g_arrBtnText[1] + html);
+    });
     $('#idBtnUpload').on('click', function(e)
     {
         e.preventDefault();
@@ -74,7 +92,7 @@ $(document).ready(function()
         if ( objFile != null )
         {
             $('.loading').prop("disabled",true).addClass('disabled');
-            $('#idBtnLoading').html(strTagWork).addClass('fileupload-processing');
+            $('#idBtnLoading').html(g_strTagWork).addClass('fileupload-processing');
     
             $('#idFileName').val('');
             $('#fileupload').val('');
@@ -82,7 +100,7 @@ $(document).ready(function()
             let formData = new FormData();
             formData.append('csrfmiddlewaretoken', csrfTtoken);
             formData.append('file', objFile);
-            formData.append('key', sKey);
+            formData.append('key', g_sAccessKey);
             $.ajax(
             {
                 url: "upload/",
@@ -95,13 +113,12 @@ $(document).ready(function()
                     var res = JSON.parse(res);
                     if ( res.success == 'true' )
                     {
-                        // for test
                         $('#idAStep1').trigger('click');  
 
                         fnCheckFileList(true);
 
                         $('.loading').prop("disabled",false).removeClass('disabled');
-                        $('#idBtnLoading').html(arrBtnText[0]).removeClass('fileupload-processing');
+                        $('#idBtnLoading').html(g_arrBtnText[0]).removeClass('fileupload-processing');
                     }
                 }
             })
@@ -119,6 +136,9 @@ $(document).ready(function()
         let sFileName = $( "#idSelFileList option:selected" ).val();
         if ( sFileName != undefined )
         {
+            // for test
+            bChicagoData = sFileName.includes('chicago');
+
             fnLoadFile(sFileName);
         }
         else
@@ -127,116 +147,6 @@ $(document).ready(function()
             return;
         }
     });
-    $('#idBtnGoStep1').on('click', function()
-    {
-        $('.step0').prop("disabled",true).addClass('disabled');
-        
-        let aSelKey = [$( "#idSelCol4Criteria option:selected" ).text(), $( "#idSelCol4HashBukt option:selected" ).text()];
-        
-        for (let sKey in clsDatasetFair.arrOvColumns)
-        {
-            if ( !clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric && !aSelKey.includes(sKey) )
-            {
-                sTag += 
-                    "<h5 class='font-weight-bold text-left text-secondary'><div class='row'>" +
-                    "<div class='col-1'><i class='fas fa-angle-double-right'></i></div>" +
-                    "<div class='col-2' style='text-align:right;'>Vocabulary Column:</div>" +
-                    "<div class='col-3'>" +
-                    "<input type='text' id='idTxtCol" + sKey.replace(regExp,'') + "' class='running step1' style='width:100%;height:28px;' value='" + sKey + "' readonly />" +
-                    "</div>" +
-                    "<div class='col-2' style='text-align:right;'>Vocabulary List:</div>" +
-                    "<div class='col-3'>" +
-                    "<ul id='idUlList" + sKey.replace(regExp,'') + "' style='width:100%;'>" +
-                    "</ul></div><div class='col-1'></div></div></h5>";
-            }
-        }
-        $('#idDivItem1').html(sTag);
-        
-        for (let sKey in clsDatasetFair.arrOvColumns)
-        {
-            if ( !clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric && !aSelKey.includes(sKey) )
-            {
-                for (let nIdx in clsDatasetFair.arrOvColumns[sKey].arrOvData[0].arrLgdLbl)
-                {
-                    sVal = clsDatasetFair.arrOvColumns[sKey].arrOvData[0].arrLgdLbl[nIdx];
-                    sCID = sKey.replace(regExp,'') + "_" + sVal.replace(regExp,'');
-                    sTag = "<li data-id='"+ sCID +"'>" +
-                        "<span style='display:inline-block;width:300px;'><input type='checkbox' id='idChkVal_"+sCID+"' class='running step1' checked />" +
-                        "<label for='idChkVal_"+sCID+"'>&nbsp;"+sVal+"</label></span>" +
-                        "<input type='hidden' id='idTxtVal_"+sCID+"' value='"+sVal+"' /></li>";
-                    $('#idUlList'+sKey.replace(regExp,'')).append(sTag);
-                }
-            }
-        }
-
-        $("#idDivStep1").show();
-    });
-    $('#idBtnGoStep2').on('click', function()
-    {
-        $('.step1').prop("disabled",true).addClass('disabled');
-
-        let aSelKey = [$( "#idSelCol4Criteria option:selected" ).text(), $( "#idSelCol4HashBukt option:selected" ).text()];
-        
-        for (let sKey in clsDatasetFair.arrOvColumns)
-        {
-            if ( clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric && !aSelKey.includes(sKey) )
-            {
-                sTag += 
-                    "<h5 class='font-weight-bold text-left text-secondary'><div class='row'>" +
-                    "<div class='col-1'><i class='fas fa-angle-double-right'></i></div>" +
-                    "<div class='col-2' style='text-align:right;'>Numeric Column:</div>" +
-                    "<div class='col-3'>" +
-                    "<input type='text' id='idTxtCol" + sKey.replace(regExp,'') + "' class='running step2' style='width:100%;height:28px;' value='" + sKey + "' readonly />" +
-                    "</div>" +
-                    "<div class='col-2' style='text-align:right;'>Boundaries:</div>" +
-                    "<div class='col-3'>" +
-                    "<input type='text' id='idTxtList" + sKey.replace(regExp,'') + "' class='running step2' style='width:100%;height:28px;' value='10,20,30,40,50,60,70,80' />" +
-                    "</ul></div><div class='col-1'></div></div></h5>";
-            }
-        }
-        $('#idDivItem2').html(sTag);
-
-        $("#idDivStep2").show();
-    });
-    $('#idBtnGoStep3').on('click', function()
-    {
-        $('.step2').prop("disabled",true).addClass('disabled');
-        
-        $('#idSelParam07').empty();
-
-        let aSelKey = [$( "#idSelCol4Criteria option:selected" ).text(), $( "#idSelCol4HashBukt option:selected" ).text()];
-        
-        let sTag = '';
-        for (var sKey in clsDatasetFair.arrOvColumns)
-        {
-            if ( !clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric && !aSelKey.includes(sKey) )
-            {
-                sTag = "<option value='" + sKey + "'>" + sKey + "</option>";
-                $('#idSelParam07').append(sTag);
-            }
-        }
-        $('#idSelParam07').on('change', function()
-        {
-            var sSelKey = $( "#idSelParam07 option:selected" ).text();
-
-            sVal = '';
-            $('#idUlParam08').empty();
-            for (var nIdx in clsDatasetFair.arrOvColumns[sSelKey].arrOvData[0].arrLgdLbl)
-            {
-                sVal = clsDatasetFair.arrOvColumns[sSelKey].arrOvData[0].arrLgdLbl[nIdx];
-                sTag = "<li>" + sVal + "</li>";
-                $('#idUlParam08').append(sTag);
-            }
-        });
-
-        sVal = $("#idSelParam07 option:first").val();
-        $('#idSelParam07').val(sVal).trigger('change');
-        
-        // for test
-        $('#idSelParam07').val(arrColVal[5]).trigger('change');
-
-        $("#idDivStep3").show();
-    });
     $('#idBtnRun').on('click', function(e)
     {
         e.preventDefault();
@@ -244,96 +154,100 @@ $(document).ready(function()
         if ( acceessableCount <= 0 ) return;
         acceessableCount = acceessableCount - 1;
 
-        if ( clsDatasetFair != null )
+        if ( g_clsDatasetFair != null )
         {
             $('.loading').prop("disabled",true).addClass('disabled');
             $('.running').prop("disabled",true).addClass('disabled');
-            $('#idBtnRun').html(strTagWork).addClass('fileupload-processing');
+            $('#idBtnRun').html(g_strTagWork).addClass('fileupload-processing');
             
             let objData = {};
-            objData['key'] = sKey;
+            objData['key'] = g_sAccessKey;
             objData['csrfTtoken'] = csrfTtoken;
-            
-            let sCriteria = $( "#idSelCol4Criteria option:selected" ).text();
-            let sCriteLab = $( "#idSelCriterColLbl option:selected" ).text();
-            let sHashBukt = $( "#idSelCol4HashBukt option:selected" ).text();
-            let sHashSize = $( "#idTxtHashBkSize" ).val();
-            
-            objData['CriteriaCol'] = sCriteria;
-            objData['CriteriaLab'] = sCriteLab;
-            objData['HashBuktCol'] = sHashBukt;
-            objData['HashBuktSiz'] = sHashSize;
-            objData['Categorfeatures'] = [];
-            objData['Numericfeatures'] = [];
-
-            let aSelKey = [sCriteria, sHashBukt];
-            for (let sKey in clsDatasetFair.arrOvColumns)
-            {
-                if ( !aSelKey.includes(sKey) )
-                {
-                    let objItem = {};
-                    objItem['ColName'] = sKey;
-                    if ( !clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric )
-                    {
-                        let arrVal = [];
-                        $('#idUlList' + sKey.replace(regExp,'') + ' li').each(function()
-                        {
-                            let sVal = $(this).attr('data-id');
-                            if ( $('#idChkVal_'+sVal).prop('checked') )
-                            {
-                                let val = $('#idTxtVal_'+sVal).val();
-                                arrVal.push(val);
-                            };
-                        });
-                        if ( !arrVal.length )
-                        {
-                            alert("Categorical Feature의 Vocabulary List가 비었습니다.");            
-                            $('.loading').prop("disabled",false).removeClass('disabled');
-                            $('.running').prop("disabled",false).removeClass('disabled');
-                            $('#idBtnRun').html(arrBtnText[1]).removeClass('fileupload-processing');
-                            return;
-                        }
-                        objItem['VocList'] = arrVal.sort();
-                        objData['Categorfeatures'].push(objItem);
-                    }
-                    else
-                    {
-                        let list = $('#idTxtList'+sKey.replace(regExp,'')).val();
-                        let arrVal = (new Function("return [" + list + "];")());
-                        if ( !arrVal.length )
-                        {
-                            alert("Numeric Feature의 Boundaries List가 비었습니다.");            
-                            $('.loading').prop("disabled",false).removeClass('disabled');
-                            $('.running').prop("disabled",false).removeClass('disabled');
-                            $('#idBtnRun').html(arrBtnText[1]).removeClass('fileupload-processing');
-                            return;
-                        }                      
-                        objItem['BndList'] = arrVal.sort(function(a, b){return a - b});
-                        objData['Numericfeatures'].push(objItem);
-                    }
-                }
-            }
-
-            objData['Parameters'] = [];
-            objData['Parameters'].push( $( "#idTxtParam00" ).val() );
-            objData['Parameters'].push( $( "#idTxtParam01" ).val() );
-            objData['Parameters'].push( $( "#idTxtParam02" ).val() );
-            objData['Parameters'].push( $( "#idTxtParam03" ).val() );
-            objData['Parameters'].push( $( "#idTxtParam04" ).val() );
-            objData['Parameters'].push( $( "#idTxtParam05" ).val() );
-            objData['Parameters'].push( $( "#idTxtParam06" ).val() );
-            objData['Parameters'].push( $( "#idSelParam07 option:selected" ).val() );
+                        
+            objData['AlgorithmType'] = $('#idSelTprAlrotithm option:selected').val();
+            objData['SmplsPerVal'] = $('#idTxtSamplesPerVal').val();
+            objData['ClassifyCol'] = $('#idSelCol4Classify option:selected').text();
             let arrVal = [];
-            $('#idUlParam08 li').each(function()
+            $('#idUlClassifyVals li').each(function()
             {
                 var sVal = $(this).text();
                 arrVal.push(sVal);
             });
-            objData['Parameters'].push( arrVal.sort(function(a, b){return a - b}) );
-            objData['Parameters'].push( $( "#idTxtParam09" ).val() );
-            objData['Parameters'].push( $( "#idTxtParam0A" ).val() );
+            objData['ClassifyVals'] = arrVal;//.sort(function(a, b){return a - b});
+            objData['ClassifyLbls'] = [ $( "#idTxtClassifyLblA" ).val(), $( "#idTxtClassifyLblB" ).val() ];
+            objData['SubGroupCol'] = $('#idSelCol4SubGroup option:selected').text();
+            arrVal = [];
+            $('#idUlSubGroupVals li').each(function()
+            {
+                var sVal = $(this).text();
+                arrVal.push(sVal);
+            });
+            objData['SubGroupVals'] = arrVal;//.sort(function(a, b){return a - b});
 
-            worker.postMessage(objData);
+            if ( objData['AlgorithmType'] == 'gi')
+            {
+                objData['Parameters'] = [];
+                objData['Parameters'].push( $( "#idTxtParam00" ).val() );
+                objData['Parameters'].push( $( "#idTxtParam01" ).val() );
+                objData['Parameters'].push( $( "#idTxtParam02" ).val() );
+                objData['Parameters'].push( $( "#idTxtParam03" ).val() );
+                objData['Parameters'].push( $( "#idTxtParam04" ).val() );
+                objData['Parameters'].push( $( "#idTxtParam05" ).val() );
+                objData['Parameters'].push( $( "#idTxtParam06" ).val() );
+
+                objData['HashBucketSize'] = $('#idTxtHashBkSize').val();
+                objData['Categorfeatures'] = [];
+                objData['Numericfeatures'] = [];
+
+                let aSelKey = [objData['ClassifyCol'], objData['SubGroupCol']];
+                for (let sKey in g_clsDatasetFair.arrOvColumns)
+                {
+                    if ( !aSelKey.includes(sKey) )
+                    {
+                        let objItem = {};
+                        objItem['ColName'] = sKey;
+                        if ( !g_clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric )
+                        {
+                            let arrVal = [];
+                            $('#idUlList' + sKey.replace(g_regExp,'') + ' li').each(function()
+                            {
+                                let sVal = $(this).attr('data-id');
+                                if ( $('#idChkVal_'+sVal).prop('checked') )
+                                {
+                                    let val = $('#idTxtVal_'+sVal).val();
+                                    arrVal.push(val);
+                                };
+                            });
+                            if ( !arrVal.length )
+                            {
+                                alert("Categorical Feature의 Vocabulary List가 비었습니다.");            
+                                $('.loading').prop("disabled",false).removeClass('disabled');
+                                $('.running').prop("disabled",false).removeClass('disabled');
+                                $('#idBtnRun').html(g_arrBtnText[1]).removeClass('fileupload-processing');
+                                return;
+                            }
+                            objItem['VocList'] = arrVal.sort();
+                            objData['Categorfeatures'].push(objItem);
+                        }
+                        else
+                        {
+                            let list = $('#idTxtList'+sKey.replace(g_regExp,'')).val();
+                            let arrVal = (new Function("return [" + list + "];")());
+                            if ( !arrVal.length )
+                            {
+                                alert("Numeric Feature의 Boundaries List가 비었습니다.");            
+                                $('.loading').prop("disabled",false).removeClass('disabled');
+                                $('.running').prop("disabled",false).removeClass('disabled');
+                                $('#idBtnRun').html(g_arrBtnText[1]).removeClass('fileupload-processing');
+                                return;
+                            }                      
+                            objItem['BndList'] = arrVal.sort(function(a, b){return a - b});
+                            objData['Numericfeatures'].push(objItem);
+                        }
+                    }
+                }
+            }
+            g_wkrAlgProc.postMessage(objData);
         }
         else
         {
@@ -341,7 +255,7 @@ $(document).ready(function()
 
             $('.loading').prop("disabled",false).removeClass('disabled');
             $('.running').prop("disabled",false).removeClass('disabled');
-            $('#idBtnRun').html(arrBtnText[1]).removeClass('fileupload-processing');
+            $('#idBtnRun').html(g_arrBtnText[1]).removeClass('fileupload-processing');
             
             return
         }
@@ -351,17 +265,11 @@ $(document).ready(function()
     $('#idAStep0').trigger('click');
     
     fnCheckFileList();
-    // var id = window.setTimeout(function() {}, 0);
-    // while (id--)
-    // {
-    //     window.clearTimeout(id);
-    // }
-    // varTimer = setInterval(fnCheckFileList, 10000);
 
-    worker = new Worker(sFilePath);
-    worker.onmessage = function(e)
+    g_wkrAlgProc = new Worker(sFilePath);
+    g_wkrAlgProc.onmessage = function(e)
     {
-        $('#idAStep4').trigger('click');
+        $('#idAStep5').trigger('click');
 
         let json_res = JSON.parse(JSON.parse(e.data));
         if ( !json_res.success )
@@ -373,36 +281,22 @@ $(document).ready(function()
         if ( g_bOriginData )
         {
             let aTPR = [];
-            for (let nGrp in json_res.Metric)
+            for (let nIdx in json_res.Metric)
             {
-                for (let nIdx in json_res.Metric[nGrp])
+                let sMetric = '';
+                for (let sKey in json_res.Metric[nIdx])
                 {
-                    let sMetric = '';
-                    for (let sKey in json_res.Metric[nGrp][nIdx])
-                    {
-                        aTPR.push(json_res.Metric[nGrp][nIdx][sKey])
-                        sMetric += '<p>' + sKey + ': ' + json_res.Metric[nGrp][nIdx][sKey] + '</p>';
-                    }
-                    $('#idDivMetricA'+nGrp).html(sMetric);
+                    aTPR.push(json_res.Metric[nIdx][sKey])
+                    sMetric += '<p>' + sKey + ': ' + json_res.Metric[nIdx][sKey] + '</p>';
                 }
+                $('#idDivMetricA'+nIdx).html(sMetric);
             }
             $('#idDivGraphA0').html(json_res.ImgTag[0]);
             $('#idDivGraphA1').html(json_res.ImgTag[1]);
+            $('#idDivGraphA2').html(json_res.ImgTag[2]);
     
-            // var url = "http://127.0.0.1:5555/api/fairness/tpr?csv=" + json_res.filename[0] + "&tpra=" + aTPR[0] + "&tprb=" + aTPR[2]
-            // var url = "http://164.125.37.214:5555/api/fairness/tpr?csv=210719_fairness_test_origin chicago crashes.csv&tpra=0.50&tprb=0.163"
-            // var xhttp = new XMLHttpRequest();
-            // xhttp.onreadystatechange = function()
-            // {
-            //     if (this.readyState == XMLHttpRequest.DONE && this.status == 200)
-            //     {
-            //         var res = this.responseText;
-            //     }
-            // };
-            // xhttp.open("GET", url);
-            // xhttp.send();
-            
             var url = "http://164.125.37.214:5555/api/fairness/tpr"
+            if ( !bChicagoData ) url += "2";
             var data =
             {
                 csv: json_res.filename,//"210719_fairness_test_origin chicago crashes.csv",//
@@ -427,7 +321,7 @@ $(document).ready(function()
             
                         $('.loading').prop("disabled",false).removeClass('disabled');
                         $('.running').prop("disabled",false).removeClass('disabled');
-                        $('#idBtnRun').html(arrBtnText[1]).removeClass('fileupload-processing');
+                        $('#idBtnRun').html(g_arrBtnText[1]).removeClass('fileupload-processing');
                         
                         return
                     }
@@ -442,67 +336,61 @@ $(document).ready(function()
             })
 
             // for test
-            //fnLoadFile("train_after.csv", false);
+            // fnLoadFile((bChicagoData)?"c_train_after.csv":"m_train_after.csv", false);
         }
         else
         {
             let aTPR = [];
-            for (let nGrp in json_res.Metric)
+            for (let nIdx in json_res.Metric)
             {
-                for (let nIdx in json_res.Metric[nGrp])
+                let sMetric = '';
+                for (let sKey in json_res.Metric[nIdx])
                 {
-                    let sMetric = '';
-                    for (let sKey in json_res.Metric[nGrp][nIdx])
-                    {
-                        aTPR.push(json_res.Metric[nGrp][nIdx][sKey])
-                        sMetric += '<p>' + sKey + ': ' + json_res.Metric[nGrp][nIdx][sKey] + '</p>';
-                    }
-                    $('#idDivMetricB'+nGrp).html(sMetric);
+                    aTPR.push(json_res.Metric[nIdx][sKey])
+                    sMetric += '<p>' + sKey + ': ' + json_res.Metric[nIdx][sKey] + '</p>';
                 }
+                $('#idDivMetricB'+nIdx).html(sMetric);
             }
             $('#idDivGraphB0').html(json_res.ImgTag[0]);
             $('#idDivGraphB1').html(json_res.ImgTag[1]);
+            $('#idDivGraphB2').html(json_res.ImgTag[2]);
 
             $.ajax(
             {
                 url: 'getresult/',
                 type: 'POST',
-                data: JSON.stringify({'key': sKey}),
+                data: JSON.stringify({'key': g_sAccessKey}),
                 dataType: 'JSON',
                 success: function(res)
                 {
                     var res = JSON.parse(res);
                     var nPercentage = res.result.rate * 100.0;
-                    var sTag = '<p style="font-size:48px;">보정 성능 : ' + nPercentage.toFixed(3) + ' % ' + '</p>';
+                    sTag = '<p style="font-size:48px;">보정 성능 : ' + nPercentage.toFixed(3) + ' % ' + '</p>';
                     $('#idDivPerform').html(sTag);
                 }
             })
 
-            g_bProcDone = true;
+            g_bProcDone = true;          
 
-            // for test
+            fnCheckFileList(true);
+
             $('.loading').prop("disabled",false).removeClass('disabled');
-            $('#idBtnRun').html(arrBtnText[1]).removeClass('fileupload-processing');
+            var html = ( g_bManualRun ) ? '(BEFORE)' : '';
+            $('#idBtnRun').html(g_arrBtnText[1] + html).removeClass('fileupload-processing');
         }
     };
-    worker.onerror = function(e)
+    g_wkrAlgProc.onerror = function(e)
     {
         alert("Error : " + e.message + " (" + e.filename + ":" + e.lineno + ")");
     };
 });
-
-var g_bAftersetBegin = true;
-var g_bProcDone = true;
-var clsDatasetFair = null;
 function fnCheckFileList(update = false)
 {
-    if ( !g_bProcDone ) return;
-    
     $.ajax(
     {
         url: "getcount/",
         type: 'POST',
-        data: JSON.stringify({'key': sKey}),
+        data: JSON.stringify({'key': g_sAccessKey}),
         dataType: 'JSON',
         success: function(res)
         {
@@ -515,7 +403,7 @@ function fnCheckFileList(update = false)
                     {
                         url: "getlist/",
                         type: 'POST',
-                        data: JSON.stringify({'key': sKey}),
+                        data: JSON.stringify({'key': g_sAccessKey}),
                         dataType: 'JSON',
                         success: function(res)
                         {
@@ -547,12 +435,13 @@ function fnLoadFile(sFileTRN, bOriginData = true)
         g_bProcDone = false;
         
         $('.loading').prop("disabled",true).addClass('disabled');
-        $('#idBtnLoading').html(strTagWork).addClass('fileupload-processing');
+        $('#idBtnLoading').html(g_strTagWork).addClass('fileupload-processing');
+        
+        $('#idDivSbChartA').html('');
+        $('#idDivSbChartB').html('');
 
-        $("#idDivStep0").hide();
-        $("#idDivStep1").hide();
-        $("#idDivStep2").hide();
-        $("#idDivStep3").hide();
+        $("#idDivParamTpr").hide();
+        $("#idDivParamGi").hide();
 
         $('#idDivMetricA0').html('');
         $('#idDivMetricA1').html('');
@@ -565,44 +454,47 @@ function fnLoadFile(sFileTRN, bOriginData = true)
         $('#idDivPerform').html('');
     }
     
-    clsDatasetFair = null;
+    g_clsDatasetFair = null;
+    g_arrDataSunburst = [];
 
     $.ajax(
     {
         url: "loading/",
         type: 'POST',
-        data: JSON.stringify({'key': sKey, 'filename': sFileTRN, 'bOriginData': bOriginData}),
+        data: JSON.stringify({'key': g_sAccessKey, 'filename': sFileTRN, 'bOriginData': bOriginData}),
         dataType: 'JSON',
         success: async function(res)
         {
             var res = JSON.parse(res);
             if ( res.success == 'true' )
             {
-                if ( bOriginData )
-                {
-                    fnCheckFileList(true);
-                }
+                $('#idAStep2').trigger('click');
                 await fnPrepareOverView();
 
+                $('#idAStep3').trigger('click');
+                await fnPrepareSunburst();
+
+                $('#idAStep4').trigger('click');
+                await fnPrepareProc();
+                
                 if ( bOriginData )
                 {
                     $('.loading').prop("disabled",false).removeClass('disabled');
-                    $('#idBtnLoading').html(arrBtnText[0]).removeClass('fileupload-processing');
+                    $('#idBtnLoading').html(g_arrBtnText[0]).removeClass('fileupload-processing');
                     $('.running').prop("disabled",false).removeClass('disabled');
                 }
-                await fnPrepareProc();
 
-                // for test
                 if ( !g_bProcDone )
                 {
-                    $('#idBtnGoStep1').trigger('click');
-                    $('#idBtnGoStep2').trigger('click');
-                    $('#idBtnGoStep3').trigger('click');
-                    // if ( bOriginData )
-                    // {
-                    //     $('#idAStep3').trigger('click');
-                    // }
-                    $('#idBtnRun').trigger('click');
+                    if ( g_bManualRun )
+                    {
+                        var html = (bOriginData) ? ' (BEFORE)':' (AFTER)';
+                        $('#idBtnRun').html(g_arrBtnText[1] + html).removeClass('fileupload-processing');
+                    }
+                    else
+                    {
+                        $('#idBtnRun').trigger('click');
+                    }
                 }
             }
         }
@@ -614,32 +506,36 @@ const arrBarColor = [ 'rgba(170, 200, 255, 0.9)', 'rgba(255, 170, 200, 0.9)' ];
 function fnPrepareOverView()
 {
     return new Promise(function(resolve, reject)
-    { 
-        $('#idTblNumeric tbody').empty();
-        $('#idTblCategor tbody').empty();
+    {
+        var sSpace = "<p style='height:20px;'></p>";
+        $('#idDivNumeric').html(sSpace + g_strTagBusy);
+        $('#idDivCategor').html(sSpace + g_strTagBusy);
         
         $.ajax(
         {
             url: "overview/",
             type: 'POST',
-            data: JSON.stringify({'key': sKey}),
+            data: JSON.stringify({'key': g_sAccessKey}),
             dataType: 'JSON',
             success: async function(res)
             {
                 var res = JSON.parse(res);
                 if ( res.success == 'true' )
                 {
-                    clsDatasetFair = res.data;
+                    g_clsDatasetFair = res.data;
+                    
+                    $('#idTblNumeric tbody').empty();
+                    $('#idTblCategor tbody').empty();
 
-                    var nFileCnt = clsDatasetFair.objRawData.length;
+                    var nFileCnt = g_clsDatasetFair.objRawData.length;
                     for (var nIdxF = 0; nIdxF < nFileCnt; nIdxF++)
                     {
-                        // Make Raw Data List        
+                        // Make Raw Data List     
                         $('#idTblRawData'+nIdxF.toString()+' thead').empty();      
                         var strContents = "<tr><th class='text-center fixed_th td-sm' style='width:3rem'>NO</th>";
-                        for (var nCol in clsDatasetFair.objRawData[nIdxF].columns)
+                        for (var nCol in g_clsDatasetFair.objRawData[nIdxF].columns)
                         {
-                            var sKey = clsDatasetFair.objRawData[nIdxF].columns[nCol];
+                            var sKey = g_clsDatasetFair.objRawData[nIdxF].columns[nCol];
                             strContents += "<th class='text-center fixed_th td-sm'>" + sKey + "</th>";
                         }
                         strContents += "</tr>";
@@ -647,19 +543,19 @@ function fnPrepareOverView()
                 
                         $('#idTblRawData'+nIdxF.toString()+' tbody').empty();
                         strContents = '';
-                        for (var nRow in clsDatasetFair.objRawData[nIdxF].rows)
+                        for (var nRow in g_clsDatasetFair.objRawData[nIdxF].rows)
                         {
                             var nNum = +nRow;
                             if ( isNaN(nNum) ) continue;
                             if ( nNum >= 5 ) break;
                             
                             strContents += "<tr><td class='text-right td-sm'>" + (nNum+1).toString() + "</td>";
-                            for (var nCol in clsDatasetFair.objRawData[nIdxF].columns)
+                            for (var nCol in g_clsDatasetFair.objRawData[nIdxF].columns)
                             {
-                                var sKey = clsDatasetFair.objRawData[nIdxF].columns[nCol];
+                                var sKey = g_clsDatasetFair.objRawData[nIdxF].columns[nCol];
                 
                                 strContents += "<td class='text-center td-sm'>";
-                                strContents += clsDatasetFair.objRawData[nIdxF].rows[nRow][sKey];
+                                strContents += g_clsDatasetFair.objRawData[nIdxF].rows[nRow][sKey];
                                 strContents += '</td>';
                             }
                             strContents += '</tr>';
@@ -667,51 +563,51 @@ function fnPrepareOverView()
                         $('#idTblRawData'+nIdxF.toString()+' tbody').append(strContents);
                 
                         // Make Overview
-                        for (var nCol in clsDatasetFair.objRawData[nIdxF].columns)
+                        for (var nCol in g_clsDatasetFair.objRawData[nIdxF].columns)
                         {
-                            var sKey = clsDatasetFair.objRawData[nIdxF].columns[nCol];
+                            var sKey = g_clsDatasetFair.objRawData[nIdxF].columns[nCol];
                 
                             // Make Chart Data
-                            clsDatasetFair.arrOvColumns[sKey].idCanvas = 'idCvsChart' + nCol.toString();
-                            clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].arrLgdLbl = [];
-                            clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].arrLgdVal = [];
-                            clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].arrLgdClr = [];
+                            g_clsDatasetFair.arrOvColumns[sKey].idCanvas = 'idCvsChart' + nCol.toString();
+                            g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].arrLgdLbl = [];
+                            g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].arrLgdVal = [];
+                            g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].arrLgdClr = [];
                             
-                            for (var sVal in clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].pnUniqueCntr)
+                            for (var sVal in g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].pnUniqueCntr)
                             {
-                                var fVal = ( clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].bNumeric ) ? +sVal : sVal;
-                                clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].arrLgdLbl.push( fVal );
-                                clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].arrLgdVal.push( +clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].pnUniqueCntr[sVal] );
-                                clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].arrLgdClr.push( arrBarColor[nIdxF] );
+                                var fVal = ( g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].bNumeric ) ? +sVal : sVal;
+                                g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].arrLgdLbl.push( fVal );
+                                g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].arrLgdVal.push( +g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].pnUniqueCntr[sVal] );
+                                g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].arrLgdClr.push( arrBarColor[nIdxF] );
                             }
                         }
                     }
                     // Make Table
                     var sTableItem = '';
-                    for (var sKey in clsDatasetFair.arrOvColumns)
+                    for (var sKey in g_clsDatasetFair.arrOvColumns)
                     {
-                        if ( clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric )
+                        if ( g_clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric )
                         {
                             sTableItem = "<tr style='height:20px;'>"
                                 + "<td colspan=7 class='font-weight-bold'>" + sKey + "</td>"
                                 + "<td rowspan=" + (nFileCnt+1).toString() + "><div style='padding-left:15px;height:360px;'>"
-                                + "<canvas id='" + clsDatasetFair.arrOvColumns[sKey].idCanvas + "' style='width:480px;height:320px;'></canvas>"
+                                + "<canvas id='" + g_clsDatasetFair.arrOvColumns[sKey].idCanvas + "' style='width:480px;height:320px;'></canvas>"
                                 + "</div></td>"
                                 + "</tr>"
                             $('#idTblNumeric').append(sTableItem);
                 
                             for (var nIdxF = 0; nIdxF < nFileCnt; nIdxF++)
                             {
-                                var nRowCnt = clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].nCount;
-                                var fPercentage = (clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].nZeros/nRowCnt)*100;
+                                var nRowCnt = g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].nCount;
+                                var fPercentage = (g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].nZeros/nRowCnt)*100;
                                 sTableItem = "<tr>"
                                     + "<td class='text-center'>" + nRowCnt + "</td>"
-                                    + "<td class='text-center'>" + (Math.round(clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].fMean*100)/100).toFixed(2) + "</td>"
-                                    + "<td class='text-center'>" + (Math.round(clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].fStdDev*100)/100).toFixed(2) + "</td>"
+                                    + "<td class='text-center'>" + (Math.round(g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].fMean*100)/100).toFixed(2) + "</td>"
+                                    + "<td class='text-center'>" + (Math.round(g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].fStdDev*100)/100).toFixed(2) + "</td>"
                                     + "<td class='text-center'>" + (Math.round(fPercentage *100)/100).toFixed(2) + "%</td>"
-                                    + "<td class='text-center'>" + clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].fMin + "</td>"
-                                    + "<td class='text-center'>" + clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].fMedian + "</td>"
-                                    + "<td class='text-center'>" + clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].fMax + "</td>"
+                                    + "<td class='text-center'>" + g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].fMin + "</td>"
+                                    + "<td class='text-center'>" + g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].fMedian + "</td>"
+                                    + "<td class='text-center'>" + g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].fMax + "</td>"
                                     + "</tr>";
                                 $('#idTblNumeric').append(sTableItem);
                             }
@@ -721,29 +617,25 @@ function fnPrepareOverView()
                             sTableItem = "<tr style='height:20px;'>"
                                 + "<td colspan=5 class='font-weight-bold'>" + sKey + "</td>"
                                 + "<td rowspan=" + (nFileCnt+1).toString() + "><div style='padding-left:15px;height:360px;'>"
-                                + "<canvas id='" + clsDatasetFair.arrOvColumns[sKey].idCanvas + "' style='width:480px;height:320px;'></canvas>"
+                                + "<canvas id='" + g_clsDatasetFair.arrOvColumns[sKey].idCanvas + "' style='width:480px;height:320px;'></canvas>"
                                 + "</div></td>"
                                 + "</tr>";
                             $('#idTblCategor').append(sTableItem);
                             
                             for (var nIdxF = 0; nIdxF < nFileCnt; nIdxF++)
                             {
-                                var sMaxKey = clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].sMaxUniqueKey;
+                                var sMaxKey = g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].sMaxUniqueKey;
                                 sTableItem = "<tr>"
-                                    + "<td class='text-center'>" + clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].nCount + "</td>"
-                                    + "<td class='text-center'>" + Object.keys(clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].pnUniqueCntr).length + "</td>"
+                                    + "<td class='text-center'>" + g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].nCount + "</td>"
+                                    + "<td class='text-center'>" + Object.keys(g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].pnUniqueCntr).length + "</td>"
                                     + "<td class='text-center'>" + sMaxKey + "</td>"
-                                    + "<td class='text-center'>" + clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].pnUniqueCntr[sMaxKey] + "</td>"
-                                    + "<td class='text-center'>" + (Math.round(clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].fMean*100)/100).toFixed(2) + "</td>"
+                                    + "<td class='text-center'>" + g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].pnUniqueCntr[sMaxKey] + "</td>"
+                                    + "<td class='text-center'>" + (Math.round(g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdxF].fMean*100)/100).toFixed(2) + "</td>"
                                     + "</tr>";
                                 $('#idTblCategor').append(sTableItem);
                             }
                         }
                     }
-                    
-                    // for test
-                    $('#idAStep2').trigger('click');  
-
                     fnCreateChart();
 
                     return resolve(true);
@@ -752,102 +644,262 @@ function fnPrepareOverView()
         })
     });
 }
-var acceessableCount = 1;
+function fnPrepareSunburst()
+{
+    return new Promise(function(resolve, reject)
+    {
+        var sSpace = "<p style='height:50px;'></p>";
+        if ( g_bOriginData )
+        {
+            $('#idDivSbChartA').html(sSpace + g_strTagBusy);
+        }
+        else
+        {
+            $('#idDivSbChartB').html(sSpace + g_strTagBusy);
+        }
+        $.ajax(
+        {
+            url: "sunburst/",
+            type: 'POST',
+            data: JSON.stringify({'key': g_sAccessKey}),
+            dataType: 'JSON',
+            success: async function(res)
+            {
+                var res = JSON.parse(res);
+                if ( res.success == 'true' )
+                {
+                    arrData = res.data;
+                    if ( arrData.length > 0 )
+                    {
+                        g_arrDataSunburst.push(arrData[0]);
+                        
+                        if ( g_bOriginData )
+                        {
+                            $('#idDivSbChartA').html('');
+                            Sunburst().data(arrData[0])
+                            .width(400)
+                            .height(400)
+                            .color((d, parent) => g_cD3scaleOrd(parent ? parent.data.name : null))    
+                            .excludeRoot(true)
+                            .radiusScaleExponent(1)
+                            (document.getElementById('idDivSbChartA'));
+                        }
+                        else
+                        {                        
+                            $('#idDivSbChartB').html('');
+                            Sunburst().data(arrData[0])
+                            .width(400)
+                            .height(400)
+                            .color((d, parent) => g_cD3scaleOrd(parent ? parent.data.name : null))    
+                            .excludeRoot(true)
+                            .radiusScaleExponent(1)
+                            (document.getElementById('idDivSbChartB'));
+                        }
+                    }
+                    
+                    return resolve(true);
+                }
+            }
+        });
+    });
+}
+let acceessableCount = 1;
 function fnPrepareProc()
 {
     return new Promise(function(resolve, reject)
     { 
-        var sTag = '';
-        var sVal = '';
+        let sTag = '';
+        let sVal = '';
 
-        $('#idSelCol4Criteria').empty();
-        $('#idSelCriterColLbl').empty();
-        $('#idSelCol4HashBukt').empty();
+        $('#idSelTprAlrotithm').empty();
+        $('#idSelCol4Classify').empty();
+        $('#idSelCol4SubGroup').empty();
 
-        for (var sKey in clsDatasetFair.arrOvColumns)
+        for (var nIdx in g_arrAlgType)
+        {
+            sTag = "<option value='" + g_arrAlgType[nIdx].key + "'>" + g_arrAlgType[nIdx].name + "</option>";
+            $('#idSelTprAlrotithm').append(sTag);
+        }
+
+        for (var sKey in g_clsDatasetFair.arrOvColumns)
         {
             sTag = "<option value='" + sKey + "'>" + sKey + "</option>";
-            $('#idSelCol4Criteria').append(sTag);
-            $('#idSelCol4HashBukt').append(sTag);
+            $('#idSelCol4Classify').append(sTag);
+            $('#idSelCol4SubGroup').append(sTag);
         }
-        $('#idSelCol4Criteria').on('change', function()
+        $('#idSelTprAlrotithm').on('change', function()
         {
-            var sSelKey = $( "#idSelCol4Criteria option:selected" ).text();
-
-            $('#idSelCriterColLbl').empty();
-            for (var nIdx in clsDatasetFair.arrOvColumns[sSelKey].arrOvData[0].arrLgdLbl)
+            if ( $(this).val() == 'gi')
             {
-                sVal = clsDatasetFair.arrOvColumns[sSelKey].arrOvData[0].arrLgdLbl[nIdx];
-                sTag = "<option value='" + sVal + "'>" + sVal + "</option>";
-                $('#idSelCriterColLbl').append(sTag);
+                $("#idDivParamGi").show();
             }
-            $('#idSelCol4HashBukt').empty();
-            for (var sKey in clsDatasetFair.arrOvColumns)
+            else
             {
-                if ( !clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric && sKey != sSelKey )
-                {
-                    sTag = "<option value='" + sKey + "'>" + sKey + "</option>";
-                    $('#idSelCol4HashBukt').append(sTag);
-                }
+                $("#idDivParamGi").hide();
             }
         });
+        $('#idSelCol4Classify').on('change', function()
+        {
+            let sSelKey = $( "#idSelCol4Classify option:selected" ).text();
+            sVal = '';
+            $('#idUlClassifyVals').empty();
+            for (var nIdx in g_clsDatasetFair.arrOvColumns[sSelKey].arrOvData[0].arrLgdLbl)
+            {
+                sVal = g_clsDatasetFair.arrOvColumns[sSelKey].arrOvData[0].arrLgdLbl[nIdx];
+                sTag = "<li>" + sVal + "</li>";
+                $('#idUlClassifyVals').append(sTag);
+            }
+            $('#idSelCol4SubGroup').empty();
+            for (var sKey in g_clsDatasetFair.arrOvColumns)
+            {
+                //if ( !g_clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric && sKey != sSelKey )
+                if ( sKey != sSelKey )
+                {
+                    sTag = "<option value='" + sKey + "'>" + sKey + "</option>";
+                    $('#idSelCol4SubGroup').append(sTag);
+                }
+            }
+            sVal = $("#idSelCol4SubGroup option:first").val();
+            $('#idSelCol4SubGroup').val(sVal).trigger('change');
+        });
+        $('#idSelCol4SubGroup').on('change', function()
+        {
+            var sSelKey = $( "#idSelCol4SubGroup option:selected" ).text();
+            sVal = '';
+            $('#idUlSubGroupVals').empty();
+            for (var nIdx in g_clsDatasetFair.arrOvColumns[sSelKey].arrOvData[0].arrLgdLbl)
+            {
+                sVal = g_clsDatasetFair.arrOvColumns[sSelKey].arrOvData[0].arrLgdLbl[nIdx];
+                sTag = "<li>" + sVal + "</li>";
+                $('#idUlSubGroupVals').append(sTag);
+            }
+            fnFillCatgNumr();
+        });
+        if ( $("#idSelCol4SubGroup option").length > 0 )
+        {
+            sVal = $("#idSelCol4SubGroup option:first").val();
+            $('#idSelCol4SubGroup').val(sVal).trigger('change');
+            
+            // for test
+            if ( bChicagoData )
+            {
+                $('#idSelCol4SubGroup').val(arrColHdr0[5]).trigger('change');
+                $('#idTxtClassifyLblA').val(arrClsLbl0[0]);
+                $('#idTxtClassifyLblB').val(arrClsLbl0[1]);
+            }
+            else
+            {
+                $('#idSelCol4SubGroup').val(arrColHdr1[2]).trigger('change');
+                $('#idTxtClassifyLblA').val(arrClsLbl1[0]);
+                $('#idTxtClassifyLblB').val(arrClsLbl1[1]);
+            }
+        }
 
-        sVal = $("#idSelCol4Criteria option:first").val();
-        $('#idSelCol4Criteria').val(sVal).trigger('change');
-                                            
-        $("#idDivStep0").show(); 
+        sVal = $("#idSelCol4Classify option:first").val();
+        $('#idSelCol4Classify').val(sVal).trigger('change');
+        
+        $("#idDivParamTpr").show(); 
 
         // for test
-        $('#idSelCol4Criteria').val(arrColVal[6]).trigger('change');
-        $('#idSelCriterColLbl').val('>1500').trigger('change');
-        $('#idSelCol4HashBukt').val(arrColVal[3]).trigger('change');
+        $('#idSelTprAlrotithm').val(g_arrAlgType[3].key).trigger('change');
+        if ( bChicagoData )
+        {
+            $('#idSelCol4Classify').val(arrColHdr0[6]).trigger('change');
+            $('#idSelCol4SubGroup').val(arrColHdr0[5]).trigger('change');
+        }
+        else
+        {
+            $('#idSelCol4Classify').val(arrColHdr1[0]).trigger('change');
+            $('#idSelCol4SubGroup').val(arrColHdr1[2]).trigger('change');
+        }
 
         return resolve(true);
     });
 }
-function zeroPadding(num, size)
+function fnFillCatgNumr()
 {
-    if ( num.toString().length >= size ) return num;
-    return ( Math.pow(10, size) + Math.floor(num) ).toString().substring(1);
-}
-function median(numbers)
-{
-    var median = 0, numsLen = numbers.length;
-    numbers.sort();
-    if ( numsLen % 2 === 0 ) // even
+    let aSelKey = [$( "#idSelCol4Classify option:selected" ).text(), $( "#idSelCol4SubGroup option:selected" ).text()];
+    
+    sTag = '';
+    for (let sKey in g_clsDatasetFair.arrOvColumns)
     {
-        median = (numbers[numsLen / 2 - 1] + numbers[numsLen / 2]) / 2;
+        if ( !g_clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric && !aSelKey.includes(sKey) )
+        {
+            sTag += "<h5 class='font-weight-bold text-left text-secondary'><div class='row'>" +
+                "<div class='col-1'><i class='fas fa-angle-double-right'></i></div>" +
+                "<div class='col-2' style='text-align:right;'>Vocabulary Column:</div>" +
+                "<div class='col-3'>" +
+                "<input type='text' id='idTxtCol" + sKey.replace(g_regExp,'') + "' class='running' style='width:100%;height:28px;' value='" + sKey + "' readonly />" +
+                "</div>" +
+                "<div class='col-2' style='text-align:right;'>Vocabulary List:</div>" +
+                "<div class='col-3'>" +
+                "<ul id='idUlList" + sKey.replace(g_regExp,'') + "' style='width:100%;'>" +
+                "</ul></div><div class='col-1'></div></div></h5>";
+        }
     }
-    else // odd
+    $('#idDivItem1').html(sTag);
+    
+    for (let sKey in g_clsDatasetFair.arrOvColumns)
     {
-        median = numbers[(numsLen - 1) / 2];
-    }        
-    return median;
+        if ( !g_clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric && !aSelKey.includes(sKey) )
+        {
+            for (let nIdx in g_clsDatasetFair.arrOvColumns[sKey].arrOvData[0].arrLgdLbl)
+            {
+                sVal = g_clsDatasetFair.arrOvColumns[sKey].arrOvData[0].arrLgdLbl[nIdx];
+                sCID = sKey.replace(g_regExp,'') + "_" + sVal.replace(g_regExp,'');
+                sTag = "<li data-id='"+ sCID +"'>" +
+                    "<span style='display:inline-block;width:300px;'><input type='checkbox' id='idChkVal_"+sCID+"' class='running' checked />" +
+                    "<label for='idChkVal_"+sCID+"'>&nbsp;"+sVal+"</label></span>" +
+                    "<input type='hidden' id='idTxtVal_"+sCID+"' value='"+sVal+"' /></li>";
+                $('#idUlList'+sKey.replace(g_regExp,'')).append(sTag);
+            }
+        }
+    }
+    
+    sTag = '';
+    for (let sKey in g_clsDatasetFair.arrOvColumns)
+    {
+        if ( g_clsDatasetFair.arrOvColumns[sKey].arrOvData[0].bNumeric && !aSelKey.includes(sKey) )
+        {
+            sTag += 
+                "<h5 class='font-weight-bold text-left text-secondary'><div class='row'>" +
+                "<div class='col-1'><i class='fas fa-angle-double-right'></i></div>" +
+                "<div class='col-2' style='text-align:right;'>Numeric Column:</div>" +
+                "<div class='col-3'>" +
+                "<input type='text' id='idTxtCol" + sKey.replace(g_regExp,'') + "' class='running' style='width:100%;height:28px;' value='" + sKey + "' readonly />" +
+                "</div>" +
+                "<div class='col-2' style='text-align:right;'>Boundaries:</div>" +
+                "<div class='col-3'>" +
+                "<input type='text' id='idTxtList" + sKey.replace(g_regExp,'') + "' class='running' style='width:100%;height:28px;' value='10,20,30,40,50,60,70,80' />" +
+                "</ul></div><div class='col-1'></div></div></h5>";
+        }
+    }
+    $('#idDivItem2').html(sTag);
 }
 function fnCreateChart()
 {
-    for (var sKey in clsDatasetFair.arrOvColumns)
+    for (var sKey in g_clsDatasetFair.arrOvColumns)
     {        
-        if ( clsDatasetFair.arrOvColumns[sKey].ptrChart != null ) clsDatasetFair.arrOvColumns[sKey].ptrChart.destroy();
+        if ( g_clsDatasetFair.arrOvColumns[sKey].ptrChart != null ) g_clsDatasetFair.arrOvColumns[sKey].ptrChart.destroy();
 
-        var idCanvas = clsDatasetFair.arrOvColumns[sKey].idCanvas;
-        clsDatasetFair.arrOvColumns[sKey].ctxCanvas = document.getElementById(idCanvas).getContext('2d');
-        clsDatasetFair.arrOvColumns[sKey].ctxCanvas.canvas.width = 480;
-        clsDatasetFair.arrOvColumns[sKey].ctxCanvas.canvas.height = 320;
+        var idCanvas = g_clsDatasetFair.arrOvColumns[sKey].idCanvas;
+        g_clsDatasetFair.arrOvColumns[sKey].ctxCanvas = document.getElementById(idCanvas).getContext('2d');
+        g_clsDatasetFair.arrOvColumns[sKey].ctxCanvas.canvas.width = 480;
+        g_clsDatasetFair.arrOvColumns[sKey].ctxCanvas.canvas.height = 320;
         
         var arrDataset = [];
-        for (var nIdx in clsDatasetFair.arrOvColumns[sKey].arrOvData)
+        for (var nIdx in g_clsDatasetFair.arrOvColumns[sKey].arrOvData)
         {        
             arrDataset.push( {
-                data: clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdx].arrLgdVal,
-                backgroundColor: clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdx].arrLgdClr
+                data: g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdx].arrLgdVal,
+                backgroundColor: g_clsDatasetFair.arrOvColumns[sKey].arrOvData[nIdx].arrLgdClr
             } );
         }
         var config =
         {
             type: 'bar',
             data: {
-                labels: clsDatasetFair.arrOvColumns[sKey].arrOvData[0].arrLgdLbl,
+                labels: g_clsDatasetFair.arrOvColumns[sKey].arrOvData[0].arrLgdLbl,
                 datasets: arrDataset
             },
             options:
@@ -855,31 +907,8 @@ function fnCreateChart()
                 scales: { xAxes: [ { ticks: { autoSkip: false, } } ], yAxes: [ { ticks: { beginAtZero: true, } } ] },
                 responsive: false, 
                 maintainAspectRatio: false,
-                // events: false,
-                // tooltips: { enabled: false },
-                // hover: { animationDuration: 0 },
-                // animation:
-                // {
-                //     duration: 1,
-                //     onComplete: function () 
-                //     {
-                //         var chartInstance = this.chart, ctx = chartInstance.ctx;
-                //         ctx.font = Chart.helpers.fontString(Chart.defaults.global.defaultFontSize, Chart.defaults.global.defaultFontStyle, Chart.defaults.global.defaultFontFamily);
-                //         ctx.textAlign = 'center';
-                //         ctx.textBaseline = 'bottom';
-                //         this.data.datasets.forEach(function (dataset, i)
-                //         {
-                //             var meta = chartInstance.controller.getDatasetMeta(i);
-                //             meta.data.forEach(function (bar, index)
-                //             {
-                //                 var data = dataset.data[index];                            
-                //                 ctx.fillText(data, bar._model.x, bar._model.y - 5);
-                //             });
-                //         });
-                //     }
-                // }
             }
         };
-        clsDatasetFair.arrOvColumns[sKey].ptrChart = new Chart(clsDatasetFair.arrOvColumns[sKey].ctxCanvas, config);
+        g_clsDatasetFair.arrOvColumns[sKey].ptrChart = new Chart(g_clsDatasetFair.arrOvColumns[sKey].ctxCanvas, config);
     }
 }

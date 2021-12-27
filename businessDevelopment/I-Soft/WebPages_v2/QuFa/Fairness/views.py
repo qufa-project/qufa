@@ -5,10 +5,11 @@ from django.conf import settings
 from django.contrib.sessions.backends.db import SessionStore
 from django.core.files.storage import FileSystemStorage
 from django.http import JsonResponse
-from django.http.request import HttpRequest
 from django.views.decorators.csrf import csrf_exempt
 
-import base64
+from Fairness import alg_tpr
+
+import copy
 import csv
 import io
 import json
@@ -16,25 +17,46 @@ import math
 import os
 import requests
 import statistics
-import urllib
+import time
 import urllib.request
 
 from collections import OrderedDict
 from datetime import datetime
-from importlib import import_module
+from threading import Thread
 from urllib.parse import urlparse
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-from tensorflow.keras import layers
-from matplotlib import pyplot as plt
-from matplotlib import rcParams
-import seaborn as sns
-import importlib
+
+from pandas.api.types import is_string_dtype
+from pandas.api.types import is_numeric_dtype
 
 # global variables
 g_sCurLocation = settings.MEDIA_ROOT
+g_dictAlgParam = {
+    'key': '', 'AlgorithmType': 'gi',
+    'SmplsPerVal': '1000',
+    'ClassifyCol': 'damage',
+    'ClassifyVals': ['<=1500', '>1500'],
+    'ClassifyLbl': ['Less than $1,500', 'Over $1,500'],
+    'SubGroupCol': 'crash_type',
+    'SubGroupVal': ['INJURY AND / OR TOW DUE TO CRASH', 'NO INJURY / DRIVE AWAY'],
+    'HashBucketSize': '1000',
+    'Parameters': ['128', '64', '0.1', '0.001', '0.001', '10', '500'],
+    'Categorfeatures': [
+        {'ColName': 'weather_condition',
+        'VocList': ['CLEAR', 'CLOUDY/OVERCAST', 'FOG/SMOKE/HAZE', 'OTHER', 'RAIN', 'SEVERE CROSS WIND GATE', 'SLEET/HAIL', 'SNOW', 'UNKNOWN']},
+        {'ColName': 'lighting_condition',
+        'VocList': ['DARKNESS', 'DARKNESS/LIGHTED ROAD', 'DAWN', 'DAYLIGHT', 'DUSK', 'UNKNOWN']},
+        {'ColName': 'roadway_surface_cond',
+        'VocList': ['DRY', 'ICE', 'OTHER', 'SAND/MUD/DIRT', 'SNOW OR SLUSH', 'UNKNOWN', 'WET']},
+        {'ColName': 'first_crash_type',
+        'VocList': ['ANGLE', 'ANINAL', 'FIXED OBJECT', 'HEAD ON', 'OTHER NONCOLLISION', 'OVERTURNED', 'PARKED MOTOR VEHICLE',
+            'PEDELCYCLIST', 'PEDESTRAIN', 'REAR END', 'SIDESWIPE OPPOSITE DIRECTION', 'SIDEWIPE SAME DIRECTION', 'TRAIN', 'TURNING']}
+    ],
+    'Numericfeatures': [{'ColName': 'posted_speed_limit', 'BndList': [10, 20, 30, 40, 50, 60, 70, 80]}]
+}
+
 
 # view functions
 def index(request):
@@ -60,11 +82,13 @@ def test(request):
     #     print(json_res['train'])
     
     return render(request, 'test_snd.html')
-    
+
 
 @csrf_exempt
 def getkey(request):
     print('getkey::req')
+
+    global g_dictAlgParam
     
     dictResult = {}
     dictResult['success'] = 'false'
@@ -75,6 +99,10 @@ def getkey(request):
         session = SessionStore()
         session.create()
         session.set_expiry(0)
+        
+        dictAlgParam = g_dictAlgParam
+        dictAlgParam['key'] = session.session_key
+        session['dictAlgParam'] = dictAlgParam
         
         session['arrRcvFile'] = []
         session['objRcvFile'] = None
@@ -99,7 +127,7 @@ def getkey(request):
     return JsonResponse(json.dumps(dictResult), safe = False)
 
 
-def get_session(key):    
+def get_session(key):
     if key == None or len(key) != 32:
         return None
     session = SessionStore(session_key = key)
@@ -409,7 +437,6 @@ def overview(request):
             if session == None:
                 dictResult['message'] = 'invalid key'            
             else:
-
                 if 'arrDataCsv' not in session:
                     dictResult['message'] = 'arrDataCsv not exist'
                     print('overview::res', dictResult)    
@@ -450,7 +477,7 @@ def overview(request):
                             item = aRow[sKey]
 
                             if nRow == 0:
-                                dictDataFair['arrOvColumns'][sKey]['arrOvData'][nIdxF]['bNumeric'] = item.isdigit()
+                                dictDataFair['arrOvColumns'][sKey]['arrOvData'][nIdxF]['bNumeric'] = item.isdecimal()
                             
                             fVal = 0
                             if dictDataFair['arrOvColumns'][sKey]['arrOvData'][nIdxF]['bNumeric']:
@@ -496,7 +523,7 @@ def overview(request):
 
                             dictDataFair['arrOvColumns'][sKey]['arrOvData'][nIdxF]['fMedian'] = statistics.median(arrNumber)
                             
-                        else:                    
+                        else:
                             nMax = 0
                             sMaxKey = ''
                             for sVal in dictDataFair['arrOvColumns'][sKey]['arrOvData'][nIdxF]['pnUniqueCntr']:                    
@@ -506,8 +533,8 @@ def overview(request):
                                     sMaxKey = sVal                        
                             dictDataFair['arrOvColumns'][sKey]['arrOvData'][nIdxF]['sMaxUniqueKey'] = sMaxKey
 
-                        dictResult['success'] = 'true'
-                        dictResult['data'] = dictDataFair
+                dictResult['success'] = 'true'
+                dictResult['data'] = dictDataFair
                                 
     else:
         dictResult['message'] = 'not POST method'
@@ -517,16 +544,14 @@ def overview(request):
 
 
 @csrf_exempt
-def indicator(request):    
-    print('indicator::req')
-    
-    global g_sCurLocation
-    
+def sunburst(request):
+    print('sunburst::req')
+
     dictResult = {}
     dictResult['success'] = 'false'
 
     if request.method == 'POST':            
-        json_data = json.loads(request.body)
+        json_data = json.loads(request.body)        
         if 'key' not in json_data:
             dictResult['message'] = 'key is not set'            
         else:
@@ -534,10 +559,168 @@ def indicator(request):
             if session == None:
                 dictResult['message'] = 'invalid key'            
             else:
+                if 'dictStatus' not in session:
+                    dictResult['message'] = 'dictStatus not exist'
+                    return JsonResponse(json.dumps(dictResult), safe = False)                    
+                dictStatus = session['dictStatus']
+
+                if 'arrDataCsv' not in session:
+                    dictResult['message'] = 'arrDataCsv not exist'
+                    print('sunburst::res', dictResult)    
+                    return JsonResponse(json.dumps(dictResult), safe = False)
+                    
+                arrDataCsv = session['arrDataCsv']
+
+                arrProcCsv = []
+                if dictStatus['bApiMode'] == 'true':
+                    arrProcCsv = arrDataCsv
+                else:
+                    if dictStatus['bLoad2nd'] == 'true':
+                        arrProcCsv.append(arrDataCsv[1])
+                    else:
+                        arrProcCsv.append(arrDataCsv[0])
+                
+                st = time.time()
+
+                arrResult = []            
+                for dataCsv in arrProcCsv:
+                    
+                    dataFrm = pd.DataFrame(dataCsv['rows'], columns = dataCsv['columns'])
+
+                    dictData = { 'name': 'root', 'children': [] }
+                    for sColM in dataFrm.columns:
+                        dictItem0 = { 'name': sColM, 'children': [] }
+                        for sUnqM in np.sort(dataFrm[sColM].unique()):
+                            dictItem1 = { 'name': sUnqM, 'children': [] }
+                            
+                            arrSubCol = list(dataFrm.columns)
+                            arrSubCol.remove(sColM)
+                            dfSub = dataFrm.loc[dataFrm[sColM]==sUnqM][arrSubCol]
+                            for sColS in arrSubCol:
+                                dictItem2 = { 'name': sColS, 'children': [] }
+                                for sUnqS in np.sort(dfSub[sColS].unique()):
+                                    dfUnq = dfSub.loc[dfSub[sColS]==sUnqS][sColS]
+                                    sVal = str(len(dfUnq.tolist()))                                
+                                    dictItem2['children'].append({'name': f"{sUnqS} ({sVal})", 'value': sVal})
+                                    
+                                dictItem1['children'].append(dictItem2)
+
+                            dictItem0['children'].append(dictItem1)
+
+                        dictData['children'].append(dictItem0)
+
+                    arrResult.append(dictData)
+                
+                # arrThread = []
+                # arrResult = []
+                # for dataCsv in arrProcCsv:                    
+                #     dataFrm = pd.DataFrame(dataCsv['rows'], columns = dataCsv['columns'])
+
+                #     dictData = { 'name': 'root', 'children': [] }
+                #     for sCol in dataFrm.columns:
+                #         thread = clsThread(target=threadProc0, args=(dataFrm, sCol))
+                #         dictThread = { 'key': sCol, 'thread': thread }
+                #         arrThread.append(dictThread)
+                #         thread.start()
+
+                #     for item in arrThread:
+                #         dictItem = { 'name': item['key'], 'children': [] }
+                #         dictItem['children'] = item['thread'].join()
+                #         dictData['children'].append(dictItem)
+                        
+                #     arrResult.append(dictData)
+                    
+                print("sunburst::ProcTime {} sec".format(time.time()-st))
+
+                dictResult['success'] = 'true'
+                dictResult['data'] = arrResult
+                                
+    else:
+        dictResult['message'] = 'not POST method'
+
+    print('sunburst::res', dictResult['success'])    
+    return JsonResponse(json.dumps(dictResult), safe = False)
+
+def threadProc0(dataFrm, sCol):
+    arrReturn = []
+    
+    for sUnqM in np.sort(dataFrm[sCol].unique()):
+        dictItemM = { 'name': sUnqM, 'children': [] }
+        
+        arrSubCol = list(dataFrm.columns)
+        arrSubCol.remove(sCol)
+        dfSub = dataFrm.loc[dataFrm[sCol]==sUnqM][arrSubCol]
+
+        # for sColS in arrSubCol:
+        #     dictItemS = { 'name': sColS, 'children': [] }            
+        #     for sUnqS in np.sort(dfSub[sColS].unique()):
+        #         dfUnq = dfSub.loc[dfSub[sColS]==sUnqS][sColS]
+        #         sVal = str(len(dfUnq.tolist()))
+        #         dictItemS['children'].append({'name': f"{sUnqS} ({sVal})", 'value': sVal})                
+        #     dictItemM['children'].append(dictItemS)
+            
+        arrThread = []
+        for sColS in arrSubCol:
+            thread = clsThread(target=threadProc1, args=(dfSub, sColS))
+            dictThread = { 'key': sColS, 'thread': thread }
+            arrThread.append(dictThread)
+            thread.start()
+
+        for item in arrThread:
+            dictItemS = { 'name': item['key'], 'children': [] }
+            dictItemS['children'] = item['thread'].join()
+            dictItemM['children'].append(dictItemS)
+
+        arrReturn.append(dictItemM)
+
+    return arrReturn
+
+def threadProc1(dataFrm, sCol):
+    arrReturn = []
+            
+    for sUnq in np.sort(dataFrm[sCol].unique()):
+        dfUnq = dataFrm.loc[dataFrm[sCol]==sUnq][sCol]
+        sVal = str(len(dfUnq.tolist()))
+        arrReturn.append({'name': f"{sUnq} ({sVal})", 'value': sVal})
+            
+    return arrReturn
+
+class clsThread(Thread):
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, Verbose=None):
+        Thread.__init__(self, group, target, name, args, kwargs)
+        self._return = None
+    def run(self):
+        print(type(self._target))
+        if self._target is not None:
+            self._return = self._target(*self._args, **self._kwargs)
+    def join(self, *args):
+        Thread.join(self, *args)
+        return self._return
+
+
+@csrf_exempt
+def run_alg(request):
+    print('run_alg::req')
+    
+    global g_sCurLocation
+    global g_dictAlgParam
+    
+    dictResult = {}
+    dictResult['success'] = 'false'
+
+    if request.method == 'POST':            
+        dictAlgParam = json.loads(request.body)
+        if 'key' not in dictAlgParam:
+            dictResult['message'] = 'key is not set'            
+        else:
+            session = get_session(dictAlgParam['key'])
+            if session == None:
+                dictResult['message'] = 'invalid key'            
+            else:
     
                 if 'dictStatus' not in session:
                     dictResult['message'] = 'dictStatus not exist'
-                    print('indicator::res', dictResult)
+                    print('run_alg::res', dictResult)
                     return JsonResponse(json.dumps(dictResult), safe = False)
                     
                 dictStatus = session['dictStatus']
@@ -548,41 +731,21 @@ def indicator(request):
                         
                 objRcvFile = session['objRcvFile']
                 arrColumns = session['arrColumns']
-                arrDataCsv = session['arrDataCsv']                
-
-                CriteriaCol = json_data['CriteriaCol'] #'damage'
-                CriteriaLab = json_data['CriteriaLab'] #'>1500'
-                HashBuktCol = json_data['HashBuktCol'] # 'first_crash_type'
-                HashBuktSiz = json_data['HashBuktSiz'] #'1000'
-                
-                arrCategorfeatures = json_data['Categorfeatures'] # categorical features
-                arrNumericfeatures = json_data['Numericfeatures'] # numeric features
-
-                HIDDEN_UNITS_LAYER_01 = int(json_data['Parameters'][0]) # 128 #@param
-                HIDDEN_UNITS_LAYER_02 = int(json_data['Parameters'][1]) # 64 #@param
-                LEARNING_RATE         = float(json_data['Parameters'][2]) # 0.1 #@param
-                L1_REGULARIZATION_STRENGTH = float(json_data['Parameters'][3]) # 0.001 #@param
-                L2_REGULARIZATION_STRENGTH = float(json_data['Parameters'][4]) # 0.001 #@param
-                EPOCHS     = int(json_data['Parameters'][5]) # 10 #@param
-                BATCH_SIZE = int(json_data['Parameters'][6]) # 500 #@param
-
-                CATEGORY = json_data['Parameters'][7] # "crash_type" #@param
-                SUBGROUPS = json_data['Parameters'][8] # "crash_type items" #@param
-                CLASSES = [ json_data['Parameters'][9], json_data['Parameters'][10] ] # ['Over $1,500', 'Less than $1,500']
-
-                RANDOM_SEED = 512
-                tf.random.set_seed(RANDOM_SEED)
+                arrDataCsv = copy.deepcopy(session['arrDataCsv'])
+                # parameters
+                ClassifyCol = dictAlgParam['ClassifyCol'] # 'damage'
+                ClassifyVals = dictAlgParam['ClassifyVals'] # ['>1500','<=1500']
 
                 fs = FileSystemStorage(g_sCurLocation)
                 sFilePath = g_sCurLocation
                 
                 if dictStatus['bProc1st'] == 'false':
-                    print('indicator::before')
+                    print('run_alg::before')
                     
                     dictStatus['bProc1st'] = 'true'
 
                     # make test set
-                    nLimit = 5000
+                    nLimit = int(dictAlgParam['SmplsPerVal']) #5000
                     nCount0 = 0
                     nCount1 = 0
                     arrSample0 = []
@@ -590,7 +753,7 @@ def indicator(request):
 
                     for idx, row in enumerate(arrDataCsv[0]['rows']):
 
-                        if row[CriteriaCol] == CriteriaLab:
+                        if row[ClassifyCol] == ClassifyVals[0]:
                             if ( nCount0 < nLimit ):
                                 arrSample0.append( row )
                                 arrDataCsv[0]['rows'].pop(idx)
@@ -629,7 +792,7 @@ def indicator(request):
                     csvFileTRN = objFile.read().decode('utf8')
 
                 else:
-                    print('indicator::after')
+                    print('run_alg::after')
                     
                     dictStatus['bProc2nd'] = 'true'
 
@@ -653,105 +816,35 @@ def indicator(request):
                 dataFrmTRN = pd.read_csv(io.StringIO(csvFileTRN), names = arrColumns, sep=r'\s*,\s*', skiprows=[0], engine='python', na_values = "?")
                 dataFrmTST = pd.read_csv(io.StringIO(csvFileTST), names = arrColumns, sep=r'\s*,\s*', skiprows=[0], engine='python', na_values = "?")
 
+                for col in dataFrmTRN.columns:
+                    dataFrmTRN[col] = dataFrmTRN[col].replace(np.nan, 0)
+
                 print('train rows: ', dataFrmTRN.shape[0], ' cells: ', dataFrmTRN.shape[1])
                 print('test  rows: ', dataFrmTST.shape[0], ' cells: ', dataFrmTST.shape[1])
 
-                # set feature column
-                listColumnFeatures = []
-
-                feature_col = tf.feature_column.categorical_column_with_hash_bucket(HashBuktCol, hash_bucket_size = int(HashBuktSiz))
-                listColumnFeatures.append(feature_col)
-                
-                for row in arrCategorfeatures:
-                    arrVocList = []
-                    for item in row['VocList']:
-                        arrVocList.append(f"{item}")
-                    #print(f"{row['ColName']} - {arrVocList}")
-                    feature_col = tf.feature_column.categorical_column_with_vocabulary_list(row['ColName'], arrVocList)
-                    listColumnFeatures.append(feature_col)
-                
-                for row in arrNumericfeatures:
-                    arrBndList = []
-                    for item in row['BndList']:
-                        arrBndList.append(int(item))
-                    #print(f"{row['ColName']} - {arrBndList}")
-                    numeric_col = tf.feature_column.numeric_column(row['ColName'])
-                    feature_col = tf.feature_column.bucketized_column(numeric_col, boundaries = arrBndList)
-                    listColumnFeatures.append(feature_col)
-                
-                listIndicatorFeatures = []
-                for col in listColumnFeatures:
-                    indicator = tf.feature_column.indicator_column(col)
-                    listIndicatorFeatures.append(indicator)
-
-                # set param & run
-                METRICS = [
-                    tf.keras.metrics.TruePositives(name='tp'),
-                    tf.keras.metrics.FalsePositives(name='fp'),
-                    tf.keras.metrics.TrueNegatives(name='tn'),
-                    tf.keras.metrics.FalseNegatives(name='fn'), 
-                    tf.keras.metrics.BinaryAccuracy(name='accuracy'),
-                    tf.keras.metrics.Precision(name='precision'),
-                    tf.keras.metrics.Recall(name='recall'),
-                    tf.keras.metrics.AUC(name='auc'),
-                ]
-
-                regularizer = tf.keras.regularizers.l1_l2(l1=L1_REGULARIZATION_STRENGTH, l2=L2_REGULARIZATION_STRENGTH)
-
-                model = tf.keras.Sequential([
-                    layers.DenseFeatures(listIndicatorFeatures),
-                    layers.Dense(HIDDEN_UNITS_LAYER_01, activation='relu', kernel_regularizer=regularizer),
-                    layers.Dense(HIDDEN_UNITS_LAYER_02, activation='relu', kernel_regularizer=regularizer),
-                    layers.Dense(1, activation='sigmoid', kernel_regularizer=regularizer)
-                ])
-
-                model.compile(optimizer=tf.keras.optimizers.Adagrad(LEARNING_RATE), loss=tf.keras.losses.BinaryCrossentropy(), metrics=METRICS)
-
-                features, labels = pandas_to_numpy(dataFrmTRN, CriteriaCol, CriteriaLab)
-                model.fit(x=features, y=labels, epochs=EPOCHS, batch_size=BATCH_SIZE)
-
-                features, labels = pandas_to_numpy(dataFrmTST, CriteriaCol, CriteriaLab)
-                model.evaluate(x=features, y=labels)
-
-                # make result
-                dictResult['success'] = 'true'
+                # return train file name if pre-proc
                 if dictStatus['bProc1st'] == 'true':
                     dictResult['filename'] = session['sFileNameTrnB']
-                dictResult['Metric'] = []
-                dictResult['ImgTag'] = []
+                    
+                st = time.time()
+
+                sAlgType = 'gi'
+                if 'AlgorithmType' in dictAlgParam:
+                    sAlgType = dictAlgParam['AlgorithmType']
+                if sAlgType == 'gi':
+                    arrDataTpr, arrDataCMx, arrMetric, arrImgTag = alg_tpr.run_gi(dictAlgParam, dataFrmTRN, dataFrmTST)
+                else:
+                    arrDataTpr, arrDataCMx, arrMetric, arrImgTag = alg_tpr.run_sklearn(dictAlgParam, dataFrmTRN, dataFrmTST)
+                    
+                print("alg_tpr::ProcTime {} sec".format(time.time()-st))
+
+                arrTmpDataTpr = session['arrDataTpr']
+                arrTmpDataCMx = session['arrDataCMx']
+                session['arrDataTpr'] = arrTmpDataTpr + arrDataTpr
+                session['arrDataCMx'] = arrTmpDataCMx + arrDataCMx
                 
-                arrDataTpr = session['arrDataTpr']
-                arrDataCMx = session['arrDataCMx']
-
-                for subgroup in SUBGROUPS:
-
-                    subgroup_filter  = dataFrmTST.loc[dataFrmTST[CATEGORY] == subgroup]
-                    features, labels = pandas_to_numpy(subgroup_filter, CriteriaCol, CriteriaLab)
-                    subgroup_results = model.evaluate(x=features, y=labels, verbose=0)
-
-                    subgroup_performance_metrics = { 'TPR=TP/(TP+FN)': subgroup_results[7], 'FNR=FN/(TP+FN)': 1 - subgroup_results[7] }
-                    performance_df = pd.DataFrame(subgroup_performance_metrics, index =[ subgroup])
-
-                    dictResult['Metric'].append( json.loads(json.dumps(list(performance_df.T.to_dict().values()))) )
-
-                    confusion_matrix = np.array([[subgroup_results[1], subgroup_results[4]], [subgroup_results[2], subgroup_results[3]]])
-                    graph = plot_confusion_matrix(confusion_matrix, CLASSES, subgroup)
-
-                    arrDataTpr.append(subgroup_results[7])
-                    dictDataCMx = {}
-                    dictDataCMx['title'] = 'Confusion Matrix for Performance Across ' + subgroup
-                    dictDataCMx['axislable'] = ['Predictions', 'References']
-                    dictDataCMx['ticklable'] = CLASSES
-                    dictDataCMx['axisvalue'] = {
-                        'True Positives': subgroup_results[1], 'False Negatives':subgroup_results[4],
-                        'False Positives':subgroup_results[2], 'True Negatives': subgroup_results[3] }
-                    arrDataCMx.append(dictDataCMx)
-
-                    dictResult['ImgTag'].append( graph )
-
-                print(arrDataTpr)
-                session['arrDataTpr'] = arrDataTpr
-                session['arrDataCMx'] = arrDataCMx
+                dictResult['Metric'] = arrMetric
+                dictResult['ImgTag'] = arrImgTag
             
                 if dictStatus['bProc2nd'] == 'true':
                     dictStatus = {'bApiMode': 'false', 'bRunning': 'false', 'bLoad1st': 'false', 'bLoad2nd': 'false', 'bProc1st': 'false', 'bProc2nd': 'false'}
@@ -759,10 +852,12 @@ def indicator(request):
                 session['dictStatus'] = dictStatus
                 session.save()
 
+                dictResult['success'] = 'true'
+
     else:
         dictResult['message'] = 'not POST method'
         
-    print('indicator::res', dictResult['success'])
+    print('run_alg::res', dictResult['success'])
     return JsonResponse(json.dumps(dictResult), safe = False)
 
 
@@ -798,6 +893,8 @@ def isrunning(request):
 @csrf_exempt
 def run(request):
     print('run::req')
+    
+    global g_dictAlgParam
 
     dictResult = {}
     dictResult['success'] = 'false'
@@ -826,24 +923,12 @@ def run(request):
                     session['dictStatus'] = dictStatus
                     session.save()
                 
-                dictParamRun = {
-                    'key': key,
-                    'CriteriaCol': 'damage', 'CriteriaLab': '>1500',
-                    'HashBuktCol': 'first_crash_type', 'HashBuktSiz': '1000',
-                    'Categorfeatures': [
-                        {'ColName': 'weather_condition',
-                        'VocList': ['CLEAR', 'CLOUDY/OVERCAST', 'FOG/SMOKE/HAZE', 'OTHER', 'RAIN', 'SEVERE CROSS WIND GATE', 'SLEET/HAIL', 'SNOW', 'UNKNOWN']},
-                        {'ColName': 'lighting_condition',
-                        'VocList': ['DARKNESS', 'DARKNESS/LIGHTED ROAD', 'DAWN', 'DAYLIGHT', 'DUSK', 'UNKNOWN']},
-                        {'ColName': 'roadway_surface_cond',
-                        'VocList': ['DRY', 'ICE', 'OTHER', 'SAND/MUD/DIRT', 'SNOW OR SLUSH', 'UNKNOWN', 'WET']},
-                        {'ColName': 'crash_type',
-                        'VocList': ['INJURY AND / OR TOW DUE TO CRASH', 'NO INJURY / DRIVE AWAY']}],
-                    'Numericfeatures': [
-                        {'ColName': 'posted_speed_limit',
-                        'BndList': [10, 20, 30, 40, 50, 60, 70, 80]}], 
-                    'Parameters': ['128', '64', '0.1', '0.001', '0.001', '10', '500', 'crash_type', ['INJURY AND / OR TOW DUE TO CRASH', 'NO INJURY / DRIVE AWAY'],
-                    'Over $1,500', 'Less than $1,500']}
+                dictAlgParam = g_dictAlgParam
+                if 'dictAlgParam' not in session:
+                    dictAlgParam['key'] = key
+                    session['dictAlgParam'] = dictAlgParam
+                    session.save()
+                dictAlgParam = session['dictAlgParam']
 
                 #base_url =  "{0}://{1}{2}".format(request.scheme, request.get_host(), request.path)
                 base_url =  "{0}://{1}/Fairness/".format(request.scheme, request.get_host())
@@ -855,18 +940,17 @@ def run(request):
                 if res.status_code == 200:
                     json_res = json.loads(res.json())
                     if json_res['success'] == 'true':
-                        url = base_url + 'indicator/'
-                        res = requests.post(url, data = json.dumps(dictParamRun))
+                        url = base_url + 'run_alg/'
+                        res = requests.post(url, data = json.dumps(dictAlgParam))
 
                         if res.status_code == 200:
                             json_res = json.loads(res.json())
                             if json_res['success'] == 'true':
                                 
                                 aTPR = []
-                                for sGrp in json_res['Metric']:
-                                    for sIdx in sGrp:
-                                        for sKey in sIdx:
-                                            aTPR.append(sIdx[sKey])
+                                for sIdx in json_res['Metric']:
+                                    for sKey in sIdx:
+                                        aTPR.append(sIdx[sKey])
                                 
                                 url = "http://164.125.37.214:5555/api/fairness/tpr"
                                 #dictParam = {'csv': "210719_fairness_test_origin chicago crashes.csv", 'tpra': "0.50", 'tprb': "0.163" }
@@ -893,8 +977,8 @@ def run(request):
                                         if res.status_code == 200:
                                             json_res = json.loads(res.json())
                                             if json_res['success'] == 'true':
-                                                url = base_url + 'indicator/'
-                                                res = requests.post(url, data = json.dumps(dictParamRun))
+                                                url = base_url + 'run_alg/'
+                                                res = requests.post(url, data = json.dumps(dictAlgParam))
 
                                                 json_res = json.loads(res.json())
                                                 if json_res['success'] == 'true':
@@ -909,8 +993,8 @@ def run(request):
                                 # if res.status_code == 200:
                                 #     json_res = json.loads(res.json())
                                 #     if json_res['success'] == 'true':
-                                #         url = base_url + 'indicator/'
-                                #         res = requests.post(url, data = json.dumps(dictParamRun))
+                                #         url = base_url + 'run_alg/'
+                                #         res = requests.post(url, data = json.dumps(dictAlgParam))
 
                                 #         json_res = json.loads(res.json())
                                 #         if json_res['success'] == 'true':
@@ -957,51 +1041,3 @@ def getresult(request):
         dictResult['message'] = 'not POST method'
         
     return JsonResponse(json.dumps(dictResult), safe = False)
-
-    
-def pandas_to_numpy(data, colName, colValue):
-
-    data = data.dropna(how="any", axis=0)
-    labels = np.array(data[f"{colName}"] == f"{colValue}")
-    features = data.drop(colName, axis=1)
-    features = {name:np.array(value) for name, value in features.items()}
-    
-    return features, labels
-
-    
-def plot_confusion_matrix(confusion_matrix, class_names, subgroup, figsize = (8, 6)):
-    
-    importlib.reload(plt)
-    importlib.reload(sns)
-
-    rcParams.update({'font.family':'sans-serif', 'font.sans-serif':['Liberation Sans'],})
-    plt.switch_backend('agg')
-
-    df_cm = pd.DataFrame(confusion_matrix, index=class_names, columns=class_names,)
-    
-    fig = plt.figure(figsize=figsize)
-    
-    strings = np.asarray([['True Positives', 'False Negatives'], ['False Positives', 'True Negatives']])
-    labels = (np.asarray(["{0:g}\n{1}".format(value, string) for string, value in zip(strings.flatten(), confusion_matrix.flatten())])).reshape(2, 2)
-
-    sns.set(font_scale=1.25)
-    heatmap = sns.heatmap(df_cm, annot=labels, fmt="", linewidths=2.0, cmap=sns.color_palette("GnBu_d"))
-    heatmap.yaxis.set_ticklabels(heatmap.yaxis.get_ticklabels(), rotation=0, ha='right')
-    heatmap.xaxis.set_ticklabels(heatmap.xaxis.get_ticklabels(), rotation=45, ha='right')
-    
-    plt.xlabel('Predictions')  
-    plt.ylabel('References')
-        
-    buf = io.BytesIO()
-    st = fig.suptitle('Confusion Matrix for Performance Across ' + subgroup)
-    fig.savefig(buf, format='png', bbox_extra_artists=[st], bbox_inches='tight')
-    buf.seek(0)
-    str = base64.b64encode(buf.read())
-    
-    plt.close(fig)
-
-    uri = 'data:image/png;base64,' + urllib.parse.quote(str)
-    html = f'<img src = "{uri}" alt="{subgroup}" style="height:100%;width:100%;object-fit:contain"/>'
-
-
-    return html
