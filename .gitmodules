@@ -4,3 +4,12 @@
 [submodule "dataQuality/ewu/qufafeat"]
 	path = dataQuality/ewu/qufafeat
 	url = https://github.com/oslab-ewha/qufafeat
+[submodule "integratedSystem/web"]
+	path = integratedSystem/web
+	url = https://gitlab.com/qufa-ptech/qufa-ptech
+[submodule "integratedSystem/profiler"]
+	path = integratedSystem/profiler
+	url = https://gitlab.com/qufa-ptech/qufa-profiler
+[submodule "integratedSystem/imputation"]
+	path = integratedSystem/imputation
+	url = https://gitlab.com/qufa-ptech/imputation
