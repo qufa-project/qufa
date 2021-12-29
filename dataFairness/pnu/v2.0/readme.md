@@ -41,6 +41,10 @@ definition: 긍정적인 결과의 가능성은 개인이 보호된(예 : 여성
 
 > 요약
 
+**batch-algorithm**
+
+in-memory Spark 기반 실시간 배치 알고리즘
+
 **data-fairness-algorithm**
 
 performance measures 기반의 데이터 공정성 알고리즘

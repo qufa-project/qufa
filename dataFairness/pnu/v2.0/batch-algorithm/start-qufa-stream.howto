@@ -1,0 +1,79 @@
+############################################################
+##
+## HOWTO QuFa Streaming
+##
+############################################################
+
+------------------------------------------------------------
+
+0. Info
+
+0.1. Kafka
+
+- install path(file): ./kafka/docker-compose.yml
+- bootstrap.servers: localhost:9091,localhost:9092,localhost:9093
+  (OR 164.125.37.214:9091,164.125.37.214:9092,164.125.37.214:9093)
+- topic: algorithm-tpr
+- kafka manager: http://164.125.37.214:9000
+- port:
+  - zookeeper: 2181, 2182, 2183
+  - kafka: 9091, 9092, 9093
+  - kafka manager: 9000
+
+0.2. Spark
+
+- install path(file): ./spark/spark-3.1.2-bin-hadoop3.2
+- python source: ./spark/python/spark.demo.py
+- spark dashboard: http://164.125.37.214:8080
+- port:
+  - spark: 7077
+  - spark dashboard: 8080, 8081
+
+------------------------------------------------------------
+
+1. Start
+
+$ ./start-qufa-stream.sh
+Enter service number:
+[ 1 ] Spark Streaming					# Enter "1" to start Spark Streaming (Console 1)
+[ 2 ] Kafka Producer					# Enter "2" to start Kafka Producer (Console 2)
+[ 9 ] Exit								# Enter "9" to exit
+Enter Kafka Producer CSV number:
+[ 1 ] Health (91k lines)				# Enter "1" to start Kafka Producer with Health CSV
+[ 2 ] Sample (15 lines)				# Enter "2" to start Kafka Producer with Sample CSV
+[ 9 ] Exit								# Enter "9" to exit
+
+------------------------------------------------------------
+
+2. Start Spark Streaming
+
+$ ./spark/spark.run.sh {python-filename}
+OR
+$ spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2 {python-filename}
+
+example: $ spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2 ./spark/python/spark.demo.py
+
+------------------------------------------------------------
+
+3. Start Kafka Consumer/Producer
+
+3.1. Consumer
+
+$ python3 ./kafka/kafka.consumer.py {topic}
+
+example: $ python3 ./kafka/kafka.consumer.py algorithm-tpr
+
+3.2. Producer
+
+$ python3 ./kafka/kafka.producer.py {csv-filename} {topic}
+
+3.2.1. Sample CSV
+
+example: $ python3 ./kafka/kafka.producer.py ./data/input/sample.csv algorithm-tpr
+
+3.2.2. Health CSV
+
+example: $ python3 ./kafka/kafka.producer.py ./data/input/before_fairness.csv algorithm-tpr
+
+------------------------------------------------------------
+
