@@ -74,6 +74,14 @@
                 <label>i-Soft ((주)아이소프트) - <a href=https://gitlab.com/qufa/qufa/-/tree/master/businessDevelopment/I-Soft>source code</a></label>
             </li>
           </ul>
+        </li><br>
+        <li>
+          <label>integratedSystem</label>
+          <ul>
+            <li>
+                <label>QuFa 통합 프레임워크의 submodule 등록 - <a href=https://gitlab.com/qufa/qufa/-/tree/master/integratedSystem>more</a></label>
+            </li>            
+          </ul>
         </li>
       </ul>
     </li>
@@ -92,4 +100,4 @@
 | QuFa_dataCloud | - 환경 데이터셋 저장소 클라우드<br> | <a href=https://drive.google.com/drive/folders/15-z-NWTicGJeEkYsbKUXaoBcwZJT9IKC target="_blank">Go</a> |
 
 ##
-<div align="center"><strong>by QuFa consortium</strong></div>
+<div align="center"><strong>by Team QuFa</strong></div>
