@@ -99,5 +99,8 @@
 | QuFa_dataFeat | - 데이터 특징공학 툴<br> | <a href=https://github.com/oslab-ewha/qufafeat target="_blank">Go</a> |
 | QuFa_dataCloud | - 환경 데이터셋 저장소 클라우드<br> | <a href=https://drive.google.com/drive/folders/15-z-NWTicGJeEkYsbKUXaoBcwZJT9IKC target="_blank">Go</a> |
 
+## License
+This project is licensed under the Apache License 2.0, see the [LICENSE](LICENSE) file.
+
 ##
 <div align="center"><strong>by Team QuFa</strong></div>
