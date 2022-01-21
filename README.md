@@ -100,7 +100,9 @@
 | QUFA_dataCloud | - 환경 데이터셋 저장소 클라우드<br> | <a href=https://drive.google.com/drive/folders/15-z-NWTicGJeEkYsbKUXaoBcwZJT9IKC target="_blank">Go</a> |
 | QUFA_dataQuality | - QUFA Imputation & Remove outlier<br> | <a href=https://gitlab.com/qufa-ptech/imputation target="_blank">Go</a> |
 | QUFA_dataProfiler | - QUFA data Profiler 프로젝트<br> | <a href=https://gitlab.com/qufa-ptech/qufa-profiler target="_blank">Go</a> |
+| QUFA_Feat | - QUFA feat : Automated feature engineering pipeline<br> | <a href=https://gitlab.com/qufa-project/qufafeat target="_blank">Go</a> |
 | QUFA_Studio | - QUFA Studio : 데이터 품질/공정성 통합 관리 시스템<br> | <a href=https://gitlab.com/qufa-project/qufa-studio target="_blank">Go</a> |
+
 
 ## License
 This project is licensed under the Apache License 2.0, see the [LICENSE](LICENSE) file.
