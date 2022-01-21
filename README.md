@@ -1,4 +1,4 @@
-# **QuFa** (Data **Qu**ality and **Fa**irness)
+# **QUFA** (Data **Qu**ality and **Fa**irness)
 
 - 데이터 품질 평가기반 데이터 고도화 및 데이터셋 보정 기술 개발 (Development of data improvement and dataset correction technology based on data quality assessment)
 
@@ -17,7 +17,7 @@
 
 <ul>
     <li>
-      <label>QuFa (Repository - structure of directories)</label>
+      <label>QUFA (Repository - structure of directories)</label>
       <ul>
         <li>
           <label>dataDomain (데이터 셋)</label>
@@ -79,7 +79,7 @@
           <label>integratedSystem</label>
           <ul>
             <li>
-                <label>QuFa 통합 프레임워크의 submodule 등록 - <a href=https://gitlab.com/qufa/qufa/-/tree/master/integratedSystem>more</a></label>
+                <label>QUFA 통합 프레임워크의 submodule 등록 - <a href=https://gitlab.com/qufa/qufa/-/tree/master/integratedSystem>more</a></label>
             </li>            
           </ul>
         </li>
@@ -88,19 +88,22 @@
 </ul>
 
 ##
-- Status of QuFa Repository (Last update: Oct. 14, 2021)
+- Status of QUFA Repository (Last update: Jan. 21, 2022)
 
 | Name | Description of key features  | Link |
 | ------ | ------ | ------ |
-| QuFa | **※ Official repo. of QuFa**<br> - 도메인별 데이터셋 및 데이터 품질/공정성/통합(QuFa Framework) 구현 | - |
-| Qufa_dataHunter | - 원천 데이터를 프로젝트 DB내에 로드<br> - 원천 데이터의 Meta data reading | <a href=https://gitlab.com/qufa/qufa_datahunter target="_blank">Go</a> |
-| QuFa_dataReviewerServer | - 피드백 지원도구(백엔드)<br> - REST API 활용<br> - 파일 데이터, Database 정보를 통해 데이터를 API로 자동 변환 | <a href=https://gitlab.com/qufa/qufa_datareviewerserver target="_blank">Go</a> |
+| QUFA | **※ Official repo. of QUFA**<br> - 도메인별 데이터셋 및 데이터 품질/공정성/통합(QUFA Framework) 구현 | - |
+| QUFA_dataHunter | - 원천 데이터를 프로젝트 DB내에 로드<br> - 원천 데이터의 Meta data reading | <a href=https://gitlab.com/qufa/qufa_datahunter target="_blank">Go</a> |
+| QUFA_dataReviewerServer | - 피드백 지원도구(백엔드)<br> - REST API 활용<br> - 파일 데이터, Database 정보를 통해 데이터를 API로 자동 변환 | <a href=https://gitlab.com/qufa/qufa_datareviewerserver target="_blank">Go</a> |
 | QuFa_dataReviewerClient | - 피드백 지원도구(프론트엔드)<br> - Designer-Server와 연동<br> - React Framework 기반의 Web Frontend 프로젝트 | <a href=https://gitlab.com/qufa/qufa_datareviewerclient target="_blank">Go</a> |
-| QuFa_dataFeat | - 데이터 특징공학 툴<br> | <a href=https://github.com/oslab-ewha/qufafeat target="_blank">Go</a> |
-| QuFa_dataCloud | - 환경 데이터셋 저장소 클라우드<br> | <a href=https://drive.google.com/drive/folders/15-z-NWTicGJeEkYsbKUXaoBcwZJT9IKC target="_blank">Go</a> |
+| QUFA_dataFeat | - 데이터 특징공학 툴<br> | <a href=https://github.com/oslab-ewha/qufafeat target="_blank">Go</a> |
+| QUFA_dataCloud | - 환경 데이터셋 저장소 클라우드<br> | <a href=https://drive.google.com/drive/folders/15-z-NWTicGJeEkYsbKUXaoBcwZJT9IKC target="_blank">Go</a> |
+| QUFA_dataQuality | - QUFA Imputation & Remove outlier<br> | <a href=https://gitlab.com/qufa-ptech/imputation target="_blank">Go</a> |
+| QUFA_dataProfiler | - QUFA data Profiler 프로젝트<br> | <a href=https://gitlab.com/qufa-ptech/qufa-profiler target="_blank">Go</a> |
+| QUFA_Studio | - QUFA Studio : 데이터 품질/공정성 통합 관리 시스템<br> | <a href=https://gitlab.com/qufa-project/qufa-studio target="_blank">Go</a> |
 
 ## License
 This project is licensed under the Apache License 2.0, see the [LICENSE](LICENSE) file.
 
 ##
-<div align="center"><strong>by Team QuFa</strong></div>
+<div align="center"><strong>by Team QUFA</strong></div>
