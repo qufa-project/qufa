@@ -3,13 +3,50 @@ package com.QuFa.profiler.service;
 
 import com.QuFa.profiler.config.ActiveProfileProperty;
 import com.QuFa.profiler.model.Local;
-import com.QuFa.profiler.model.profile.*;
+import com.QuFa.profiler.model.profile.BasicProfile;
+import com.QuFa.profiler.model.profile.DateProfile;
+import com.QuFa.profiler.model.profile.NumberProfile;
+import com.QuFa.profiler.model.profile.ProfileColumnResult;
+import com.QuFa.profiler.model.profile.ProfileTableResult;
+import com.QuFa.profiler.model.profile.StringProfile;
+import com.QuFa.profiler.model.profile.VdModel;
 import com.opencsv.CSVReader;
-import freemarker.template.SimpleDate;
+import com.opencsv.CSVWriter;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.net.URL;
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.datacleaner.api.AnalyzerResult;
 import org.datacleaner.api.InputColumn;
-import org.datacleaner.beans.*;
+import org.datacleaner.beans.DateAndTimeAnalyzer;
+import org.datacleaner.beans.DateAndTimeAnalyzerResult;
+import org.datacleaner.beans.NumberAnalyzer;
+import org.datacleaner.beans.NumberAnalyzerResult;
+import org.datacleaner.beans.StringAnalyzer;
+import org.datacleaner.beans.StringAnalyzerResult;
 import org.datacleaner.beans.valuedist.MonthDistributionAnalyzer;
 import org.datacleaner.beans.valuedist.ValueDistributionAnalyzer;
 import org.datacleaner.beans.valuedist.ValueDistributionAnalyzerResult;
@@ -25,19 +62,12 @@ import org.datacleaner.job.builder.TransformerComponentBuilder;
 import org.datacleaner.job.runner.AnalysisResultFuture;
 import org.datacleaner.job.runner.AnalysisRunner;
 import org.datacleaner.job.runner.AnalysisRunnerImpl;
-import org.datacleaner.result.*;
+import org.datacleaner.result.AnalysisResult;
+import org.datacleaner.result.CrosstabDimension;
+import org.datacleaner.result.CrosstabResult;
+import org.datacleaner.result.ValueFrequency;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.io.*;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.net.URL;
-import java.text.DateFormat;
-import java.text.DecimalFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 /**
  * 데이터 프로파일 작업을 수행하는 서비스
@@ -55,9 +85,26 @@ public class ProfileService {
     @Autowired
     private final DataStoreService dataStoreService;
 
+    private List<String> header;
+
+    /**
+     * <현 문제점>
+     * columnNames 에 대해 for 문 돌면서 호출됨.
+     * 해당 컬럼의 타입이 무엇인지 판단
+     * 근데 typecheck 는 모든 레코드에 대해서 하는데 (5000개~)
+     * 아래 컬럼 타입 max 구할땐 100개만 함. ?
+     *
+     * <해결 방법>
+     * - file의 크기에 따라 예를들어 100개 이하면 전수조사,
+     * - 100개 이상이면 샘플링해서 판단.
+     *
+     * - 예를들어 200개 -> 50%인 100개, 300개 -> 33%인 100개 ...
+     * - 목표는 모든 csv파일에 대해 동일한 시간이 나오도록
+     * - 샘플링은 random
+     * - 시간이 많이 걸리는 부분이 어딘지 한번 체크해볼것!
+     */
     public String typeDetection(String path, String columnName) throws IOException {
         CSVReader csvReader = new CSVReader(new FileReader(path));
-        List<String> header = Arrays.asList(csvReader.readNext().clone());
         String[] nextLine;
         List<String> rowValues = new ArrayList<>();
         Map<String, String> rowType = new HashMap<>();
@@ -107,10 +154,15 @@ public class ProfileService {
 
                 }
             }
-//            if(i<=99)
-//                System.out.println(rowVal + " : " + rowType.get(rowVal));
-//            i++;
         }
+
+        /*
+         * 해당 컬럼의 100개의 값에 대한 type 을 검사해서
+         * 그중 가장 많이 나온 값으로 리턴
+         * date, number, number, string -> type: number
+         *
+         * ->> 고쳐야 할 부분
+         */
         i = 0;
         int n;
         Map<String, Integer> vdTypes = new HashMap<>();
@@ -135,18 +187,19 @@ public class ProfileService {
     }
 
     public ProfileTableResult profileLocalCSV(Local local){
-        //ProfileTableResult profileTableResult = new ProfileTableResult();
 
         if(local.getSource().getType().equals("path")) {
             String path = local.getSource().getPath();
+            String fileName = getFileName(local.getSource().getType(), local.getSource().getPath());
             try {
-                CSVReader csvReader = new CSVReader(new FileReader(path));
+                /**
+                 * FileNotFound 예외처리 해야함
+                 */
 
-                List<String> header = Arrays.asList(csvReader.readNext().clone());
+                // header는 처음에 한번만 구하고, ProfileService 객체에 필드로 정의.
+                header = getHeader(path, local.isHeader(), fileName);
 
                 profileLocalColumns("path", path, header);
-
-                csvReader.close();
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -160,9 +213,6 @@ public class ProfileService {
                 dataStoreService.storeUrlFile(file);
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(file.openStream()));
-
-                List<String> header = Arrays.asList(reader.readLine().split(","));
-                System.out.println("header : " + header);
 
                 profileLocalColumns("url", url, header);
 
@@ -183,13 +233,7 @@ public class ProfileService {
         profileTableResult = new ProfileTableResult();
         System.out.println(path);
 
-        //파일이름만 분리
-        String[] split = null;
-        if(type.equals("path"))
-            split = path.split("\\\\");
-        else if(type.equals("url"))
-            split = path.split("/");
-        String filename = split[split.length-1].split("\\.")[0];
+        String filename = getFileName(type, path);
         System.out.println("filename:"+filename);
 
         //CsvDatastore
@@ -236,7 +280,7 @@ public class ProfileService {
         String inputColumnName = tableName + "." + columnName;
         System.out.println("inputColumnName : " + inputColumnName);
         String type = profileColumnResult.getColumn_type();
-        //DataStoreService.setDataStore2(activeProfileProperty.getActive());
+
         DataStoreService.setDataStore("CSVDS");
         AnalysisJobBuilder builder = DataStoreService.getBuilder();
         builder.addSourceColumns(columnName);
@@ -257,8 +301,6 @@ public class ProfileService {
         } else if (type.equals("date")){
             TransformerComponentBuilder<ConvertToDateTransformer> ctd = builder.addTransformer(ConvertToDateTransformer.class);
             ctd.setConfiguredProperty("Time zone","Asia/Seoul");
-//            Date DateNullReplacement = new Date();
-//            ctd.setConfiguredProperty("Null replacement", DateNullReplacement);
             ctd.addInputColumns(targetInputColumn);
             dateTargetInputColumn = targetInputColumn;
             targetInputColumn = ctd.getOutput()[0];
@@ -530,9 +572,9 @@ public class ProfileService {
      * @param tableName         현재 프로파일 작업을 수행한 테이블명
      */
     private void extractResult(List<AnalyzerResult> results,
-                               InputColumn<?> targetInputColumn,
-                               String columnName,
-                               String tableName) {
+            InputColumn<?> targetInputColumn,
+            String columnName,
+            String tableName) {
         BasicProfile basicProfile = new BasicProfile();
         NumberProfile numberProfile = new NumberProfile();
         StringProfile stringProfile = new StringProfile();
@@ -771,5 +813,59 @@ public class ProfileService {
             profileColumnResult.getProfiles().put("string_profile", stringProfile);
         if(profileColumnResult.getColumn_type().equals("date"))
             profileColumnResult.getProfiles().put("date_profile", dateProfile);
+    }
+
+    public String getFileName(String type, String path) {
+        String[] split = null;
+        if(type.equals("path"))
+            split = path.split("\\\\");
+        else if(type.equals("url"))
+            split = path.split("/");
+        return split[split.length-1].split("\\.")[0];
+    }
+
+    public List<String> getHeader(String path, Boolean isHeader, String fileName) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader(path));
+        List<String> header = new ArrayList<>();
+
+        // 헤더가 있을 경우
+        if (isHeader) {
+            header = Arrays.asList(csvReader.readNext().clone());
+            csvReader.close();
+        } else { // 헤더가 없을 경우
+            csvReader = new CSVReader((new FileReader(path)));
+
+            // 컬럼 수에 따라 헤더 설정
+            int recordsCount = csvReader.readNext().length;
+            for (int i = 1; i < recordsCount + 1; i++) {
+                header.add(fileName + "_" + i);
+            }
+            csvReader.close();
+
+            File originFile = new File(path); // 원본 파일
+            csvReader = new CSVReader((new FileReader(path)));
+            List<Object> originData = new ArrayList<>();
+            String[] nextLine;
+            while ((nextLine = csvReader.readNext()) != null) {
+                originData.add(nextLine); // 원본 데이터 읽기
+            }
+
+            originFile.delete(); // 파일 지움
+            File newFile = new File(path);
+            CSVWriter csvWriter = new CSVWriter(new FileWriter(newFile));
+            csvWriter.writeNext(header.toArray(String[]::new)); // 헤더 작성
+
+            // 헤더 아랫줄부터 원본 데이터 쓰기
+            for (Object data : originData) {
+                csvWriter.writeNext((String[]) data);
+            }
+
+            csvWriter.close();
+
+            CSVReader csvTestReader = new CSVReader(new FileReader(path));
+            csvTestReader.close();
+        }
+
+        return header;
     }
 }
