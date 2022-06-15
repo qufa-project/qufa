@@ -8,7 +8,7 @@ import java.util.Map;
 @Getter
 public class Local {
     private Source source;
-    private boolean header = false;
+    private boolean header = true;
     private Map<String, List<Integer>> profiles;
 
 
