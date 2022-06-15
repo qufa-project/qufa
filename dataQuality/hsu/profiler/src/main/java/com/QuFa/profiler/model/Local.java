@@ -1,16 +1,15 @@
 package com.QuFa.profiler.model;
 
-import lombok.Getter;
-
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
 
 @Getter
 public class Local {
+
     private Source source;
     private boolean header = true;
     private Map<String, List<Integer>> profiles;
-
 
     //private boolean header = false;
     //private List<String> profiling;

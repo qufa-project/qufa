@@ -38,7 +38,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.datacleaner.api.AnalyzerResult;
 import org.datacleaner.api.InputColumn;
 import org.datacleaner.beans.DateAndTimeAnalyzer;
@@ -75,6 +74,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Component
 public class ProfileService {
+
     /**
      *
      */
@@ -88,19 +88,12 @@ public class ProfileService {
     private List<String> header;
 
     /**
-     * <현 문제점>
-     * columnNames 에 대해 for 문 돌면서 호출됨.
-     * 해당 컬럼의 타입이 무엇인지 판단
-     * 근데 typecheck 는 모든 레코드에 대해서 하는데 (5000개~)
-     * 아래 컬럼 타입 max 구할땐 100개만 함. ?
-     *
-     * <해결 방법>
-     * - file의 크기에 따라 예를들어 100개 이하면 전수조사,
-     * - 100개 이상이면 샘플링해서 판단.
-     *
-     * - 예를들어 200개 -> 50%인 100개, 300개 -> 33%인 100개 ...
-     * - 목표는 모든 csv파일에 대해 동일한 시간이 나오도록
-     * - 샘플링은 random
+     * <현 문제점> columnNames 에 대해 for 문 돌면서 호출됨. 해당 컬럼의 타입이 무엇인지 판단 근데 typecheck 는 모든 레코드에 대해서 하는데
+     * (5000개~) 아래 컬럼 타입 max 구할땐 100개만 함. ?
+     * <p>
+     * <해결 방법> - file의 크기에 따라 예를들어 100개 이하면 전수조사, - 100개 이상이면 샘플링해서 판단.
+     * <p>
+     * - 예를들어 200개 -> 50%인 100개, 300개 -> 33%인 100개 ... - 목표는 모든 csv파일에 대해 동일한 시간이 나오도록 - 샘플링은 random
      * - 시간이 많이 걸리는 부분이 어딘지 한번 체크해볼것!
      */
     public String typeDetection(String path, String columnName) throws IOException {
@@ -109,14 +102,17 @@ public class ProfileService {
         List<String> rowValues = new ArrayList<>();
         Map<String, String> rowType = new HashMap<>();
         while ((nextLine = csvReader.readNext()) != null) {
-            if(nextLine.length == header.size())
+            if (nextLine.length == header.size()) {
                 rowValues.add(nextLine[header.indexOf(columnName)]);
+            }
         }
 
         int i = 0;
 
-        for(String rowVal : rowValues) {
-            if (rowVal.trim().equals("")) continue;
+        for (String rowVal : rowValues) {
+            if (rowVal.trim().equals("")) {
+                continue;
+            }
             List<DateFormat> dfs = new ArrayList<>();
             SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             sd.setLenient(false);
@@ -139,7 +135,7 @@ public class ProfileService {
             dfs.add(sd);
 
             Date date;
-            for(DateFormat df : dfs) {
+            for (DateFormat df : dfs) {
                 try {
                     date = df.parse(rowVal);
                     rowType.put(rowVal, "date");
@@ -169,26 +165,29 @@ public class ProfileService {
         vdTypes.put("string", 0);
         vdTypes.put("number", 0);
         vdTypes.put("date", 0);
-        for(String t : rowType.values()){
-            if(i >= 99) break;
+        for (String t : rowType.values()) {
+            if (i >= 99) {
+                break;
+            }
             n = vdTypes.get(t) + 1;
             vdTypes.put(t, n);
             i++;
         }
 
-        int maxVal =  Collections.max(vdTypes.values());
+        int maxVal = Collections.max(vdTypes.values());
 
-        for(String key : vdTypes.keySet()){
-            if(vdTypes.get(key).equals(maxVal))
+        for (String key : vdTypes.keySet()) {
+            if (vdTypes.get(key).equals(maxVal)) {
                 return key;
+            }
         }
 
         return "string";
     }
 
-    public ProfileTableResult profileLocalCSV(Local local){
+    public ProfileTableResult profileLocalCSV(Local local) {
 
-        if(local.getSource().getType().equals("path")) {
+        if (local.getSource().getType().equals("path")) {
             String path = local.getSource().getPath();
             String fileName = getFileName(local.getSource().getType(), local.getSource().getPath());
             try {
@@ -205,14 +204,14 @@ public class ProfileService {
                 e.printStackTrace();
             }
             return profileTableResult;
-        }
-        else if(local.getSource().getType().equals("url")){
+        } else if (local.getSource().getType().equals("url")) {
             String url = local.getSource().getUrl();
             try {
                 URL file = new URL(url);
                 dataStoreService.storeUrlFile(file);
 
-                BufferedReader reader = new BufferedReader(new InputStreamReader(file.openStream()));
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(file.openStream()));
 
                 profileLocalColumns("url", url, header);
 
@@ -222,8 +221,7 @@ public class ProfileService {
                 e.printStackTrace();
             }
             return profileTableResult;
-        }
-        else{
+        } else {
             //TODO:type에러 추가
         }
         return null;
@@ -234,26 +232,24 @@ public class ProfileService {
         System.out.println(path);
 
         String filename = getFileName(type, path);
-        System.out.println("filename:"+filename);
+        System.out.println("filename:" + filename);
 
         //CsvDatastore
-        if(type.equals("path"))
+        if (type.equals("path")) {
             DataStoreService.createLocalDataStore(path);
-        else if(type.equals("url")) {
+        } else if (type.equals("url")) {
             path = "./src/main/resources/targetfiles/" + filename + ".csv";
             DataStoreService.createLocalDataStore(path);
         }
-
 
         profileTableResult.setDataset_name(filename);
         profileTableResult.setDataset_type("csv");
 
         File file = new File(path);
-        profileTableResult.setDataset_size((int)file.length());
+        profileTableResult.setDataset_size((int) file.length());
         file = null;
 
         profileTableResult.setDataset_column_cnt(columnNames.size());
-
 
         for (String columnName : columnNames) {
             profileColumnResult = new ProfileColumnResult();
@@ -261,7 +257,7 @@ public class ProfileService {
             profileColumnResult.setColumn_name(columnName);
             try {
                 profileColumnResult.setColumn_type(typeDetection(path, columnName));
-            } catch(IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
             }
             this.profileSingleColumn(filename, columnName);
@@ -288,54 +284,65 @@ public class ProfileService {
         InputColumn<?> dateTargetInputColumn = null;
 
         //Convert column data type
-        if (type.equals("number")){
-            TransformerComponentBuilder<ConvertToNumberTransformer> ctn = builder.addTransformer(ConvertToNumberTransformer.class);
+        if (type.equals("number")) {
+            TransformerComponentBuilder<ConvertToNumberTransformer> ctn = builder
+                    .addTransformer(ConvertToNumberTransformer.class);
             ctn.addInputColumns(targetInputColumn);
             targetInputColumn = ctn.getOutput()[0];
 
-            AnalyzerComponentBuilder<ValueMatchAnalyzer> vma = builder.addAnalyzer(ValueMatchAnalyzer.class);
+            AnalyzerComponentBuilder<ValueMatchAnalyzer> vma = builder
+                    .addAnalyzer(ValueMatchAnalyzer.class);
             vma.addInputColumn(targetInputColumn);
-            String[] expected_values = { "0" };
+            String[] expected_values = {"0"};
             vma.setConfiguredProperty("Expected values", expected_values);
 
-        } else if (type.equals("date")){
-            TransformerComponentBuilder<ConvertToDateTransformer> ctd = builder.addTransformer(ConvertToDateTransformer.class);
-            ctd.setConfiguredProperty("Time zone","Asia/Seoul");
+        } else if (type.equals("date")) {
+            TransformerComponentBuilder<ConvertToDateTransformer> ctd = builder
+                    .addTransformer(ConvertToDateTransformer.class);
+            ctd.setConfiguredProperty("Time zone", "Asia/Seoul");
             ctd.addInputColumns(targetInputColumn);
             dateTargetInputColumn = targetInputColumn;
             targetInputColumn = ctd.getOutput()[0];
         }
         System.out.println(targetInputColumn); // null로 나옴
 
-
         // analyzer config
         // val
-        AnalyzerComponentBuilder<ValueDistributionAnalyzer> valDistAnalyzer = builder.addAnalyzer(ValueDistributionAnalyzer.class);
-        if(type.equals("date"))
+        AnalyzerComponentBuilder<ValueDistributionAnalyzer> valDistAnalyzer = builder
+                .addAnalyzer(ValueDistributionAnalyzer.class);
+        if (type.equals("date")) {
             valDistAnalyzer.addInputColumns(dateTargetInputColumn);
-        else
+        } else {
             valDistAnalyzer.addInputColumns(targetInputColumn);
-        valDistAnalyzer.setConfiguredProperty(ValueDistributionAnalyzer.PROPERTY_RECORD_UNIQUE_VALUES, true);
-        valDistAnalyzer.setConfiguredProperty(ValueDistributionAnalyzer.PROPERTY_RECORD_DRILL_DOWN_INFORMATION, true);
-
+        }
+        valDistAnalyzer
+                .setConfiguredProperty(ValueDistributionAnalyzer.PROPERTY_RECORD_UNIQUE_VALUES,
+                        true);
+        valDistAnalyzer.setConfiguredProperty(
+                ValueDistributionAnalyzer.PROPERTY_RECORD_DRILL_DOWN_INFORMATION, true);
 
         //Column data type과 매핑되는 analyzer config
         if (type.equals("string")) {
-            AnalyzerComponentBuilder<StringAnalyzer> stringAnalyzer = builder.addAnalyzer(StringAnalyzer.class);
+            AnalyzerComponentBuilder<StringAnalyzer> stringAnalyzer = builder
+                    .addAnalyzer(StringAnalyzer.class);
             stringAnalyzer.addInputColumn(targetInputColumn);
         } else if (type.equals("number")) {
-            AnalyzerComponentBuilder<NumberAnalyzer> numberAnalyzer = builder.addAnalyzer(NumberAnalyzer.class);
+            AnalyzerComponentBuilder<NumberAnalyzer> numberAnalyzer = builder
+                    .addAnalyzer(NumberAnalyzer.class);
             numberAnalyzer.setConfiguredProperty("Descriptive statistics", true);
             numberAnalyzer.addInputColumn(targetInputColumn);
         } else if (type.equals("date")) {
-            AnalyzerComponentBuilder<DateAndTimeAnalyzer> dateAnalyzer = builder.addAnalyzer(DateAndTimeAnalyzer.class);
+            AnalyzerComponentBuilder<DateAndTimeAnalyzer> dateAnalyzer = builder
+                    .addAnalyzer(DateAndTimeAnalyzer.class);
             dateAnalyzer.setConfiguredProperty("Descriptive statistics", true);
             dateAnalyzer.addInputColumn(targetInputColumn);
 
-            AnalyzerComponentBuilder<MonthDistributionAnalyzer> monthDistAnalyzer = builder.addAnalyzer(MonthDistributionAnalyzer.class);
+            AnalyzerComponentBuilder<MonthDistributionAnalyzer> monthDistAnalyzer = builder
+                    .addAnalyzer(MonthDistributionAnalyzer.class);
             monthDistAnalyzer.addInputColumns(targetInputColumn);
 
-            AnalyzerComponentBuilder<YearDistributionAnalyzer> yearDistAnalyzer = builder.addAnalyzer(YearDistributionAnalyzer.class);
+            AnalyzerComponentBuilder<YearDistributionAnalyzer> yearDistAnalyzer = builder
+                    .addAnalyzer(YearDistributionAnalyzer.class);
             yearDistAnalyzer.addInputColumns(targetInputColumn);
         }
 
@@ -371,27 +378,28 @@ public class ProfileService {
         }
     }
 
-    private String SerialNumberToDate(long num){
+    private String SerialNumberToDate(long num) {
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
                 .format(new Date(num * 86400000L));
     }
 
-    private Map<Object, Object> getTop100(Map<Object, Object> map){
+    private Map<Object, Object> getTop100(Map<Object, Object> map) {
         Map<Object, Object> top100 = new HashMap<>();
 
         return top100;
     }
 
-    private Map<Object, Object> valueSortByDesc(Map<Object, Object> map){
+    private Map<Object, Object> valueSortByDesc(Map<Object, Object> map) {
         List<Map.Entry<Object, Object>> list = new LinkedList<>(map.entrySet());
         Collections.sort(list, new Comparator<Object>() {
             @SuppressWarnings("unchecked")
             public int compare(Object o1, Object o2) {
-                return ((Comparable<Integer>) ((Map.Entry<Integer, Integer>) (o2)).getValue()).compareTo(((Map.Entry<Integer, Integer>) (o1)).getValue());
+                return ((Comparable<Integer>) ((Map.Entry<Integer, Integer>) (o2)).getValue())
+                        .compareTo(((Map.Entry<Integer, Integer>) (o1)).getValue());
             }
         });
         Map<Object, Object> resultMap = new LinkedHashMap<>();
-        for (Iterator<Map.Entry<Object, Object>> it = list.iterator(); it.hasNext();) {
+        for (Iterator<Map.Entry<Object, Object>> it = list.iterator(); it.hasNext(); ) {
             Map.Entry<Object, Object> entry = (Map.Entry<Object, Object>) it.next();
             resultMap.put(entry.getKey(), entry.getValue());
         }
@@ -399,48 +407,50 @@ public class ProfileService {
         return resultMap;
     }
 
-    private List<Map<Object, Object>> monthSort(Map<Object, Object> map){
+    private List<Map<Object, Object>> monthSort(Map<Object, Object> map) {
         String[] months = {"January", "February", "March", "April", "May", "June", "July", "August",
                 "September", "October", "November", "December"};
         List<Map<Object, Object>> resultList = new ArrayList<>();
 
-        for(String month : months)
+        for (String month : months) {
             resultList.add(Map.of(month, map.get(month)));
+        }
 
         return resultList;
     }
 
-    private Map<Object, Object> numberKeySortByAsc(Map<Object, Object> map, String type){
+    private Map<Object, Object> numberKeySortByAsc(Map<Object, Object> map, String type) {
         Object[] keyArray = map.keySet().toArray();
         Map<Object, Object> resultMap = new LinkedHashMap<>();
 
-        if(type.equals("int")){
+        if (type.equals("int")) {
             int[] intArray = new int[keyArray.length];
-            for(int i=0; i<keyArray.length; i++){
+            for (int i = 0; i < keyArray.length; i++) {
                 intArray[i] = Integer.parseInt(keyArray[i].toString());
             }
 
             Arrays.sort(intArray);
 
-            for(int i : intArray)
+            for (int i : intArray) {
                 resultMap.put(i, map.get(Integer.toString(i)));
-        }
-        else if(type.equals("double")){
+            }
+        } else if (type.equals("double")) {
             double[] doubleArray = new double[keyArray.length];
-            for(int i=0; i<keyArray.length; i++){
+            for (int i = 0; i < keyArray.length; i++) {
                 doubleArray[i] = Double.parseDouble(keyArray[i].toString());
             }
 
             Arrays.sort(doubleArray);
 
-            for(double d : doubleArray)
+            for (double d : doubleArray) {
                 resultMap.put(Double.toString(d), map.get(Double.toString(d)));
+            }
         }
 
         return resultMap;
     }
 
-    private List<Map<Object, Object>> getRange(Map<Object, Object> vfModelList){
+    private List<Map<Object, Object>> getRange(Map<Object, Object> vfModelList) {
         List<Map<Object, Object>> range = new ArrayList<>();
         Map<Object, Object> LastMapInRange = new HashMap<>();
         Map<Object, Object> ascList;
@@ -448,66 +458,64 @@ public class ProfileService {
 
         Map<Object, Object> vfModelList_copy = new LinkedHashMap<>(vfModelList);
 
-        for(Object o : vfModelList.keySet()){
+        for (Object o : vfModelList.keySet()) {
             double d = Double.parseDouble(o.toString());
-            if(!((Double.toString(d)).equals(o.toString()))){
-                vfModelList_copy.put(Double.toString(d),vfModelList_copy.remove(o));
+            if (!((Double.toString(d)).equals(o.toString()))) {
+                vfModelList_copy.put(Double.toString(d), vfModelList_copy.remove(o));
             }
         }
 
-        boolean isDouble=false;
-        for(int i=0; i<100; i++){
-            if(keyArray[i].toString().contains(".")){
-                isDouble=true;
+        boolean isDouble = false;
+        for (int i = 0; i < 100; i++) {
+            if (keyArray[i].toString().contains(".")) {
+                isDouble = true;
                 break;
             }
         }
 
-        if(isDouble){
-            ascList = numberKeySortByAsc(vfModelList_copy, "double");}
-        else{
-            ascList = numberKeySortByAsc(vfModelList, "int");}
-
+        if (isDouble) {
+            ascList = numberKeySortByAsc(vfModelList_copy, "double");
+        } else {
+            ascList = numberKeySortByAsc(vfModelList, "int");
+        }
 
         Object[] objectKeyArray = ascList.keySet().toArray();
         String[] stringKeyArray = new String[objectKeyArray.length];
-        for(int i = 0; i < stringKeyArray.length; i++)
+        for (int i = 0; i < stringKeyArray.length; i++) {
             stringKeyArray[i] = objectKeyArray[i].toString();
+        }
         //String[] stringKeyArray = Arrays.copyOf(objectKeyArray,objectKeyArray.length,String[].class);
 
+        int valueSum = 0;
 
-        int valueSum=0;
-
-        if(isDouble){ //실수
+        if (isDouble) { //실수
             BigDecimal BDmin = new BigDecimal(stringKeyArray[0]);
-            BigDecimal BDmax = new BigDecimal(stringKeyArray[stringKeyArray.length-1]);
-            BigDecimal BigDist = (BDmax.subtract(BDmin)).divide(BigDecimal.valueOf(10), 100, RoundingMode.HALF_EVEN);
+            BigDecimal BDmax = new BigDecimal(stringKeyArray[stringKeyArray.length - 1]);
+            BigDecimal BigDist = (BDmax.subtract(BDmin))
+                    .divide(BigDecimal.valueOf(10), 100, RoundingMode.HALF_EVEN);
             BigDist = BigDecimal.valueOf(BigDist.doubleValue());
 
-
-            for(String s : stringKeyArray){
+            for (String s : stringKeyArray) {
                 BigDecimal b;
 
                 try {
-                    b=new BigDecimal(s);
+                    b = new BigDecimal(s);
                 } catch (Exception e) {
-                    System.out.println("[BigDecimal except]:"+s);
+                    System.out.println("[BigDecimal except]:" + s);
                     e.printStackTrace();
                     continue;
                 }
 
-                if((b.compareTo(BDmin.add(BigDist))) < 0) {
-                    try{
-                        valueSum+=Integer.parseInt(ascList.get(s).toString());
-                    }catch(Exception e){
+                if ((b.compareTo(BDmin.add(BigDist))) < 0) {
+                    try {
+                        valueSum += Integer.parseInt(ascList.get(s).toString());
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
-                }
-                else if(stringKeyArray[stringKeyArray.length-1].equals(s)){
-                    valueSum+= Integer.parseInt(ascList.get(s).toString());
+                } else if (stringKeyArray[stringKeyArray.length - 1].equals(s)) {
+                    valueSum += Integer.parseInt(ascList.get(s).toString());
                     range.add(Map.of(BDmin.toString(), valueSum));
-                }
-                else{
+                } else {
                     range.add(Map.of(BDmin.toString(), valueSum));
                     BDmin = BDmin.add(BigDist);
                     valueSum = Integer.parseInt(ascList.get(s).toString());
@@ -516,15 +524,14 @@ public class ProfileService {
 
             LastMapInRange.put(BDmax.toString(), null);
             range.add(LastMapInRange);
-        }
-        else{ //정수
+        } else { //정수
             int Imin = Integer.parseInt(stringKeyArray[0]);
             int Imax = Integer.parseInt(stringKeyArray[stringKeyArray.length - 1]);
-            int dist = (Imax-Imin)/10;
-            int remains = (Imax-Imin)%10;
+            int dist = (Imax - Imin) / 10;
+            int remains = (Imax - Imin) % 10;
             int isRemain;
 
-            for(String s : stringKeyArray) {
+            for (String s : stringKeyArray) {
                 int i;
 
                 try {
@@ -535,19 +542,18 @@ public class ProfileService {
                     continue;
                 }
 
-                if(remains>0)
-                    isRemain=1;
-                else
-                    isRemain=0;
+                if (remains > 0) {
+                    isRemain = 1;
+                } else {
+                    isRemain = 0;
+                }
 
                 if (i < (Imin + dist + isRemain)) {
                     valueSum += Integer.parseInt(vfModelList.get(s).toString());
-                }
-                else if (stringKeyArray[stringKeyArray.length - 1].equals(s)) {
+                } else if (stringKeyArray[stringKeyArray.length - 1].equals(s)) {
                     valueSum += Integer.parseInt(vfModelList.get(s).toString());
                     range.add(Map.of(Integer.toString(Imin), valueSum));
-                }
-                else {
+                } else {
                     range.add(Map.of(Integer.toString(Imin), valueSum));
                     Imin += dist;
                     valueSum = Integer.parseInt(vfModelList.get(s).toString());
@@ -596,7 +602,8 @@ public class ProfileService {
             //System.out.println(result.getClass());
             if (result instanceof ValueDistributionAnalyzerResult) {
                 if (((ValueDistributionAnalyzerResult) result).getNullCount() > 0) {
-                    basicProfile.setNull_cnt(((ValueDistributionAnalyzerResult) result).getNullCount());
+                    basicProfile
+                            .setNull_cnt(((ValueDistributionAnalyzerResult) result).getNullCount());
                 }
 
                 int distinct_cnt = ((ValueDistributionAnalyzerResult) result).getDistinctCount();
@@ -607,45 +614,48 @@ public class ProfileService {
 
                 basicProfile.setDistinct_cnt(distinct_cnt);
                 basicProfile.setRow_cnt(row_cnt);
-                basicProfile.setUnique_cnt(((ValueDistributionAnalyzerResult) result).getUniqueCount());
+                basicProfile
+                        .setUnique_cnt(((ValueDistributionAnalyzerResult) result).getUniqueCount());
                 basicProfile.setDistinctness((double) distinct_cnt / row_cnt);
 
-                Collection<ValueFrequency> vfList = ((ValueDistributionAnalyzerResult) result).getValueCounts();
+                Collection<ValueFrequency> vfList = ((ValueDistributionAnalyzerResult) result)
+                        .getValueCounts();
                 for (ValueFrequency vf : vfList) {
                     if (vf.getChildren() != null) {
                         Collection<ValueFrequency> vfChildren = vf.getChildren();
                         for (ValueFrequency vfChild : vfChildren) {
-                            if(vfChild.getValue() != null)
-                                vfModelList.put(vfChild.getValue(),vfChild.getCount());
+                            if (vfChild.getValue() != null) {
+                                vfModelList.put(vfChild.getValue(), vfChild.getCount());
+                            }
                         }
                     } else {
-                        if(vf.getValue() != null)
-                            vfModelList.put(vf.getValue(),vf.getCount());
+                        if (vf.getValue() != null) {
+                            vfModelList.put(vf.getValue(), vf.getCount());
+                        }
                     }
                 }
 
                 vfModelList = valueSortByDesc(vfModelList);
 
-                if(distinct_cnt > 100){
+                if (distinct_cnt > 100) {
                     vdModel.setType("top100");
 
                     Object[] keys = vfModelList.keySet().toArray();
-                    for(int i = 0; i < 100; i++) {
+                    for (int i = 0; i < 100; i++) {
                         vdValueList.add(Map.of(
                                 keys[i], vfModelList.get(keys[i])
                         ));
                     }
                     vdModel.setValue(vdValueList);
 
-                    if(profileColumnResult.getColumn_type().equals("number")){
+                    if (profileColumnResult.getColumn_type().equals("number")) {
                         List<Map<Object, Object>> range = getRange(vfModelList);
                         vdModel.setRange(range);
-                    }
-                    else
+                    } else {
                         vdModel.setRange("-");
+                    }
 
-                }
-                else{
+                } else {
                     vdModel.setType("all");
 
                     Object[] keys = vfModelList.keySet().toArray();
@@ -659,91 +669,114 @@ public class ProfileService {
                     vdModel.setRange("-");
                 }
 
-
                 basicProfile.setValue_distribution(vdModel);
                 totalCnt = ((ValueDistributionAnalyzerResult) result).getTotalCount();
             }
-            if (profileColumnResult.getColumn_type().equals("date") && result instanceof CrosstabResult &&
-                    !(result instanceof DateAndTimeAnalyzerResult)){
+            if (profileColumnResult.getColumn_type().equals("date")
+                    && result instanceof CrosstabResult &&
+                    !(result instanceof DateAndTimeAnalyzerResult)) {
                 CrosstabDimension ctr = ((CrosstabResult) result).getCrosstab().getDimension(1);
                 String dimension = "";
 
-                if(ctr.getName().equals("Month"))
+                if (ctr.getName().equals("Month")) {
                     dimension = "Month";
-                else
+                } else {
                     dimension = "Year";
+                }
 
-                for(String category : ctr.getCategories()){
+                for (String category : ctr.getCategories()) {
                     Object value = ((CrosstabResult) result).getCrosstab().where("Column",
                             targetInputColumn.getName()).where(dimension, category)
                             .safeGet(null);
-                    if(value == null)
+                    if (value == null) {
                         value = 0;
+                    }
 
-                    if(dimension.equals("Month"))
+                    if (dimension.equals("Month")) {
                         monthList.put(category, value);
-                    else
+                    } else {
                         yearList.put(category, value);
+                    }
                 }
 
                 vdMonthList = monthSort(monthList);
                 dateProfile.setMonth_distribution(vdMonthList);
 
-                yearList = numberKeySortByAsc(yearList,"int");
-                for(Object year : yearList.keySet().toArray()){
+                yearList = numberKeySortByAsc(yearList, "int");
+                for (Object year : yearList.keySet().toArray()) {
                     vdYearList.add(Map.of(year, yearList.get(year)));
                 }
                 dateProfile.setYear_distribution(vdYearList);
             }
         }
 
-
         DecimalFormat form = new DecimalFormat("#.###");
 
         for (AnalyzerResult result : results) {
             if (result instanceof StringAnalyzerResult) {
-                if (((StringAnalyzerResult) result).getNullCount(targetInputColumn) > 0 && basicProfile.getNull_cnt() == 0) {
-                    basicProfile.setNull_cnt(((StringAnalyzerResult) result).getNullCount(targetInputColumn));
+                if (((StringAnalyzerResult) result).getNullCount(targetInputColumn) > 0
+                        && basicProfile.getNull_cnt() == 0) {
+                    basicProfile.setNull_cnt(
+                            ((StringAnalyzerResult) result).getNullCount(targetInputColumn));
                 }
 
                 if (((StringAnalyzerResult) result).getNullCount(targetInputColumn) < totalCnt) {
-                    stringProfile.setAvg_len(Double.parseDouble(form.format(((StringAnalyzerResult) result).getAvgChars(targetInputColumn))));
-                    stringProfile.setMax_len(((StringAnalyzerResult) result).getMaxChars(targetInputColumn));
-                    stringProfile.setMin_len(((StringAnalyzerResult) result).getMinChars(targetInputColumn));
+                    stringProfile.setAvg_len(Double.parseDouble(form.format(
+                            ((StringAnalyzerResult) result).getAvgChars(targetInputColumn))));
+                    stringProfile.setMax_len(
+                            ((StringAnalyzerResult) result).getMaxChars(targetInputColumn));
+                    stringProfile.setMin_len(
+                            ((StringAnalyzerResult) result).getMinChars(targetInputColumn));
                 }
-                stringProfile.setBlank_cnt(((StringAnalyzerResult) result).getBlankCount(targetInputColumn));
+                stringProfile.setBlank_cnt(
+                        ((StringAnalyzerResult) result).getBlankCount(targetInputColumn));
             }
 
             if (result instanceof NumberAnalyzerResult) {
-                if (((NumberAnalyzerResult) result).getNullCount(targetInputColumn).intValue() > 0 && basicProfile.getNull_cnt() == 0)
-                    basicProfile.setNull_cnt(((NumberAnalyzerResult) result).getNullCount(targetInputColumn).intValue());
+                if (((NumberAnalyzerResult) result).getNullCount(targetInputColumn).intValue() > 0
+                        && basicProfile.getNull_cnt() == 0) {
+                    basicProfile.setNull_cnt(
+                            ((NumberAnalyzerResult) result).getNullCount(targetInputColumn)
+                                    .intValue());
+                }
 
                 if (((NumberAnalyzerResult) result).getLowestValue(targetInputColumn) != null) {
-                    numberProfile.setMin((Double) ((NumberAnalyzerResult) result).getLowestValue(targetInputColumn));
+                    numberProfile.setMin((Double) ((NumberAnalyzerResult) result)
+                            .getLowestValue(targetInputColumn));
                 }
                 if (((NumberAnalyzerResult) result).getHighestValue(targetInputColumn) != null) {
-                    numberProfile.setMax((Double) ((NumberAnalyzerResult) result).getHighestValue(targetInputColumn));
+                    numberProfile.setMax((Double) ((NumberAnalyzerResult) result)
+                            .getHighestValue(targetInputColumn));
                 }
                 if (((NumberAnalyzerResult) result).getSum(targetInputColumn) != null) {
-                    numberProfile.setSum(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getSum(targetInputColumn))));
+                    numberProfile.setSum(Double.parseDouble(form.format(
+                            ((NumberAnalyzerResult) result).getSum(targetInputColumn))));
                 }
                 if (((NumberAnalyzerResult) result).getMean(targetInputColumn) != null) {
-                    numberProfile.setMean(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getMean(targetInputColumn))));
+                    numberProfile.setMean(Double.parseDouble(form.format(
+                            ((NumberAnalyzerResult) result).getMean(targetInputColumn))));
                 }
                 if (((NumberAnalyzerResult) result).getMedian(targetInputColumn) != null) {
-                    numberProfile.setMedian(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getMedian(targetInputColumn))));
+                    numberProfile.setMedian(Double.parseDouble(form.format(
+                            ((NumberAnalyzerResult) result).getMedian(targetInputColumn))));
                 }
-                if (((NumberAnalyzerResult) result).getStandardDeviation(targetInputColumn) != null) {
-                    numberProfile.setSd(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getStandardDeviation(targetInputColumn))));
+                if (((NumberAnalyzerResult) result).getStandardDeviation(targetInputColumn)
+                        != null) {
+                    numberProfile.setSd(Double.parseDouble(form.format(
+                            ((NumberAnalyzerResult) result)
+                                    .getStandardDeviation(targetInputColumn))));
                 }
                 if (((NumberAnalyzerResult) result).getVariance(targetInputColumn) != null) {
-                    numberProfile.setVariance(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getVariance(targetInputColumn))));
+                    numberProfile.setVariance(Double.parseDouble(form.format(
+                            ((NumberAnalyzerResult) result).getVariance(targetInputColumn))));
                 }
                 if (((NumberAnalyzerResult) result).getPercentile25(targetInputColumn) != null) {
-                    numberProfile.setPercentile_25th(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getPercentile25(targetInputColumn))));
+                    numberProfile.setPercentile_25th(Double.parseDouble(form.format(
+                            ((NumberAnalyzerResult) result).getPercentile25(targetInputColumn))));
                 }
                 if (((NumberAnalyzerResult) result).getPercentile75(targetInputColumn) != null) {
-                    numberProfile.setPercentile_75th(Double.parseDouble(form.format(((NumberAnalyzerResult) result).getPercentile75(targetInputColumn))));
+                    numberProfile.setPercentile_75th(Double.parseDouble(form.format(
+                            ((NumberAnalyzerResult) result).getPercentile75(targetInputColumn))));
                 }
             }
 
@@ -756,75 +789,98 @@ public class ProfileService {
             if (result instanceof DateAndTimeAnalyzerResult) {
                 Object value;
 
-                if (((DateAndTimeAnalyzerResult) result).getNullCount(targetInputColumn) > 0 && basicProfile.getNull_cnt() == 0) {
-                    basicProfile.setNull_cnt(((DateAndTimeAnalyzerResult) result).getNullCount(targetInputColumn));
+                if (((DateAndTimeAnalyzerResult) result).getNullCount(targetInputColumn) > 0
+                        && basicProfile.getNull_cnt() == 0) {
+                    basicProfile.setNull_cnt(
+                            ((DateAndTimeAnalyzerResult) result).getNullCount(targetInputColumn));
                 }
 
-                value = ((CrosstabResult) result).getCrosstab().where("Column", targetInputColumn.getName()).where("Measure", "Highest date")
+                value = ((CrosstabResult) result).getCrosstab()
+                        .where("Column", targetInputColumn.getName())
+                        .where("Measure", "Highest date")
                         .safeGet(null);
-                if(value!=null)
-                    dateProfile.setHighest_date((String)value);
-                else
+                if (value != null) {
+                    dateProfile.setHighest_date((String) value);
+                } else {
                     dateProfile.setHighest_date("-");
+                }
 
-                value = ((CrosstabResult) result).getCrosstab().where("Column", targetInputColumn.getName()).where("Measure", "Lowest date")
+                value = ((CrosstabResult) result).getCrosstab()
+                        .where("Column", targetInputColumn.getName())
+                        .where("Measure", "Lowest date")
                         .safeGet(null);
-                if(value!=null)
-                    dateProfile.setLowest_date((String)value);
-                else
+                if (value != null) {
+                    dateProfile.setLowest_date((String) value);
+                } else {
                     dateProfile.setLowest_date("-");
+                }
 
-                value = ((CrosstabResult) result).getCrosstab().where("Column", targetInputColumn.getName()).where("Measure", "Mean")
+                value = ((CrosstabResult) result).getCrosstab()
+                        .where("Column", targetInputColumn.getName()).where("Measure", "Mean")
                         .safeGet(null);
-                if(value!=null)
-                    dateProfile.setMean_date((String)value);
-                else
+                if (value != null) {
+                    dateProfile.setMean_date((String) value);
+                } else {
                     dateProfile.setMean_date("-");
+                }
 
-                value = ((CrosstabResult) result).getCrosstab().where("Column", targetInputColumn.getName()).where("Measure", "Median")
+                value = ((CrosstabResult) result).getCrosstab()
+                        .where("Column", targetInputColumn.getName()).where("Measure", "Median")
                         .safeGet(null);
-                if(value!=null)
-                    dateProfile.setMedian_date((String)value);
-                else
+                if (value != null) {
+                    dateProfile.setMedian_date((String) value);
+                } else {
                     dateProfile.setMedian_date("-");
+                }
 
-                value = ((CrosstabResult) result).getCrosstab().where("Column", targetInputColumn.getName()).where("Measure", "25th percentile")
+                value = ((CrosstabResult) result).getCrosstab()
+                        .where("Column", targetInputColumn.getName())
+                        .where("Measure", "25th percentile")
                         .safeGet(null);
-                if(value!=null)
-                    dateProfile.setPercentile_25th((String)value);
-                else
+                if (value != null) {
+                    dateProfile.setPercentile_25th((String) value);
+                } else {
                     dateProfile.setPercentile_25th("-");
+                }
 
-                value = ((CrosstabResult) result).getCrosstab().where("Column", targetInputColumn.getName()).where("Measure", "75th percentile")
+                value = ((CrosstabResult) result).getCrosstab()
+                        .where("Column", targetInputColumn.getName())
+                        .where("Measure", "75th percentile")
                         .safeGet(null);
-                if(value!=null)
-                    dateProfile.setPercentile_75th((String)value);
-                else
+                if (value != null) {
+                    dateProfile.setPercentile_75th((String) value);
+                } else {
                     dateProfile.setPercentile_75th("-");
+                }
 
                 //basicProfile.setValue_distribution(vfModelList);
             }
         }
 
         profileColumnResult.getProfiles().put("basic_profile", basicProfile);
-        if(profileColumnResult.getColumn_type().equals("number"))
+        if (profileColumnResult.getColumn_type().equals("number")) {
             profileColumnResult.getProfiles().put("number_profile", numberProfile);
-        if(profileColumnResult.getColumn_type().equals("string"))
+        }
+        if (profileColumnResult.getColumn_type().equals("string")) {
             profileColumnResult.getProfiles().put("string_profile", stringProfile);
-        if(profileColumnResult.getColumn_type().equals("date"))
+        }
+        if (profileColumnResult.getColumn_type().equals("date")) {
             profileColumnResult.getProfiles().put("date_profile", dateProfile);
+        }
     }
 
     public String getFileName(String type, String path) {
         String[] split = null;
-        if(type.equals("path"))
+        if (type.equals("path")) {
             split = path.split("\\\\");
-        else if(type.equals("url"))
+        } else if (type.equals("url")) {
             split = path.split("/");
-        return split[split.length-1].split("\\.")[0];
+        }
+        return split[split.length - 1].split("\\.")[0];
     }
 
-    public List<String> getHeader(String path, Boolean isHeader, String fileName) throws IOException {
+    public List<String> getHeader(String path, Boolean isHeader, String fileName)
+            throws IOException {
         CSVReader csvReader = new CSVReader(new FileReader(path));
         List<String> header = new ArrayList<>();
 
