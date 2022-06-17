@@ -9,7 +9,7 @@ public class Local {
 
     private Source source;
     private boolean header = true;
-    private Map<String, List<Integer>> profiles;
+    private Map<String, List<Object>> profiles;
 
     //private boolean header = false;
     //private List<String> profiling;
