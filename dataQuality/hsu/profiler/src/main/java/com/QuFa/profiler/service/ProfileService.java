@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.datacleaner.api.AnalyzerResult;
 import org.datacleaner.api.InputColumn;
@@ -81,6 +82,12 @@ public class ProfileService {
     private final ActiveProfileProperty activeProfileProperty;
     private ProfileTableResult profileTableResult = new ProfileTableResult();
     private ProfileColumnResult profileColumnResult = new ProfileColumnResult();
+
+    /* 컬럼 분리*/
+    Map<String, List<Object>> profiles;
+    private Map<Object,String> request = new HashMap<>();
+    private List<Object> requestValue = new ArrayList<>();
+
 
     @Autowired
     private final DataStoreService dataStoreService;
@@ -186,6 +193,9 @@ public class ProfileService {
     }
 
     public ProfileTableResult profileLocalCSV(Local local) {
+        /* 컬럼 분리 */
+        profiles = local.getProfiles();
+
         String fileName = getFileName(local.getSource().getType(), local.getSource().getPath());
         if (local.getSource().getType().equals("path")) {
             String path = local.getSource().getPath();
@@ -230,6 +240,38 @@ public class ProfileService {
     }
 
     public void profileLocalColumns(String type, String path, List<String> columnNames, Boolean isHeader) {
+        /* 컬럼 분리 */
+        profiles.forEach((key,valueList)-> {
+            valueList.forEach(value->{
+                String valueType = value.getClass().getName();
+                if (valueType.equals("java.lang.String")) {
+                    for (String columnName : columnNames) {
+                        if (Objects.equals(String.valueOf(value), columnName)){
+                            int valueIndex = columnNames.indexOf(String.valueOf(value)) + 1;
+                            if(!key.equals("basic")){
+                                // 헤더 있는 경우 -> request = {컬럼이름=number}
+                                request.put(valueIndex,key);
+                            }
+                            // 헤더 있는 경우 -> requestValue = [컬럼이름1,컬럼이름2,컬럼이름2]
+                            requestValue.add(valueIndex);
+                        }
+                    }
+                } else if (valueType.equals("java.lang.Integer")){
+                    if(!key.equals("basic")){
+                        // 헤더 없는 경우 -> request = {2=number}
+                        request.put(value,key);
+                    }
+                    // 헤더 없는 경우 -> requestValue = [1, 2, 2]
+                    requestValue.add(value);
+                } else {
+                    //TODO:type에러 추가
+                }
+            });
+        });
+
+        System.out.println("requestValue = " + requestValue);
+        System.out.println("request = " + request);
+
         profileTableResult = new ProfileTableResult();
         System.out.println(path);
 
@@ -255,16 +297,26 @@ public class ProfileService {
         profileTableResult.setDataset_column_cnt(columnNames.size());
 
         for (String columnName : columnNames) {
-            profileColumnResult = new ProfileColumnResult();
-            profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
-            profileColumnResult.setColumn_name(columnName);
-            try {
-                profileColumnResult.setColumn_type(typeDetection(path, columnName));
-            } catch (IOException e) {
-                e.printStackTrace();
+            int index = columnNames.indexOf(columnName) + 1;
+
+            if (requestValue.contains(index)) {
+                profileColumnResult = new ProfileColumnResult();
+                profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
+                profileColumnResult.setColumn_name(columnName);
+                try {
+                    String valueType = typeDetection(path, columnName);
+                    if (valueType != request.get(index)){
+                        System.out.println("valueType = " + valueType+", "+"request = " + request.get(index));
+                        System.out.println("타입 에러!!!!!!!!!!!!!!!");
+                        //TODO:type에러 추가
+                    }
+                    profileColumnResult.setColumn_type(typeDetection(path, columnName));
+                } catch(IOException e){
+                    e.printStackTrace();
+                }
+                this.profileSingleColumn(filename, columnName);
+                profileTableResult.getResults().add(profileColumnResult);
             }
-            this.profileSingleColumn(filename, columnName);
-            profileTableResult.getResults().add(profileColumnResult);
         }
     }
 
