@@ -186,10 +186,9 @@ public class ProfileService {
     }
 
     public ProfileTableResult profileLocalCSV(Local local) {
-
+        String fileName = getFileName(local.getSource().getType(), local.getSource().getPath());
         if (local.getSource().getType().equals("path")) {
             String path = local.getSource().getPath();
-            String fileName = getFileName(local.getSource().getType(), local.getSource().getPath());
             try {
                 /**
                  * FileNotFound 예외처리 해야함
@@ -198,7 +197,7 @@ public class ProfileService {
                 // header는 처음에 한번만 구하고, ProfileService 객체에 필드로 정의.
                 header = getHeader(path, local.isHeader(), fileName);
 
-                profileLocalColumns("path", path, header);
+                profileLocalColumns("path", path, header, local.isHeader());
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -213,7 +212,10 @@ public class ProfileService {
                 BufferedReader reader = new BufferedReader(
                         new InputStreamReader(file.openStream()));
 
-                profileLocalColumns("url", url, header);
+                // header는 처음에 한번만 구하고, ProfileService 객체에 필드로 정의.
+                header = Arrays.asList(reader.readLine().split(","));
+
+                profileLocalColumns("url", url, header, local.isHeader());
 
                 reader.close();
 
@@ -227,7 +229,7 @@ public class ProfileService {
         return null;
     }
 
-    public void profileLocalColumns(String type, String path, List<String> columnNames) {
+    public void profileLocalColumns(String type, String path, List<String> columnNames, Boolean isHeader) {
         profileTableResult = new ProfileTableResult();
         System.out.println(path);
 
@@ -235,9 +237,10 @@ public class ProfileService {
         System.out.println("filename:" + filename);
 
         //CsvDatastore
-        if (type.equals("path")) {
+        // 헤더가 있으면 original path
+        if (type.equals("path") && isHeader) {
             DataStoreService.createLocalDataStore(path);
-        } else if (type.equals("url")) {
+        } else if (type.equals("url") || !isHeader) { // url이거나, 헤더가 없으면 targetfiles~
             path = "./src/main/resources/targetfiles/" + filename + ".csv";
             DataStoreService.createLocalDataStore(path);
         }
@@ -883,6 +886,7 @@ public class ProfileService {
             throws IOException {
         CSVReader csvReader = new CSVReader(new FileReader(path));
         List<String> header = new ArrayList<>();
+        String folderName = "./src/main/resources/targetfiles/";
 
         // 헤더가 있을 경우
         if (isHeader) {
@@ -898,7 +902,6 @@ public class ProfileService {
             }
             csvReader.close();
 
-            File originFile = new File(path); // 원본 파일
             csvReader = new CSVReader((new FileReader(path)));
             List<Object> originData = new ArrayList<>();
             String[] nextLine;
@@ -906,8 +909,10 @@ public class ProfileService {
                 originData.add(nextLine); // 원본 데이터 읽기
             }
 
-            originFile.delete(); // 파일 지움
-            File newFile = new File(path);
+            // 헤더가 없을 경우 targetfiles에 변형 파일 저장
+            boolean directoryCreated = new File(folderName).mkdir(); // 폴더 생성
+            String newFilePath = folderName + fileName + ".csv";
+            File newFile = new File(newFilePath);
             CSVWriter csvWriter = new CSVWriter(new FileWriter(newFile));
             csvWriter.writeNext(header.toArray(String[]::new)); // 헤더 작성
 
@@ -917,9 +922,6 @@ public class ProfileService {
             }
 
             csvWriter.close();
-
-            CSVReader csvTestReader = new CSVReader(new FileReader(path));
-            csvTestReader.close();
         }
 
         return header;

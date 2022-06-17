@@ -1,5 +1,12 @@
 package com.QuFa.profiler.service;
 
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.datacleaner.configuration.DataCleanerConfiguration;
 import org.datacleaner.configuration.DataCleanerConfigurationImpl;
@@ -48,9 +55,40 @@ public class DataStoreService {
     public void storeUrlFile(URL url) {
         try(InputStream in = url.openStream()) {
             String[] split = url.getFile().split("/");
-            String filename = split[split.length-1].split("\\.")[0];
-            Files.copy(in, Paths.get("./src/main/resources/targetfiles/" + filename + ".csv"),
+            String fileName = split[split.length-1].split("\\.")[0];
+            String folderName = "./src/main/resources/targetfiles/";
+            Files.copy(in, Paths.get( folderName + fileName + ".csv"),
                     StandardCopyOption.REPLACE_EXISTING);
+
+            String path = folderName + fileName + ".csv";
+            CSVReader csvReader = new CSVReader((new FileReader(path)));
+            List<String> header = new ArrayList<>();
+
+            // 컬럼 수에 따라 헤더 설정
+            int recordsCount = csvReader.readNext().length;
+            for (int i = 1; i < recordsCount + 1; i++) {
+                header.add(fileName + "_" + i);
+            }
+            csvReader.close();
+
+            File originFile = new File(path); // 원본 파일
+            csvReader = new CSVReader((new FileReader(path)));
+            List<Object> originData = new ArrayList<>();
+            String[] nextLine;
+            while ((nextLine = csvReader.readNext()) != null) {
+                originData.add(nextLine); // 원본 데이터 읽기
+            }
+
+            // 헤더가 없을 경우 targetfiles에 변형 파일 저장
+            CSVWriter csvWriter = new CSVWriter(new FileWriter(originFile));
+            csvWriter.writeNext(header.toArray(String[]::new)); // 헤더 작성
+
+            // 헤더 아랫줄부터 원본 데이터 쓰기
+            for (Object data : originData) {
+                csvWriter.writeNext((String[]) data);
+            }
+
+            csvWriter.close();
         }catch(Exception e) {
             e.printStackTrace();
         }
