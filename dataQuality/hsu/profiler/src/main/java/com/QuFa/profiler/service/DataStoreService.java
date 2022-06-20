@@ -5,8 +5,10 @@ import com.opencsv.CSVWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.io.FileUtils;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.datacleaner.configuration.DataCleanerConfiguration;
 import org.datacleaner.configuration.DataCleanerConfigurationImpl;
@@ -31,8 +33,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 /**
- * 프로파일링을 위한 기본 설정 작업을 수행하는 클래스 <br>
- * Configruation 파일 파싱, Datasource 연결, 프로파일 분석 작업 설정 등을 수행한다
+ * 프로파일링을 위한 기본 설정 작업을 수행하는 클래스 <br> Configruation 파일 파싱, Datasource 연결, 프로파일 분석 작업 설정 등을 수행한다
  */
 @Component
 public class DataStoreService {
@@ -52,14 +53,15 @@ public class DataStoreService {
     private static AnalysisJobBuilder builder;
     private static Datastore dataStore;
 
-    public void storeUrlFile(URL url) {
-        try(InputStream in = url.openStream()) {
-            String[] split = url.getFile().split("/");
-            String fileName = split[split.length-1].split("\\.")[0];
-            String folderName = "./src/main/resources/targetfiles/";
-            Files.copy(in, Paths.get( folderName + fileName + ".csv"),
-                    StandardCopyOption.REPLACE_EXISTING);
+    public void storeUrlFile(String url, Boolean isHeader) throws IOException {
+        String[] split = url.split("/");
+        String fileName = split[split.length - 1].split("\\.")[0];
+        String folderName = "./src/main/resources/targetfiles/";
 
+        File f = new File(folderName + fileName + ".csv");
+        FileUtils.copyURLToFile(new URL(url), f);
+
+        if (!isHeader) {
             String path = folderName + fileName + ".csv";
             CSVReader csvReader = new CSVReader((new FileReader(path)));
             List<String> header = new ArrayList<>();
@@ -89,9 +91,8 @@ public class DataStoreService {
             }
 
             csvWriter.close();
-        }catch(Exception e) {
-            e.printStackTrace();
         }
+
     }
 
     /**
@@ -101,7 +102,10 @@ public class DataStoreService {
         try {
 
             //JdbcDatastore datastore = new JdbcDatastore(dbName, url, driver, username, password, false);
-            CsvDatastore datastore = new CsvDatastore("CSVDS","C:\\develop\\profiler\\src\\main\\resources\\targetfiles\\"+fileName+".csv", quote_char, separator_char, csvEncoding, fail_on_inconsistencies, header_line_number);
+            CsvDatastore datastore = new CsvDatastore("CSVDS",
+                    "C:\\develop\\profiler\\src\\main\\resources\\targetfiles\\" + fileName
+                            + ".csv", quote_char, separator_char, csvEncoding,
+                    fail_on_inconsistencies, header_line_number);
 
             DatastoreCatalogImpl catalog = new DatastoreCatalogImpl(datastore);
 
@@ -117,7 +121,8 @@ public class DataStoreService {
         try {
 
             //JdbcDatastore datastore = new JdbcDatastore(dbName, url, driver, username, password, false);
-            CsvDatastore datastore = new CsvDatastore("CSVDS",path, quote_char, separator_char, csvEncoding, fail_on_inconsistencies, header_line_number);
+            CsvDatastore datastore = new CsvDatastore("CSVDS", path, quote_char, separator_char,
+                    csvEncoding, fail_on_inconsistencies, header_line_number);
 
             DatastoreCatalogImpl catalog = new DatastoreCatalogImpl(datastore);
 
@@ -164,15 +169,25 @@ public class DataStoreService {
         System.gc();
     }
 
-    public static void setQuote_char(char quote_char) { DataStoreService.quote_char = quote_char; }
+    public static void setQuote_char(char quote_char) {
+        DataStoreService.quote_char = quote_char;
+    }
 
-    public static void setSeparator_char(char separator_char) { DataStoreService.separator_char = separator_char; }
+    public static void setSeparator_char(char separator_char) {
+        DataStoreService.separator_char = separator_char;
+    }
 
-    public static void setCsvEncoding(String encoding) { DataStoreService.csvEncoding = encoding; }
+    public static void setCsvEncoding(String encoding) {
+        DataStoreService.csvEncoding = encoding;
+    }
 
-    public static void setFail_on_inconsistencies(boolean fail_on_inconsistencies) { DataStoreService.fail_on_inconsistencies = fail_on_inconsistencies; }
+    public static void setFail_on_inconsistencies(boolean fail_on_inconsistencies) {
+        DataStoreService.fail_on_inconsistencies = fail_on_inconsistencies;
+    }
 
-    public static void setHeader_line_number(int header_line_number) { DataStoreService.header_line_number = header_line_number; }
+    public static void setHeader_line_number(int header_line_number) {
+        DataStoreService.header_line_number = header_line_number;
+    }
 
 
 }

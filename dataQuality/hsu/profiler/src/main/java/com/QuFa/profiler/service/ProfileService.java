@@ -217,9 +217,8 @@ public class ProfileService {
             String fileName = getFileName(local.getSource().getType(), local.getSource().getUrl());
             String url = local.getSource().getUrl();
             try {
+                dataStoreService.storeUrlFile(url, local.isHeader()); // url의 파일을 로컬에 복사
                 URL file = new URL(url);
-                dataStoreService.storeUrlFile(file);
-
                 BufferedReader reader = new BufferedReader(
                         new InputStreamReader(file.openStream()));
 
