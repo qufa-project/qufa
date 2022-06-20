@@ -196,8 +196,8 @@ public class ProfileService {
         /* 컬럼 분리 */
         profiles = local.getProfiles();
 
-        String fileName = getFileName(local.getSource().getType(), local.getSource().getPath());
         if (local.getSource().getType().equals("path")) {
+            String fileName = getFileName(local.getSource().getType(), local.getSource().getPath());
             String path = local.getSource().getPath();
             try {
                 /**
@@ -214,6 +214,7 @@ public class ProfileService {
             }
             return profileTableResult;
         } else if (local.getSource().getType().equals("url")) {
+            String fileName = getFileName(local.getSource().getType(), local.getSource().getUrl());
             String url = local.getSource().getUrl();
             try {
                 URL file = new URL(url);
