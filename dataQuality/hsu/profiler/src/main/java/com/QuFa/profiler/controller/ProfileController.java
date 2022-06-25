@@ -32,10 +32,22 @@ public class ProfileController {
         System.out.println("===================");
         System.out.println("===================");
 
+
         System.out.println(local.getSource().getType());
         System.out.println(local.getSource().getPath());
         System.out.println(local.getSource().getUrl());
         System.out.println(local.isHeader());
+
+        String url = local.getSource().getUrl();
+        String type = url.substring(0, 4);
+        if (type.equals("file")) {
+            local.getSource().setType("path");
+            local.getSource().setPath( url.substring(8).replace('/','\\'));
+        }
+
+        System.out.println(local.getSource().getType());
+        System.out.println(local.getSource().getPath());
+        System.out.println(local.getSource().getUrl());
 
         return new ResponseEntity<>(profileService.profileLocalCSV(local), HttpStatus.OK);
     }
