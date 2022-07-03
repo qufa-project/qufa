@@ -94,6 +94,8 @@ public class ProfileService {
 
     private List<String> header;
 
+    private long t = 0;
+
     /**
      * <현 문제점> columnNames 에 대해 for 문 돌면서 호출됨. 해당 컬럼의 타입이 무엇인지 판단 근데 typecheck 는 모든 레코드에 대해서 하는데
      * (5000개~) 아래 컬럼 타입 max 구할땐 100개만 함. ?
@@ -112,6 +114,11 @@ public class ProfileService {
             if (nextLine.length == header.size()) {
                 rowValues.add(nextLine[header.indexOf(columnName)]);
             }
+        }
+
+        if (rowValues.size()>100) {
+            Collections.shuffle(rowValues);
+            rowValues = rowValues.subList(0, 100);
         }
 
         int i = 0;
@@ -232,6 +239,7 @@ public class ProfileService {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
             return profileTableResult;
         } else {
             //TODO:type에러 추가
@@ -304,13 +312,23 @@ public class ProfileService {
                 profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
                 profileColumnResult.setColumn_name(columnName);
                 try {
+
+                    long beforeTime = System.currentTimeMillis();
                     String valueType = typeDetection(path, columnName);
+                    long afterTime = System.currentTimeMillis(); // 코드 실행 후에 시간 받아오기
+                    long secDiffTime = (afterTime - beforeTime); //두 시간에 차 계산
+                    System.out.println("시간차이(m) : "+secDiffTime);
+                    t = t+secDiffTime;
+                    System.out.println("타입구분시간 : "+t);
+
                     if (valueType != request.get(index)){
                         System.out.println("valueType = " + valueType+", "+"request = " + request.get(index));
                         System.out.println("타입 에러!!!!!!!!!!!!!!!");
                         //TODO:type에러 추가
                     }
-                    profileColumnResult.setColumn_type(typeDetection(path, columnName));
+                    // profileColumnResult.setColumn_type(typeDetection(path, columnName));
+                    profileColumnResult.setColumn_type(valueType);
+
                 } catch(IOException e){
                     e.printStackTrace();
                 }
