@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -83,10 +84,10 @@ public class ProfileService {
     private ProfileTableResult profileTableResult = new ProfileTableResult();
     private ProfileColumnResult profileColumnResult = new ProfileColumnResult();
 
-    /* 컬럼 분리*/
-    Map<String, List<Object>> profiles;
-    private Map<Object,String> request = new HashMap<>();
-    private List<Object> requestValue = new ArrayList<>();
+    /* 컬럼별 프로파일 */
+    Map<String, List<Object>> profiles = null;
+    private Map<Object,List<String>> requestColumnAndType;
+    private HashSet<Object> requestColumnSet;
 
 
     @Autowired
@@ -200,8 +201,10 @@ public class ProfileService {
     }
 
     public ProfileTableResult profileLocalCSV(Local local) {
-        /* 컬럼 분리 */
+        /* 컬럼별 프로파일  */
         profiles = local.getProfiles();
+        requestColumnAndType = new HashMap<>();
+        requestColumnSet = new HashSet<>();
 
         if (local.getSource().getType().equals("path")) {
             String fileName = getFileName(local.getSource().getType(), local.getSource().getPath());
@@ -248,38 +251,6 @@ public class ProfileService {
     }
 
     public void profileLocalColumns(String type, String path, List<String> columnNames, Boolean isHeader) {
-        /* 컬럼 분리 */
-        profiles.forEach((key,valueList)-> {
-            valueList.forEach(value->{
-                String valueType = value.getClass().getName();
-                if (valueType.equals("java.lang.String")) {
-                    for (String columnName : columnNames) {
-                        if (Objects.equals(String.valueOf(value), columnName)){
-                            int valueIndex = columnNames.indexOf(String.valueOf(value)) + 1;
-                            if(!key.equals("basic")){
-                                // 헤더 있는 경우 -> request = {컬럼이름=number}
-                                request.put(valueIndex,key);
-                            }
-                            // 헤더 있는 경우 -> requestValue = [컬럼이름1,컬럼이름2,컬럼이름2]
-                            requestValue.add(valueIndex);
-                        }
-                    }
-                } else if (valueType.equals("java.lang.Integer")){
-                    if(!key.equals("basic")){
-                        // 헤더 없는 경우 -> request = {2=number}
-                        request.put(value,key);
-                    }
-                    // 헤더 없는 경우 -> requestValue = [1, 2, 2]
-                    requestValue.add(value);
-                } else {
-                    //TODO:type에러 추가
-                }
-            });
-        });
-
-        System.out.println("requestValue = " + requestValue);
-        System.out.println("request = " + request);
-
         profileTableResult = new ProfileTableResult();
         System.out.println(path);
 
@@ -304,31 +275,80 @@ public class ProfileService {
 
         profileTableResult.setDataset_column_cnt(columnNames.size());
 
-        for (String columnName : columnNames) {
-            int index = columnNames.indexOf(columnName) + 1;
 
-            if (requestValue.contains(index)) {
+        /* 컬럼별 프로파일  */
+        if (profiles != null) {
+            profiles.forEach((key,valueList)-> {
+                valueList.forEach(value-> {
+                    if (value.getClass().getName().equals("java.lang.String")) { // "header": true
+                        for (String columnName : columnNames) {
+                            if (Objects.equals(String.valueOf(value), columnName)){
+                                value = columnNames.indexOf(String.valueOf(value)) + 1;
+                            }
+                        }
+                    }
+                    if (!value.getClass().getName().equals("java.lang.Integer")){ // "header": false
+                        System.out.println("컬럼 요청 에러!!!!!!!!!!!!!!!");
+                        //TODO:type에러 추가
+                    }
+
+                    List<String> keyList;
+                    if (requestColumnAndType.containsKey(value))
+                        keyList = requestColumnAndType.get(value);
+                    else
+                        keyList = new ArrayList<>();
+
+                    keyList.add(key);
+                    requestColumnAndType.put(value,keyList);
+                    requestColumnSet.add(value);
+                });
+            });
+
+            System.out.println("requestColumnAndType= " + requestColumnAndType); // {1=[basic, number], 2=[basic, string]}
+            System.out.println("requestColumnSet= " + requestColumnSet); // [1, 2]
+
+            for (String columnName : columnNames) {
+                int index = columnNames.indexOf(columnName) + 1;
+
+                if (requestColumnSet.contains(index)) {
+                    profileColumnResult = new ProfileColumnResult();
+                    profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
+                    profileColumnResult.setColumn_name(columnName);
+                    try {
+
+                        long beforeTime = System.currentTimeMillis();
+                        String valueType = typeDetection(path, columnName);
+                        long afterTime = System.currentTimeMillis(); // 코드 실행 후에 시간 받아오기
+                        long secDiffTime = (afterTime - beforeTime); //두 시간에 차 계산
+                        System.out.println("시간차이(m) : "+secDiffTime);
+                        t = t+secDiffTime;
+                        System.out.println("타입구분시간 : "+t);
+
+
+                        List<String> typeList = requestColumnAndType.get(index);
+                        if (!typeList.contains(valueType)){
+                            System.out.println("valueType = " + valueType+", "+"request = " + typeList);
+                            System.out.println("타입 에러!!!!!!!!!!!!!!!");
+                            //TODO:type에러 추가
+                        }
+                        // profileColumnResult.setColumn_type(typeDetection(path, columnName));
+                        profileColumnResult.setColumn_type(valueType);
+
+                    } catch(IOException e){
+                        e.printStackTrace();
+                    }
+                    this.profileSingleColumn(filename, columnName);
+                    profileTableResult.getResults().add(profileColumnResult);
+                }
+            }
+        }
+        else {
+            for (String columnName : columnNames) {
                 profileColumnResult = new ProfileColumnResult();
                 profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
                 profileColumnResult.setColumn_name(columnName);
                 try {
-
-                    long beforeTime = System.currentTimeMillis();
-                    String valueType = typeDetection(path, columnName);
-                    long afterTime = System.currentTimeMillis(); // 코드 실행 후에 시간 받아오기
-                    long secDiffTime = (afterTime - beforeTime); //두 시간에 차 계산
-                    System.out.println("시간차이(m) : "+secDiffTime);
-                    t = t+secDiffTime;
-                    System.out.println("타입구분시간 : "+t);
-
-                    if (valueType != request.get(index)){
-                        System.out.println("valueType = " + valueType+", "+"request = " + request.get(index));
-                        System.out.println("타입 에러!!!!!!!!!!!!!!!");
-                        //TODO:type에러 추가
-                    }
-                    // profileColumnResult.setColumn_type(typeDetection(path, columnName));
-                    profileColumnResult.setColumn_type(valueType);
-
+                    profileColumnResult.setColumn_type(typeDetection(path, columnName));
                 } catch(IOException e){
                     e.printStackTrace();
                 }
@@ -336,6 +356,7 @@ public class ProfileService {
                 profileTableResult.getResults().add(profileColumnResult);
             }
         }
+
     }
 
     /**
@@ -930,16 +951,39 @@ public class ProfileService {
             }
         }
 
-        profileColumnResult.getProfiles().put("basic_profile", basicProfile);
-        if (profileColumnResult.getColumn_type().equals("number")) {
-            profileColumnResult.getProfiles().put("number_profile", numberProfile);
+        /* 컬럼별 프로파일  */
+        if (profiles != null) {
+            int index = header.indexOf(columnName) + 1;
+            List<String> typeList = requestColumnAndType.get(index);
+
+            if (typeList.contains("basic"))
+                profileColumnResult.getProfiles().put("basic_profile", basicProfile);
+            if (typeList.contains("number")) {
+                if (profileColumnResult.getColumn_type().equals("number")) {
+                    profileColumnResult.getProfiles().put("number_profile", numberProfile);
+                }
+            }
+            else if (typeList.contains("string")) {
+                if (profileColumnResult.getColumn_type().equals("string")) {
+                    profileColumnResult.getProfiles().put("string_profile", stringProfile);
+                }
+            }
+            else if (typeList.contains("date")) {
+                if (profileColumnResult.getColumn_type().equals("date")) {
+                    profileColumnResult.getProfiles().put("date_profile", dateProfile);
+                }
+            }
+        } else {
+            profileColumnResult.getProfiles().put("basic_profile", basicProfile);
+            if(profileColumnResult.getColumn_type().equals("number"))
+                profileColumnResult.getProfiles().put("number_profile", numberProfile);
+            if(profileColumnResult.getColumn_type().equals("string"))
+                profileColumnResult.getProfiles().put("string_profile", stringProfile);
+            if(profileColumnResult.getColumn_type().equals("date"))
+                profileColumnResult.getProfiles().put("date_profile", dateProfile);
         }
-        if (profileColumnResult.getColumn_type().equals("string")) {
-            profileColumnResult.getProfiles().put("string_profile", stringProfile);
-        }
-        if (profileColumnResult.getColumn_type().equals("date")) {
-            profileColumnResult.getProfiles().put("date_profile", dateProfile);
-        }
+
+
     }
 
     public String getFileName(String type, String path) {
