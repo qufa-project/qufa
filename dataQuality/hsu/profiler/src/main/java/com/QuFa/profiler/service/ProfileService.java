@@ -1,7 +1,12 @@
 package com.QuFa.profiler.service;
 
 
+import static com.QuFa.profiler.controller.exception.ErrorCode.COLUMN_NAME_BAD_REQUEST;
+import static com.QuFa.profiler.controller.exception.ErrorCode.COLUMN_NUMBER_BAD_REQUEST;
+import static com.QuFa.profiler.controller.exception.ErrorCode.FILE_NOT_FOUND;
+
 import com.QuFa.profiler.config.ActiveProfileProperty;
+import com.QuFa.profiler.controller.exception.CustomException;
 import com.QuFa.profiler.model.Local;
 import com.QuFa.profiler.model.profile.BasicProfile;
 import com.QuFa.profiler.model.profile.DateProfile;
@@ -70,12 +75,14 @@ import org.datacleaner.result.ValueFrequency;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 /**
  * 데이터 프로파일 작업을 수행하는 서비스
  */
 @RequiredArgsConstructor
-@Component
+//@Component
+@Service
 public class ProfileService {
 
     /**
@@ -89,7 +96,7 @@ public class ProfileService {
     Map<String, List<Object>> profiles = null;
     private Map<Object, List<String>> requestColumnAndType;
     private HashSet<Object> requestColumnSet;
-
+    private boolean headerExist;
 
     @Autowired
     private final DataStoreService dataStoreService;
@@ -175,7 +182,7 @@ public class ProfileService {
          * 그중 가장 많이 나온 값으로 리턴
          * date, number, number, string -> type: number
          *
-         * ->> 고쳐야 할 부분
+         * ->> 고쳐야 할 부분f
          */
         i = 0;
         int n;
@@ -222,18 +229,22 @@ public class ProfileService {
         if (local.getSource().getType().equals("path")) {
             String fileName = getFileName(local.getSource().getType(), local.getSource().getPath());
             String path = local.getSource().getPath();
+            headerExist = local.isHeader();
             try {
-                /**
-                 * FileNotFound 예외처리 해야함
-                 */
-
                 // header는 처음에 한번만 구하고, ProfileService 객체에 필드로 정의.
                 header = getHeader(path, local.isHeader(), fileName);
 
-                profileLocalColumns("path", path, header, local.isHeader());
-
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new CustomException(FILE_NOT_FOUND);
+            }
+            try {
+                profileLocalColumns("path", path, header, local.isHeader());
+            } catch (Exception e) {
+                if (local.isHeader()) {
+                    throw new CustomException(COLUMN_NAME_BAD_REQUEST);
+                } else {
+                    throw new CustomException(COLUMN_NUMBER_BAD_REQUEST);
+                }
             }
             return profileTableResult;
         } else if (local.getSource().getType().equals("url")) {
@@ -258,7 +269,7 @@ public class ProfileService {
 
             return profileTableResult;
         } else {
-            //TODO:type에러 추가
+
         }
         return null;
     }
@@ -294,19 +305,21 @@ public class ProfileService {
         if (profiles != null) {
             profiles.forEach((key, valueList) -> {
                 valueList.forEach(value -> {
-                    if (value.getClass().getName().equals("java.lang.String")) { // "header": true
-                        for (String columnName : columnNames) {
-                            if (Objects.equals(String.valueOf(value), columnName)) {
-                                value = columnNames.indexOf(String.valueOf(value)) + 1;
+                    if (headerExist) { // "header": true
+                        if (value.getClass().getName().equals("java.lang.String")) {
+                            for (String columnName : columnNames) {
+                                if (Objects.equals(String.valueOf(value), columnName)) {
+                                    value = columnNames.indexOf(String.valueOf(value)) + 1;
+                                }
                             }
+                        } else {
+                            throw new CustomException(COLUMN_NAME_BAD_REQUEST);
+                        }
+                    } else { // "header": false
+                        if (!value.getClass().getName().equals("java.lang.Integer")) {
+                            throw new CustomException(COLUMN_NUMBER_BAD_REQUEST);
                         }
                     }
-                    if (!value.getClass().getName()
-                            .equals("java.lang.Integer")) { // "header": false
-                        System.out.println("컬럼 요청 에러!!!!!!!!!!!!!!!");
-                        //TODO:type에러 추가
-                    }
-
                     List<String> keyList;
                     if (requestColumnAndType.containsKey(value)) {
                         keyList = requestColumnAndType.get(value);
