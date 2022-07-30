@@ -86,7 +86,7 @@ public class ProfileService {
 
     /* 컬럼별 프로파일 */
     Map<String, List<Object>> profiles = null;
-    private Map<Object,List<String>> requestColumnAndType;
+    private Map<Object, List<String>> requestColumnAndType;
     private HashSet<Object> requestColumnSet;
 
 
@@ -117,7 +117,7 @@ public class ProfileService {
             }
         }
 
-        if (rowValues.size()>100) {
+        if (rowValues.size() > 100) {
             Collections.shuffle(rowValues);
             rowValues = rowValues.subList(0, 100);
         }
@@ -250,7 +250,8 @@ public class ProfileService {
         return null;
     }
 
-    public void profileLocalColumns(String type, String path, List<String> columnNames, Boolean isHeader) {
+    public void profileLocalColumns(String type, String path, List<String> columnNames,
+            Boolean isHeader) {
         profileTableResult = new ProfileTableResult();
         System.out.println(path);
 
@@ -278,33 +279,36 @@ public class ProfileService {
 
         /* 컬럼별 프로파일  */
         if (profiles != null) {
-            profiles.forEach((key,valueList)-> {
-                valueList.forEach(value-> {
+            profiles.forEach((key, valueList) -> {
+                valueList.forEach(value -> {
                     if (value.getClass().getName().equals("java.lang.String")) { // "header": true
                         for (String columnName : columnNames) {
-                            if (Objects.equals(String.valueOf(value), columnName)){
+                            if (Objects.equals(String.valueOf(value), columnName)) {
                                 value = columnNames.indexOf(String.valueOf(value)) + 1;
                             }
                         }
                     }
-                    if (!value.getClass().getName().equals("java.lang.Integer")){ // "header": false
+                    if (!value.getClass().getName()
+                            .equals("java.lang.Integer")) { // "header": false
                         System.out.println("컬럼 요청 에러!!!!!!!!!!!!!!!");
                         //TODO:type에러 추가
                     }
 
                     List<String> keyList;
-                    if (requestColumnAndType.containsKey(value))
+                    if (requestColumnAndType.containsKey(value)) {
                         keyList = requestColumnAndType.get(value);
-                    else
+                    } else {
                         keyList = new ArrayList<>();
+                    }
 
                     keyList.add(key);
-                    requestColumnAndType.put(value,keyList);
+                    requestColumnAndType.put(value, keyList);
                     requestColumnSet.add(value);
                 });
             });
 
-            System.out.println("requestColumnAndType= " + requestColumnAndType); // {1=[basic, number], 2=[basic, string]}
+            System.out.println("requestColumnAndType= "
+                                       + requestColumnAndType); // {1=[basic, number], 2=[basic, string]}
             System.out.println("requestColumnSet= " + requestColumnSet); // [1, 2]
 
             for (String columnName : columnNames) {
@@ -314,42 +318,28 @@ public class ProfileService {
                     profileColumnResult = new ProfileColumnResult();
                     profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
                     profileColumnResult.setColumn_name(columnName);
-                    try {
 
-                        long beforeTime = System.currentTimeMillis();
-                        String valueType = typeDetection(path, columnName);
-                        long afterTime = System.currentTimeMillis(); // 코드 실행 후에 시간 받아오기
-                        long secDiffTime = (afterTime - beforeTime); //두 시간에 차 계산
-                        System.out.println("시간차이(m) : "+secDiffTime);
-                        t = t+secDiffTime;
-                        System.out.println("타입구분시간 : "+t);
-
-
-                        List<String> typeList = requestColumnAndType.get(index);
-                        if (!typeList.contains(valueType)){
-                            System.out.println("valueType = " + valueType+", "+"request = " + typeList);
-                            System.out.println("타입 에러!!!!!!!!!!!!!!!");
-                            //TODO:type에러 추가
+                    List<String> typeList = requestColumnAndType.get(index);
+                    String valueType = "string";
+                    for (String x : typeList) {
+                        if (x != "basic") {
+                            valueType = x;
                         }
-                        // profileColumnResult.setColumn_type(typeDetection(path, columnName));
-                        profileColumnResult.setColumn_type(valueType);
-
-                    } catch(IOException e){
-                        e.printStackTrace();
                     }
+                    profileColumnResult.setColumn_type(valueType);
+
                     this.profileSingleColumn(filename, columnName);
                     profileTableResult.getResults().add(profileColumnResult);
                 }
             }
-        }
-        else {
+        } else {
             for (String columnName : columnNames) {
                 profileColumnResult = new ProfileColumnResult();
                 profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
                 profileColumnResult.setColumn_name(columnName);
                 try {
                     profileColumnResult.setColumn_type(typeDetection(path, columnName));
-                } catch(IOException e){
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
                 this.profileSingleColumn(filename, columnName);
@@ -767,8 +757,8 @@ public class ProfileService {
                 totalCnt = ((ValueDistributionAnalyzerResult) result).getTotalCount();
             }
             if (profileColumnResult.getColumn_type().equals("date")
-                    && result instanceof CrosstabResult &&
-                    !(result instanceof DateAndTimeAnalyzerResult)) {
+                        && result instanceof CrosstabResult &&
+                        !(result instanceof DateAndTimeAnalyzerResult)) {
                 CrosstabDimension ctr = ((CrosstabResult) result).getCrosstab().getDimension(1);
                 String dimension = "";
 
@@ -780,7 +770,7 @@ public class ProfileService {
 
                 for (String category : ctr.getCategories()) {
                     Object value = ((CrosstabResult) result).getCrosstab().where("Column",
-                            targetInputColumn.getName()).where(dimension, category)
+                                    targetInputColumn.getName()).where(dimension, category)
                             .safeGet(null);
                     if (value == null) {
                         value = 0;
@@ -809,7 +799,7 @@ public class ProfileService {
         for (AnalyzerResult result : results) {
             if (result instanceof StringAnalyzerResult) {
                 if (((StringAnalyzerResult) result).getNullCount(targetInputColumn) > 0
-                        && basicProfile.getNull_cnt() == 0) {
+                            && basicProfile.getNull_cnt() == 0) {
                     basicProfile.setNull_cnt(
                             ((StringAnalyzerResult) result).getNullCount(targetInputColumn));
                 }
@@ -828,7 +818,7 @@ public class ProfileService {
 
             if (result instanceof NumberAnalyzerResult) {
                 if (((NumberAnalyzerResult) result).getNullCount(targetInputColumn).intValue() > 0
-                        && basicProfile.getNull_cnt() == 0) {
+                            && basicProfile.getNull_cnt() == 0) {
                     basicProfile.setNull_cnt(
                             ((NumberAnalyzerResult) result).getNullCount(targetInputColumn)
                                     .intValue());
@@ -855,7 +845,7 @@ public class ProfileService {
                             ((NumberAnalyzerResult) result).getMedian(targetInputColumn))));
                 }
                 if (((NumberAnalyzerResult) result).getStandardDeviation(targetInputColumn)
-                        != null) {
+                            != null) {
                     numberProfile.setSd(Double.parseDouble(form.format(
                             ((NumberAnalyzerResult) result)
                                     .getStandardDeviation(targetInputColumn))));
@@ -884,7 +874,7 @@ public class ProfileService {
                 Object value;
 
                 if (((DateAndTimeAnalyzerResult) result).getNullCount(targetInputColumn) > 0
-                        && basicProfile.getNull_cnt() == 0) {
+                            && basicProfile.getNull_cnt() == 0) {
                     basicProfile.setNull_cnt(
                             ((DateAndTimeAnalyzerResult) result).getNullCount(targetInputColumn));
                 }
@@ -956,31 +946,33 @@ public class ProfileService {
             int index = header.indexOf(columnName) + 1;
             List<String> typeList = requestColumnAndType.get(index);
 
-            if (typeList.contains("basic"))
+            if (typeList.contains("basic")) {
                 profileColumnResult.getProfiles().put("basic_profile", basicProfile);
+            }
             if (typeList.contains("number")) {
                 if (profileColumnResult.getColumn_type().equals("number")) {
                     profileColumnResult.getProfiles().put("number_profile", numberProfile);
                 }
-            }
-            else if (typeList.contains("string")) {
+            } else if (typeList.contains("string")) {
                 if (profileColumnResult.getColumn_type().equals("string")) {
                     profileColumnResult.getProfiles().put("string_profile", stringProfile);
                 }
-            }
-            else if (typeList.contains("date")) {
+            } else if (typeList.contains("date")) {
                 if (profileColumnResult.getColumn_type().equals("date")) {
                     profileColumnResult.getProfiles().put("date_profile", dateProfile);
                 }
             }
         } else {
             profileColumnResult.getProfiles().put("basic_profile", basicProfile);
-            if(profileColumnResult.getColumn_type().equals("number"))
+            if (profileColumnResult.getColumn_type().equals("number")) {
                 profileColumnResult.getProfiles().put("number_profile", numberProfile);
-            if(profileColumnResult.getColumn_type().equals("string"))
+            }
+            if (profileColumnResult.getColumn_type().equals("string")) {
                 profileColumnResult.getProfiles().put("string_profile", stringProfile);
-            if(profileColumnResult.getColumn_type().equals("date"))
+            }
+            if (profileColumnResult.getColumn_type().equals("date")) {
                 profileColumnResult.getProfiles().put("date_profile", dateProfile);
+            }
         }
 
 
