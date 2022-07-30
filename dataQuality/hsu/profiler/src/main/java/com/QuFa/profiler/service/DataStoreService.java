@@ -18,6 +18,7 @@ import org.datacleaner.connection.Datastore;
 import org.datacleaner.connection.DatastoreCatalogImpl;
 import org.datacleaner.connection.JdbcDatastore;
 import org.datacleaner.job.builder.AnalysisJobBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -52,17 +53,27 @@ public class DataStoreService {
     private static DataCleanerConfiguration configuration;
     private static AnalysisJobBuilder builder;
     private static Datastore dataStore;
+    String targetFolderPath;
 
     public void storeUrlFile(String url, Boolean isHeader) throws IOException {
         String[] split = url.split("/");
         String fileName = split[split.length - 1].split("\\.")[0];
-        String folderName = "./src/main/resources/targetfiles/";
 
-        File f = new File(folderName + fileName + ".csv");
+        // 운영체제별로 targetfiles 다르게 설정
+        String os = System.getProperty("os.name").toLowerCase();
+
+        if (os.contains("win")) {
+            targetFolderPath = "./src/main/resources/targetfiles/";
+            System.out.println("targetFolderPath = " + targetFolderPath);
+
+        }
+
+        File f = new File(targetFolderPath + fileName + ".csv");
         FileUtils.copyURLToFile(new URL(url), f);
 
+
         if (!isHeader) {
-            String path = folderName + fileName + ".csv";
+            String path = targetFolderPath + fileName + ".csv";
             CSVReader csvReader = new CSVReader((new FileReader(path)));
             List<String> header = new ArrayList<>();
 

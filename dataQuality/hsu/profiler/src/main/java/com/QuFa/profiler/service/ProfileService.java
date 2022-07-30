@@ -68,6 +68,7 @@ import org.datacleaner.result.CrosstabDimension;
 import org.datacleaner.result.CrosstabResult;
 import org.datacleaner.result.ValueFrequency;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -96,6 +97,8 @@ public class ProfileService {
     private List<String> header;
 
     private long t = 0;
+
+    String targetFolderPath;
 
     /**
      * <현 문제점> columnNames 에 대해 for 문 돌면서 호출됨. 해당 컬럼의 타입이 무엇인지 판단 근데 typecheck 는 모든 레코드에 대해서 하는데
@@ -206,6 +209,15 @@ public class ProfileService {
         requestColumnAndType = new HashMap<>();
         requestColumnSet = new HashSet<>();
 
+        // 운영체제별로 targetfiles 다르게 설정
+        String os = System.getProperty("os.name").toLowerCase();
+
+        if (os.contains("win")) {
+            targetFolderPath = "./src/main/resources/targetfiles/";
+            System.out.println("targetFolderPath = " + targetFolderPath);
+
+        }
+
         if (local.getSource().getType().equals("path")) {
             String fileName = getFileName(local.getSource().getType(), local.getSource().getPath());
             String path = local.getSource().getPath();
@@ -263,7 +275,7 @@ public class ProfileService {
         if (type.equals("path") && isHeader) {
             DataStoreService.createLocalDataStore(path);
         } else if (type.equals("url") || !isHeader) { // url이거나, 헤더가 없으면 targetfiles~
-            path = "./src/main/resources/targetfiles/" + filename + ".csv";
+            path = targetFolderPath + filename + ".csv";
             DataStoreService.createLocalDataStore(path);
         }
 
@@ -992,7 +1004,6 @@ public class ProfileService {
             throws IOException {
         CSVReader csvReader = new CSVReader(new FileReader(path));
         List<String> header = new ArrayList<>();
-        String folderName = "./src/main/resources/targetfiles/";
 
         // 헤더가 있을 경우
         if (isHeader) {
@@ -1016,8 +1027,8 @@ public class ProfileService {
             }
 
             // 헤더가 없을 경우 targetfiles에 변형 파일 저장
-            boolean directoryCreated = new File(folderName).mkdir(); // 폴더 생성
-            String newFilePath = folderName + fileName + ".csv";
+            boolean directoryCreated = new File(targetFolderPath).mkdir(); // 폴더 생성
+            String newFilePath = targetFolderPath + fileName + ".csv";
             File newFile = new File(newFilePath);
             CSVWriter csvWriter = new CSVWriter(new FileWriter(newFile));
             csvWriter.writeNext(header.toArray(String[]::new)); // 헤더 작성
