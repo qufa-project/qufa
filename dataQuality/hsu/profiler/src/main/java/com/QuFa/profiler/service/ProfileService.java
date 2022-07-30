@@ -213,9 +213,10 @@ public class ProfileService {
         String os = System.getProperty("os.name").toLowerCase();
 
         if (os.contains("win")) {
-            targetFolderPath = "./src/main/resources/targetfiles/";
+            targetFolderPath = "C://Temp/targetfiles/";
             System.out.println("targetFolderPath = " + targetFolderPath);
-
+        } else if (os.contains("linux")) {
+            targetFolderPath = "~/tmp";
         }
 
         if (local.getSource().getType().equals("path")) {
