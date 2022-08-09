@@ -104,6 +104,8 @@ public class ProfileService {
     private List<String> header;
 
     private long t = 0;
+    private long totalDetact = 0;
+    private int cntDetactType = 1;
 
     String targetFolderPath;
 
@@ -117,6 +119,9 @@ public class ProfileService {
      * - 시간이 많이 걸리는 부분이 어딘지 한번 체크해볼것!
      */
     public String typeDetection(String path, String columnName) throws IOException {
+
+        long beforeTime = System.currentTimeMillis();
+
         CSVReader csvReader = new CSVReader(new FileReader(path));
         String[] nextLine;
         List<String> rowValues = new ArrayList<>();
@@ -127,10 +132,11 @@ public class ProfileService {
             }
         }
 
-        if (rowValues.size() > 100) {
+        if (rowValues.size() > cntDetactType) {
             Collections.shuffle(rowValues);
-            rowValues = rowValues.subList(0, 100);
+            rowValues = rowValues.subList(0, cntDetactType);
         }
+        totalDetact += rowValues.size();
 
         int i = 0;
 
@@ -186,28 +192,64 @@ public class ProfileService {
          */
         i = 0;
         int n;
-        Map<String, Integer> vdTypes = new HashMap<>();
+        /*Map<String, Integer> vdTypes = new HashMap<>();
         vdTypes.put("string", 0);
         vdTypes.put("number", 0);
         vdTypes.put("date", 0);
         for (String t : rowType.values()) {
-            if (i >= 99) {
-                break;
-            }
             n = vdTypes.get(t) + 1;
             vdTypes.put(t, n);
             i++;
-        }
+        }*/
 
-        int maxVal = Collections.max(vdTypes.values());
+        String typeValue;
+//        System.out.println(vdTypes.get("date"));
+//        System.out.println(vdTypes.get("number"));
+//        System.out.println(vdTypes.get("string"));
+//        System.out.println(rowValues.size());
+//        System.out.println(vdTypes.size());
 
-        for (String key : vdTypes.keySet()) {
-            if (vdTypes.get(key).equals(maxVal)) {
-                return key;
+        boolean dateType;
+        boolean numberType;
+        dateType = true;
+        numberType = true;
+        for (String t : rowType.values()) {
+            if (t.equals("number")) {
+                dateType = false;
+            } else if (t.equals("date")) {
+                numberType= false;
+            } else if (t.equals("string")) {
+                dateType = false;
+                numberType= false;
             }
         }
 
-        return "string";
+        if(dateType) {
+            typeValue = "date";
+        } else if (numberType) {
+            typeValue = "number";
+        } else {
+            typeValue = "string";
+        }
+
+        long afterTime = System.currentTimeMillis(); // 코드 실행 후에 시간 받아오기
+        long secDiffTime = (afterTime - beforeTime); //두 시간에 차 계산
+        System.out.println("시간차이(m) : "+secDiffTime);
+        t = t+secDiffTime;
+        System.out.println("타입구분시간 : "+t);
+        System.out.println("타입 : "+typeValue);
+        System.out.println(rowValues);
+
+        return typeValue;
+//        int maxVal = Collections.max(vdTypes.values());
+//
+//        for (String key : vdTypes.keySet()) {
+//            if (vdTypes.get(key).equals(maxVal)) {
+//                return key;
+//            }
+//        }
+//
+//        return "string";
     }
 
     public ProfileTableResult profileLocalCSV(Local local) {
@@ -215,6 +257,8 @@ public class ProfileService {
         profiles = local.getProfiles();
         requestColumnAndType = new HashMap<>();
         requestColumnSet = new HashSet<>();
+        t = 0;
+        totalDetact = 0;
 
         // 운영체제별로 targetfiles 다르게 설정
         String os = System.getProperty("os.name").toLowerCase();
@@ -246,6 +290,11 @@ public class ProfileService {
                     throw new CustomException(COLUMN_NUMBER_BAD_REQUEST);
                 }
             }
+            System.out.println("파일 크기 : "+profileTableResult.getDataset_size());
+            System.out.println("타입 판단 제한 개수 : "+cntDetactType);
+            System.out.println("타입구분시간 : "+t);
+            System.out.println("총 타입판단개수 : "+totalDetact);
+            System.out.println("데이터당 걸린 시간 : "+(double)t/(double)totalDetact);
             return profileTableResult;
         } else if (local.getSource().getType().equals("url")) {
             String fileName = getFileName(local.getSource().getType(), local.getSource().getUrl());
@@ -266,7 +315,11 @@ public class ProfileService {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
+            System.out.println("파일 크기 : "+profileTableResult.getDataset_size());
+            System.out.println("타입 판단 제한 개수 : "+cntDetactType);
+            System.out.println("타입구분시간 : "+t);
+            System.out.println("총 타입판단개수 : "+totalDetact);
+            System.out.println("데이터당 걸린 시간 : "+(double)t/(double)totalDetact);
             return profileTableResult;
         } else {
 
