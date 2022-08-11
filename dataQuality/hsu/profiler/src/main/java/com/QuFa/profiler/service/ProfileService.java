@@ -104,9 +104,9 @@ public class ProfileService {
     private List<String> header;
 
     private long t = 0;
-    private long totalDetact = 0;
-    private int cntDetactType = 0;
-    private int detactingtime = 10000;
+    private long totalDetact = 0; // 총 판단하는 데이터 개수
+    private int cntDetactType = 0; // row당 판단하는 최대 데이터 개수
+    private int detactingtime = 10000; // 전체 타입 판단 시간 설정 (1000 -> 1초)
 
 
     String targetFolderPath;
@@ -207,22 +207,8 @@ public class ProfileService {
          */
         i = 0;
         int n;
-        /*Map<String, Integer> vdTypes = new HashMap<>();
-        vdTypes.put("string", 0);
-        vdTypes.put("number", 0);
-        vdTypes.put("date", 0);
-        for (String t : rowType.values()) {
-            n = vdTypes.get(t) + 1;
-            vdTypes.put(t, n);
-            i++;
-        }*/
 
         String typeValue;
-//        System.out.println(vdTypes.get("date"));
-//        System.out.println(vdTypes.get("number"));
-//        System.out.println(vdTypes.get("string"));
-//        System.out.println(rowValues.size());
-//        System.out.println(vdTypes.size());
 
         boolean dateType;
         boolean numberType;
@@ -256,15 +242,6 @@ public class ProfileService {
 
 
         return typeValue;
-//        int maxVal = Collections.max(vdTypes.values());
-//
-//        for (String key : vdTypes.keySet()) {
-//            if (vdTypes.get(key).equals(maxVal)) {
-//                return key;
-//            }
-//        }
-//
-//        return "string";
     }
 
     public ProfileTableResult profileLocalCSV(Local local) {
