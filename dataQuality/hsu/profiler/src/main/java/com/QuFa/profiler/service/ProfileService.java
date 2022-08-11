@@ -295,7 +295,17 @@ public class ProfileService {
                         new InputStreamReader(file.openStream()));
 
                 // header는 처음에 한번만 구하고, ProfileService 객체에 필드로 정의.
-                header = Arrays.asList(reader.readLine().split(","));
+                if (local.isHeader()) {
+                    header = Arrays.asList(reader.readLine().split(","));
+                }
+                else {
+                    int recordsCount = Arrays.asList(reader.readLine().split(",")).size();
+                    header = new ArrayList<>();
+                    for (int i = 1; i < recordsCount + 1; i++) {
+                        header.add(fileName + "_" + i);
+                    }
+                    System.out.println("!!!!!" + header);
+                }
 
                 profileLocalColumns("url", url, header, local.isHeader());
 
