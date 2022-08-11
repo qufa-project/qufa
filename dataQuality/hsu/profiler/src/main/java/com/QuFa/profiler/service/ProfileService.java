@@ -1,8 +1,7 @@
 package com.QuFa.profiler.service;
 
 
-import static com.QuFa.profiler.controller.exception.ErrorCode.COLUMN_NAME_BAD_REQUEST;
-import static com.QuFa.profiler.controller.exception.ErrorCode.COLUMN_NUMBER_BAD_REQUEST;
+import static com.QuFa.profiler.controller.exception.ErrorCode.BAD_JSON_REQUEST;
 import static com.QuFa.profiler.controller.exception.ErrorCode.FILE_NOT_FOUND;
 
 import com.QuFa.profiler.config.ActiveProfileProperty;
@@ -73,15 +72,12 @@ import org.datacleaner.result.CrosstabDimension;
 import org.datacleaner.result.CrosstabResult;
 import org.datacleaner.result.ValueFrequency;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 /**
  * 데이터 프로파일 작업을 수행하는 서비스
  */
 @RequiredArgsConstructor
-//@Component
 @Service
 public class ProfileService {
 
@@ -277,10 +273,8 @@ public class ProfileService {
             try {
                 profileLocalColumns("path", path, header, local.isHeader());
             } catch (Exception e) {
-                if (local.isHeader()) {
-                    throw new CustomException(COLUMN_NAME_BAD_REQUEST);
-                } else {
-                    throw new CustomException(COLUMN_NUMBER_BAD_REQUEST);
+                if (profiles != null){
+                    throw new CustomException(BAD_JSON_REQUEST);
                 }
             }
             System.out.println("파일 크기 : "+profileTableResult.getDataset_size());
@@ -309,6 +303,9 @@ public class ProfileService {
 
             } catch (Exception e) {
                 e.printStackTrace();
+                if (profiles != null){
+                    throw new CustomException(BAD_JSON_REQUEST);
+                }
             }
             System.out.println("파일 크기 : "+profileTableResult.getDataset_size());
             System.out.println("타입 판단 제한 개수 : "+cntDetactType);
@@ -351,7 +348,7 @@ public class ProfileService {
 
 
         /* 컬럼별 프로파일  */
-        if (profiles != null) {
+        if (profiles != null) { // profiles가 있으면 칼럼 타입 판단 X
             profiles.forEach((key, valueList) -> {
                 valueList.forEach(value -> {
                     if (headerExist) { // "header": true
@@ -362,11 +359,11 @@ public class ProfileService {
                                 }
                             }
                         } else {
-                            throw new CustomException(COLUMN_NAME_BAD_REQUEST);
+                            throw new CustomException(BAD_JSON_REQUEST);
                         }
                     } else { // "header": false
                         if (!value.getClass().getName().equals("java.lang.Integer")) {
-                            throw new CustomException(COLUMN_NUMBER_BAD_REQUEST);
+                            throw new CustomException(BAD_JSON_REQUEST);
                         }
                     }
                     List<String> keyList;
@@ -407,7 +404,7 @@ public class ProfileService {
                     profileTableResult.getResults().add(profileColumnResult);
                 }
             }
-        } else {
+        } else { // profiles가 없으면 칼럼 타입 판단 O
             for (String columnName : columnNames) {
                 profileColumnResult = new ProfileColumnResult();
                 profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);

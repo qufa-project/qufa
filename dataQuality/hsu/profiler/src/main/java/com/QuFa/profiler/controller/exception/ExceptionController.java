@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @Slf4j
 @RestControllerAdvice
-//        (basePackages = "com.QuFa.profiler")
 public class ExceptionController {
 
     @ExceptionHandler(value = {FileNotFoundException.class})
