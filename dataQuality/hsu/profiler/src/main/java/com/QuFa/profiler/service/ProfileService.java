@@ -105,7 +105,9 @@ public class ProfileService {
 
     private long t = 0;
     private long totalDetact = 0;
-    private int cntDetactType = 1;
+    private int cntDetactType = 0;
+    private int detactingtime = 10000;
+
 
     String targetFolderPath;
 
@@ -120,6 +122,7 @@ public class ProfileService {
      */
     public String typeDetection(String path, String columnName) throws IOException {
 
+        long beforeTime1 = System.currentTimeMillis();
         long beforeTime = System.currentTimeMillis();
 
         CSVReader csvReader = new CSVReader(new FileReader(path));
@@ -131,12 +134,24 @@ public class ProfileService {
                 rowValues.add(nextLine[header.indexOf(columnName)]);
             }
         }
+        long afterTime1 = System.currentTimeMillis(); // 코드 실행 후에 시간 받아오기
+        long secDiffTime1 = (afterTime1 - beforeTime1); //두 시간에 차 계산
+        System.out.println("시간차이(m) : "+secDiffTime1);
+
+        if (cntDetactType == 0){
+            cntDetactType = (int)(detactingtime - (rowValues.size()*0.005* profileTableResult.getDataset_column_cnt()))/ profileTableResult.getDataset_column_cnt() * 20;
+            if (cntDetactType<1000) {
+                cntDetactType = 1000;
+            }
+        }
+        System.out.println("타입추출제한개수 : "+cntDetactType);
+        System.out.println("row size : "+rowValues.size());
 
         if (rowValues.size() > cntDetactType) {
             Collections.shuffle(rowValues);
             rowValues = rowValues.subList(0, cntDetactType);
         }
-        totalDetact += rowValues.size();
+        totalDetact += rowValues.size()-1;
 
         int i = 0;
 
@@ -238,7 +253,7 @@ public class ProfileService {
         t = t+secDiffTime;
         System.out.println("타입구분시간 : "+t);
         System.out.println("타입 : "+typeValue);
-        System.out.println(rowValues);
+
 
         return typeValue;
 //        int maxVal = Collections.max(vdTypes.values());
@@ -258,6 +273,7 @@ public class ProfileService {
         requestColumnAndType = new HashMap<>();
         requestColumnSet = new HashSet<>();
         t = 0;
+        cntDetactType = 0;
         totalDetact = 0;
 
         // 운영체제별로 targetfiles 다르게 설정
@@ -292,8 +308,10 @@ public class ProfileService {
             }
             System.out.println("파일 크기 : "+profileTableResult.getDataset_size());
             System.out.println("타입 판단 제한 개수 : "+cntDetactType);
-            System.out.println("타입구분시간 : "+t);
+            System.out.println("설정한 타입구분시간 : "+detactingtime);
+            System.out.println("실제 타입구분시간 : "+t);
             System.out.println("총 타입판단개수 : "+totalDetact);
+            System.out.println("총 데이터 수 : "+profileTableResult.getDataset_column_cnt()*profileTableResult.getDataset_row_cnt());
             System.out.println("데이터당 걸린 시간 : "+(double)t/(double)totalDetact);
             return profileTableResult;
         } else if (local.getSource().getType().equals("url")) {
@@ -317,7 +335,8 @@ public class ProfileService {
             }
             System.out.println("파일 크기 : "+profileTableResult.getDataset_size());
             System.out.println("타입 판단 제한 개수 : "+cntDetactType);
-            System.out.println("타입구분시간 : "+t);
+            System.out.println("설정한 타입구분시간 : "+detactingtime);
+            System.out.println("실제 타입구분시간 : "+t);
             System.out.println("총 타입판단개수 : "+totalDetact);
             System.out.println("데이터당 걸린 시간 : "+(double)t/(double)totalDetact);
             return profileTableResult;
