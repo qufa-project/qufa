@@ -359,4 +359,4 @@
 
 * **Notes:**
 
-  - Swagger Hub Link : https://app.swaggerhub.com/apis/jee101kr/QuFa/1.0.0
+  - Swagger Hub Link : [https://app.swaggerhub.com/apis/QUFA/QuFaProjectAPI/v2](https://app.swaggerhub.com/apis/QUFA/QuFaProjectAPI/v2)
