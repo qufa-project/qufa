@@ -1,6 +1,7 @@
 package com.QuFa.profiler.controller.exception;
 
 import static com.QuFa.profiler.controller.exception.ErrorCode.FILE_NOT_FOUND;
+import static com.QuFa.profiler.controller.exception.ErrorCode.INTERNAL_ERROR;
 
 import java.io.FileNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,13 @@ public class ExceptionController {
         log.error("handleFileNotFoundException throw FileNotFoundException : {}",
                 FILE_NOT_FOUND);
         return ErrorResponse.toResponseEntity(FILE_NOT_FOUND);
+    }
+
+    @ExceptionHandler(value = {RuntimeException.class})
+    public ResponseEntity<ErrorResponse> handleRuntimeException() {
+        log.error("handleRuntimeException throw RuntimeException : {}",
+                FILE_NOT_FOUND);
+        return ErrorResponse.toResponseEntity(INTERNAL_ERROR);
     }
 
 
