@@ -3,6 +3,7 @@ package com.QuFa.profiler.service;
 
 import static com.QuFa.profiler.controller.exception.ErrorCode.BAD_JSON_REQUEST;
 import static com.QuFa.profiler.controller.exception.ErrorCode.FILE_NOT_FOUND;
+import static com.QuFa.profiler.controller.exception.ErrorCode.INTERNAL_ERROR;
 
 import com.QuFa.profiler.config.ActiveProfileProperty;
 import com.QuFa.profiler.controller.exception.CustomException;
@@ -268,7 +269,7 @@ public class ProfileService {
                 header = getHeader(path, local.isHeader(), fileName);
 
             } catch (Exception e) {
-                throw new CustomException(FILE_NOT_FOUND);
+                throw new CustomException(INTERNAL_ERROR);
             }
             try {
                 profileLocalColumns("path", path, header, local.isHeader());
@@ -315,6 +316,8 @@ public class ProfileService {
                 e.printStackTrace();
                 if (profiles != null){
                     throw new CustomException(BAD_JSON_REQUEST);
+                } else{
+                    throw new CustomException(FILE_NOT_FOUND);
                 }
             }
             System.out.println("파일 크기 : "+profileTableResult.getDataset_size());

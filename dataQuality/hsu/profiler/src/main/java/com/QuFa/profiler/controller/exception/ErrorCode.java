@@ -16,6 +16,8 @@ public enum ErrorCode {
     /* 404 NOT_FOUND : Resource 를 찾을 수 없음 */
     FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "404 File Not Found"),
 
+    REQUEST_DATA_MALFORMED(HttpStatus.LENGTH_REQUIRED,"411 Request Data Malformed"),
+
     /* 500 SERVER_ERROR */
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR,"500 Internal Error");
 
