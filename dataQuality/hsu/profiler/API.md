@@ -4,26 +4,130 @@
 #### - 요청 메시지 명세
 
 <table>
-<thead>
-<th colspan=4>항목명(영문)</th><th>항목명(국문)</th><th>항목 <br />구분</th><th>샘플데이터</th><th>항목설명</th><th>2차년도<br />지원여부</th>
-</thead>
-<tbody>
-<tr><td colspan=4>source</td><td>객체 경로</td><td>1</td><td>-</td><td>프로파일링 대상 객체 정보 (local file path, URL, database connection 중 하나)</td><td>O</td></tr>
-<tr><td colspan=1></td><td colspan=3>type</td><td>객체 타입</td><td>1</td><td>path, url, db</td><td>path: 로컬 파일 경로 <br />url: 원격파일 경로에 대한 URL <br />db: database 테이블 connection 정보<br /><br />위 3가지 타입(type, url, db)에 따라 아래 항목(path, url, db) 중 하나를 반드시 사용 (one & only one)</td><td>O</td></tr>
-<tr><td colspan=1></td><td colspan=3>path</td><td>파일 경로</td><td>0</td><td>C:\QUFA\data\sample.csv</td><td>프로파일링 대상 파일의 로컬 경로</td><td>O</td></tr>
-<tr><td colspan=1></td><td colspan=3>url</td><td>원격 파일경로에 대한 URL</td><td>0</td><td>http://qufa.com/sample.csv</td><td>프로파일링 대상 파일의 URL 경로</td><td>O</td></tr>
-<tr><td colspan=1></td><td colspan=3>db</td><td>데이터베이스 및 테이블 연결 정보</td><td>0</td><td>-</td><td>프로파일링 대상이 데이터베이스 테이블일 경우 연결 및 테이블 정보<br />* 'db'와 하위 파라미터는 2022년 지원 예정</td><td></td></tr>
-<tr><td colspan=1></td><td colspan=1></td><td colspan=2>database</td><td>DBMS명종류</td><td>0</td><td>-</td><td>DBMS 이름</td><td></td></tr>
-<tr><td colspan=1></td><td colspan=1></td><td colspan=2>conn</td><td>connection string</td><td>0</td><td>-</td><td>DB 연결을 위한 connection string</td><td></td></tr>
-<tr><td colspan=1></td><td colspan=1></td><td colspan=2>table</td><td>테이블명</td><td>0</td><td>-</td><td>프로파일링을 위한 테이블 이름</td><td></td></tr>
-<tr><td colspan=4>header</td><td>헤더</td><td>0</td><td>true, false</td><td>csv 파일 헤더에 컬럼 이름의 존재 여부를 나타내는 boolean 값(default:true)<br />* 'header' 파라미터는 2022년 지원 예정</td><td></td></tr>
-<tr><td colspan=4>profiles</td><td>컬럼별 프로파일링 항목 정의</td><td>0</td><td>-</td><td>프로파일 종류별 프로파일링 대상이 되는 컬럼들을 컬럼번호나 컬럼이름 리스트로 표현. 생략될 경우 데이터 타입에 따라 가능한 프로파일링을 수행하며, 데이터 타입은 서버에서 자동으로 추정하여 실행함<br />(default:<br />　{<br />　　basic:[모든컬럼리스트],<br />　　number:[수치형 컬럼리스트],<br />　　string:[문자열 컬럼리스트],<br />　　date:[날짜형 컬럼리스트]<br />　}<br />)
-<br />* 'profiles'와 하위 파라미터는 2022년 지원 예정</td><td></td></tr>
-<tr><td colspan=1></td><td colspan=3>basic</td><td>기본 프로파일링 대상 컬럼 리스트</td><td>0..n</td><td>-</td><td>기본 프로파일링 대상되는 컬럼 리스트 (컬럼번호 또는 컬럼명)</td><td></td></tr>
-<tr><td colspan=1></td><td colspan=3>number</td><td>수치 프로파일링 대상 컬럼 리스트</td><td>0..n</td><td>-</td><td>수치 프로파일링 대상되는 컬럼 리스트 (컬럼번호 또는 컬럼명)</td><td></td></tr>
-<tr><td colspan=1></td><td colspan=3>string</td><td>문자열 프로파일링 대상 컬럼 리스트</td><td>0..n</td><td>-</td><td>문자열 프로파일링 대상되는 컬럼 리스트 (컬럼번호 또는 컬럼명)</td><td></td></tr>
-<tr><td colspan=1></td><td colspan=3>date</td><td>날짜 프로파일링 대상 컬럼 리스트</td><td>0..n</td><td>-</td><td>날짜 프로파일링 대상되는 컬럼 리스트 (컬럼번호 또는 컬럼명)</td><td></td></tr>
-</tbody></table>
+    <thead>
+        <th colspan=4>항목명(영문)</th>
+        <th>항목명(국문)</th>
+        <th>항목 <br />구분</th>
+        <th>샘플데이터</th>
+        <th>항목설명</th>
+        <th>2차년도<br />지원여부</th>
+    </thead>
+    <tbody>
+        <tr>
+            <td colspan=4>source</td>
+            <td>객체 경로</td>
+            <td>1</td>
+            <td>-</td>
+            <td>프로파일링 대상 객체 정보 (local file path, URL, database connection 중 하나)</td>
+            <td>O</td>
+        </tr>
+        <tr>
+            <td colspan=1></td>
+            <td colspan=3>url</td>
+            <td>파일경로에 대한 URL</td>
+            <td>0</td>
+            <td>http://qufa.com/sample.csv</td>
+            <td>프로파일링 대상 파일의 URL 경로. <br>
+                원격 파일일 경우 "http://" + 파일 url<br>
+                로컬 파일일 경우 "file:///" + 파일 경로</td>
+            <td>O</td>
+        </tr>
+        <tr>
+            <td colspan=1></td>
+            <td colspan=3>db</td>
+            <td>데이터베이스 및 테이블 연결 정보</td>
+            <td>0</td>
+            <td>-</td>
+            <td>프로파일링 대상이 데이터베이스 테이블일 경우 연결 및 테이블 정보<br />* 'db'와 하위 파라미터는 2022년 지원 예정</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td colspan=1></td>
+            <td colspan=1></td>
+            <td colspan=2>database</td>
+            <td>DBMS명종류</td>
+            <td>0</td>
+            <td>-</td>
+            <td>DBMS 이름</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td colspan=1></td>
+            <td colspan=1></td>
+            <td colspan=2>conn</td>
+            <td>connection string</td>
+            <td>0</td>
+            <td>-</td>
+            <td>DB 연결을 위한 connection string</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td colspan=1></td>
+            <td colspan=1></td>
+            <td colspan=2>table</td>
+            <td>테이블명</td>
+            <td>0</td>
+            <td>-</td>
+            <td>프로파일링을 위한 테이블 이름</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td colspan=4>header</td>
+            <td>헤더</td>
+            <td>0</td>
+            <td>true, false</td>
+            <td>csv 파일 헤더에 컬럼 이름의 존재 여부를 나타내는 boolean 값(default:true)</td>
+            <td>O</td>
+        </tr>
+        <tr>
+            <td colspan=4>profiles</td>
+            <td>컬럼별 프로파일링 항목 정의</td>
+            <td>0</td>
+            <td>-</td>
+            <td>프로파일 종류별 프로파일링 대상이 되는 컬럼들을 컬럼번호나 컬럼이름 리스트로 표현. 생략될 경우 데이터 타입에 따라 가능한 프로파일링을 수행하며, 데이터 타입은 서버에서 자동으로 추정하여
+                실행함<br />(default:<br />　{<br />　　basic:[모든컬럼리스트],<br />　　number:[수치형 컬럼리스트],<br />　　string:[문자열
+                컬럼리스트],<br />　　date:[날짜형 컬럼리스트]<br />　}<br />)
+                </td>
+            <td>O</td>
+        </tr>
+        <tr>
+            <td colspan=1></td>
+            <td colspan=3>basic</td>
+            <td>기본 프로파일링 대상 컬럼 리스트</td>
+            <td>0..n</td>
+            <td>-</td>
+            <td>기본 프로파일링 대상되는 컬럼 인덱스 리스트</td>
+            <td>O</td>
+        </tr>
+        <tr>
+            <td colspan=1></td>
+            <td colspan=3>number</td>
+            <td>수치 프로파일링 대상 컬럼 리스트</td>
+            <td>0..n</td>
+            <td>-</td>
+            <td>수치 프로파일링 대상되는 컬럼 인덱스 리스트</td>
+            <td>O</td>
+        </tr>
+        <tr>
+            <td colspan=1></td>
+            <td colspan=3>string</td>
+            <td>문자열 프로파일링 대상 컬럼 리스트</td>
+            <td>0..n</td>
+            <td>-</td>
+            <td>문자열 프로파일링 대상되는 컬럼 인덱스 리스트</td>
+            <td>O</td>
+        </tr>
+        <tr>
+            <td colspan=1></td>
+            <td colspan=3>date</td>
+            <td>날짜 프로파일링 대상 컬럼 리스트</td>
+            <td>0..n</td>
+            <td>-</td>
+            <td>날짜 프로파일링 대상되는 컬럼 인덱스 리스트</td>
+            <td>O</td>
+        </tr>
+    </tbody>
+</table>
 
 ###### ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)
  <br /> <br />
@@ -99,27 +203,24 @@
 *  **JSON Request Params**
 
    **Required:**
- 
-   `source:type=[string]`
+
+   `source:url=[string]`
 
    **Optional:**
- 
-   `source:path=[string]` <br />
-   `source:url=[string]` <br />
+   
    `header=[boolean]` <br />
    `profiles:basic=[integer array]` <br />
    `profiles:number=[integer array]` <br />
    `profiles:string=[integer array]` <br />
    `profiles:date=[integer array]` <br />
-
+   
 * **Data Params**
 
-  - if: type = path <br />
+  - if source is local file <br />
     ```
     {
         "source": {
-          "type": "path",
-          "path": "C:\QUFA\data\sample.csv"
+          "url": "file:///C:/sample.csv",
         },
         "header": true,
         "profiles: {
@@ -130,12 +231,11 @@
         }
     }
     ```
-
-  - if: type = "url" <br />
+    
+  - if source is remote file <br />
     ```
     {
         "source": {
-          "type": "url",
           "url": "http://qufa.com/sample.csv"
         }
         //param 'header', 'profiles' can use like above
@@ -259,4 +359,4 @@
 
 * **Notes:**
 
-  - Swagger Hub Link : https://app.swaggerhub.com/apis/jee101kr/QuFa/1.0.0
+  - Swagger Hub Link : [https://app.swaggerhub.com/apis/QUFA/QuFaProjectAPI/v2](https://app.swaggerhub.com/apis/QUFA/QuFaProjectAPI/v2)
