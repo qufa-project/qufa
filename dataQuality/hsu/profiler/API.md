@@ -203,27 +203,24 @@
 *  **JSON Request Params**
 
    **Required:**
- 
-   `source:type=[string]`
+
+   `source:url=[string]`
 
    **Optional:**
- 
-   `source:path=[string]` <br />
-   `source:url=[string]` <br />
+   
    `header=[boolean]` <br />
    `profiles:basic=[integer array]` <br />
    `profiles:number=[integer array]` <br />
    `profiles:string=[integer array]` <br />
    `profiles:date=[integer array]` <br />
-
+   
 * **Data Params**
 
-  - if: type = path <br />
+  - if source is local file <br />
     ```
     {
         "source": {
-          "type": "path",
-          "path": "C:\QUFA\data\sample.csv"
+          "url": "file:///C:/sample.csv",
         },
         "header": true,
         "profiles: {
@@ -234,12 +231,11 @@
         }
     }
     ```
-
-  - if: type = "url" <br />
+    
+  - if source is remote file <br />
     ```
     {
         "source": {
-          "type": "url",
           "url": "http://qufa.com/sample.csv"
         }
         //param 'header', 'profiles' can use like above
