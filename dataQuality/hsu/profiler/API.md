@@ -25,7 +25,7 @@
             <td colspan=1></td>
             <td colspan=3>url</td>
             <td>파일경로에 대한 URL</td>
-            <td>1</td>
+            <td>0</td>
             <td>http://qufa.com/sample.csv</td>
             <td>프로파일링 대상 파일의 URL 경로. <br>
                 원격 파일일 경우 "http://" + 파일 url<br>
