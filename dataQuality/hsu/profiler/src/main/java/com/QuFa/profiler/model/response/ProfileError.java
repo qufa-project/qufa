@@ -1,10 +1,8 @@
-package com.QuFa.profiler.model.profile;
+package com.QuFa.profiler.model.response;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 /**
  * profile_error 테이블과 매핑되는 엔티티 클래스
