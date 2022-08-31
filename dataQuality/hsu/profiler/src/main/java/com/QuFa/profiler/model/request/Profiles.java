@@ -9,6 +9,6 @@ public class Profiles {
 
     private Map<String, List<Object>> types;
     private boolean key_analysis;
-    private List<DependencyAnalysis> dependency_analysis;
+    private List<DependencyAnalysis> dependencied_analysis;
     private List<FKAnalysis> FK_analysis;
 }

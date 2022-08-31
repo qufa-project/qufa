@@ -294,7 +294,7 @@ public class ProfileService {
             System.out.println("총 타입판단개수 : "+totalDetact);
             System.out.println("총 데이터 수 : "+profileTableResult.getDataset_column_cnt()*profileTableResult.getDataset_row_cnt());
             System.out.println("데이터당 걸린 시간 : "+(double)t/(double)totalDetact);
-            return profileTableResult;
+
         } else if (local.getSource().getType().equals("url")) {
             String fileName = getFileName(local.getSource().getType(), local.getSource().getUrl());
             String url = local.getSource().getUrl();
@@ -331,31 +331,31 @@ public class ProfileService {
                 }
             }
 
-            /* dependency analysis result */
-            dependencyAnalyses = profiles.getDependency_analysis();
-            if (dependencyAnalyses != null) {
-                List<DependencyAnalysisResult> dependencyAnalysisResults = new ArrayList<>();
-                dependencyAnalyses.forEach(dependencyAnalysis -> {
-                    try {
-                        dependencyAnalysisResults.add(dependencyAnalysis(dependencyAnalysis));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
-                profileTableResult.setDependency_analysis_results(dependencyAnalysisResults);
-            }
-
             System.out.println("파일 크기 : "+profileTableResult.getDataset_size());
             System.out.println("타입 판단 제한 개수 : "+cntDetactType);
             System.out.println("설정한 타입구분시간 : "+detactingtime);
             System.out.println("실제 타입구분시간 : "+t);
             System.out.println("총 타입판단개수 : "+totalDetact);
             System.out.println("데이터당 걸린 시간 : "+(double)t/(double)totalDetact);
-            return profileTableResult;
         } else {
 
         }
-        return null;
+
+        /* dependency analysis result */
+        dependencyAnalyses = profiles.getDependencied_analysis();
+        if (dependencyAnalyses != null) {
+            System.out.println("dependencyAnalyses = " + dependencyAnalyses.toString());
+            List<DependencyAnalysisResult> dependencyAnalysisResults = new ArrayList<>();
+            dependencyAnalyses.forEach(dependencyAnalysis -> {
+                try {
+                    dependencyAnalysisResults.add(dependencyAnalysis(dependencyAnalysis));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            profileTableResult.setDependency_analysis_results(dependencyAnalysisResults);
+        }
+        return profileTableResult;
     }
 
     public void profileLocalColumns(String type, String path, List<String> columnNames,
@@ -367,10 +367,8 @@ public class ProfileService {
         System.out.println("filename:" + filename);
 
         //CsvDatastore
-        // 헤더가 있으면 original path
-        if (type.equals("path") && isHeader) {
-            filePath = path;
-        } else if (type.equals("url") || !isHeader) { // url이거나, 헤더가 없으면 targetfiles~
+        filePath = path; // 헤더가 있으면 original path
+        if (type.equals("url") || !isHeader) { // url이거나, 헤더가 없으면 targetfiles~
             filePath = targetFolderPath + filename + ".csv";
         }
         DataStoreService.createLocalDataStore(filePath);
