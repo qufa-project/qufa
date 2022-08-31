@@ -246,7 +246,7 @@ public class ProfileService {
     public ProfileTableResult profileLocalCSV(Local local) {
         /* 컬럼별 프로파일  */
         profiles = local.getProfiles();
-        profileTypes = profiles.getTypes();
+        if (profiles != null)  profileTypes = profiles.getTypes();
         requestColumnAndType = new HashMap<>();
         requestColumnSet = new HashSet<>();
         t = 0;
