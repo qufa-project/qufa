@@ -418,7 +418,7 @@ public class ProfileService {
                     profileColumnResult.setColumn_type(valueType);
 
                     this.profileSingleColumn(filename, columnName);
-                    profileTableResult.getResults().add(profileColumnResult);
+                    profileTableResult.getSingle_column_results().add(profileColumnResult);
                 }
             }
         } else { // profiles가 없으면 칼럼 타입 판단 O
@@ -432,7 +432,7 @@ public class ProfileService {
                     e.printStackTrace();
                 }
                 this.profileSingleColumn(filename, columnName);
-                profileTableResult.getResults().add(profileColumnResult);
+                profileTableResult.getSingle_column_results().add(profileColumnResult);
             }
         }
 
