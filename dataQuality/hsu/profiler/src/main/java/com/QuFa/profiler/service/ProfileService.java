@@ -93,10 +93,10 @@ public class ProfileService {
     private ProfileTableResult profileTableResult = new ProfileTableResult();
     private ProfileColumnResult profileColumnResult = new ProfileColumnResult();
 
-    private List<DependencyAnalysis> dependencyAnalyses;
+    private List<DependencyAnalysis> dependencyAnalyses = null;
 
     /* 컬럼별 프로파일 */
-    private Profiles profiles;
+    private Profiles profiles = null;
     Map<String, List<Object>> profileTypes = null;
     private Map<Object, List<String>> requestColumnAndType;
     private HashSet<Object> requestColumnSet;
@@ -252,7 +252,11 @@ public class ProfileService {
     public ProfileTableResult profileLocalCSV(Local local) {
         /* 컬럼별 프로파일  */
         profiles = local.getProfiles();
-        if (profiles != null)  profileTypes = profiles.getTypes();
+        if (profiles != null)  {
+            if (profiles.getTypes() != null) profileTypes = profiles.getTypes();
+            if (profiles.getDependencied_analysis() != null ) dependencyAnalyses = profiles.getDependencied_analysis();
+        }
+
         requestColumnAndType = new HashMap<>();
         requestColumnSet = new HashSet<>();
         t = 0;
@@ -278,14 +282,16 @@ public class ProfileService {
                 header = getHeader(path, local.isHeader(), fileName);
 
             } catch (Exception e) {
-                throw new CustomException(INTERNAL_ERROR);
+                e.printStackTrace();
+//                throw new CustomException(INTERNAL_ERROR);
             }
             try {
-                profileLocalColumns("path", path, header, local.isHeader());
+                profileTableResult = profileLocalColumns("path", path, header, local.isHeader());
             } catch (Exception e) {
-                if (profileTypes != null){
-                    throw new CustomException(BAD_JSON_REQUEST);
-                }
+                e.printStackTrace();
+//                if (profileTypes != null){
+//                    throw new CustomException(BAD_JSON_REQUEST);
+//                }
             }
             System.out.println("파일 크기 : "+profileTableResult.getDataset_size());
             System.out.println("타입 판단 제한 개수 : "+cntDetactType);
@@ -317,18 +323,18 @@ public class ProfileService {
                     System.out.println("!!!!!" + header);
                 }
 
-                profileLocalColumns("url", url, header, local.isHeader());
+                profileTableResult = profileLocalColumns("url", url, header, local.isHeader());
 
                 reader.close();
 
             } catch (Exception e) {
                 e.printStackTrace();
-                if (profileTypes != null){
-                    throw new CustomException(BAD_JSON_REQUEST);
-                } else{
-                    System.out.println("profileLocalCSV() returned: " + profileTableResult);
-                    throw new CustomException(FILE_NOT_FOUND);
-                }
+//                if (profileTypes != null){
+//                    throw new CustomException(BAD_JSON_REQUEST);
+//                } else{
+//                    System.out.println("profileLocalCSV() returned: " + profileTableResult);
+//                    throw new CustomException(FILE_NOT_FOUND);
+//                }
             }
 
             System.out.println("파일 크기 : "+profileTableResult.getDataset_size());
@@ -342,7 +348,6 @@ public class ProfileService {
         }
 
         /* dependency analysis result */
-        dependencyAnalyses = profiles.getDependencied_analysis();
         if (dependencyAnalyses != null) {
             System.out.println("dependencyAnalyses = " + dependencyAnalyses.toString());
             List<DependencyAnalysisResult> dependencyAnalysisResults = new ArrayList<>();
@@ -358,9 +363,9 @@ public class ProfileService {
         return profileTableResult;
     }
 
-    public void profileLocalColumns(String type, String path, List<String> columnNames,
+    public ProfileTableResult profileLocalColumns(String type, String path, List<String> columnNames,
             Boolean isHeader) {
-        profileTableResult = new ProfileTableResult();
+//        profileTableResult = new ProfileTableResult();
         System.out.println(path);
 
         String filename = getFileName(type, path);
@@ -420,8 +425,9 @@ public class ProfileService {
             System.out.println("requestColumnSet= " + requestColumnSet); // [1, 2]
 
             for (String columnName : columnNames) {
-                int index = columnNames.indexOf(columnName) + 1;
+                if (columnName.isEmpty()) continue;
 
+                int index = columnNames.indexOf(columnName) + 1;
                 if (requestColumnSet.contains(index)) {
                     profileColumnResult = new ProfileColumnResult();
                     profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
@@ -442,6 +448,8 @@ public class ProfileService {
             }
         } else { // profiles가 없으면 칼럼 타입 판단 O
             for (String columnName : columnNames) {
+                if (columnName.isEmpty()) continue;
+
                 profileColumnResult = new ProfileColumnResult();
                 profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
                 profileColumnResult.setColumn_name(columnName);
@@ -454,7 +462,7 @@ public class ProfileService {
                 profileTableResult.getSingle_column_results().add(profileColumnResult);
             }
         }
-
+        return profileTableResult;
     }
 
     /**
