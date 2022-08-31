@@ -340,22 +340,27 @@
     }
     ```
   <br />
-
+  
 * **Error Response:**
 
-  * **Code:** 400 Bad Json Request <br />
-    **Content:** `{ status_code : "BAD_JSON_REQUEST" }`
+  * **Code:** 400 <br />
+    **Content:** "BAD_JSON_REQUEST"
 
   OR
 
-  * **Code:** 411 Request Data Malformed <br />
-    **Content:** `{ status_code : "REQUEST_DATA_MALFORMED" }`
+  * **Code:** 404 <br />
+    **Content:** "FILE_NOT_FOUND"
 
   OR
 
-  * **Code:** 500 Internal Error <br />
-    **Content:** `{ status_code : "INTERNAL_ERROR" }`
-  <br />
+  * **Code:** 411 <br />
+    **Content:** "REQUEST_DATA_MALFORMED"
+
+  OR
+
+  * **Code:** 500<br />
+    **Content:** "INTERNAL_ERROR"
+    <br />
 
 * **Notes:**
 
