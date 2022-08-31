@@ -8,9 +8,11 @@ import static com.QuFa.profiler.controller.exception.ErrorCode.INTERNAL_ERROR;
 import com.QuFa.profiler.config.ActiveProfileProperty;
 import com.QuFa.profiler.controller.exception.CustomException;
 import com.QuFa.profiler.model.Local;
+import com.QuFa.profiler.model.request.DependencyAnalysis;
 import com.QuFa.profiler.model.request.Profiles;
 import com.QuFa.profiler.model.response.BasicProfile;
 import com.QuFa.profiler.model.response.DateProfile;
+import com.QuFa.profiler.model.response.DependencyAnalysisResult;
 import com.QuFa.profiler.model.response.NumberProfile;
 import com.QuFa.profiler.model.response.ProfileColumnResult;
 import com.QuFa.profiler.model.response.ProfileTableResult;
@@ -20,6 +22,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -90,6 +93,8 @@ public class ProfileService {
     private ProfileTableResult profileTableResult = new ProfileTableResult();
     private ProfileColumnResult profileColumnResult = new ProfileColumnResult();
 
+    private List<DependencyAnalysis> dependencyAnalyses;
+
     /* 컬럼별 프로파일 */
     private Profiles profiles;
     Map<String, List<Object>> profileTypes = null;
@@ -109,6 +114,7 @@ public class ProfileService {
 
 
     String targetFolderPath;
+    String filePath;
 
     /**
      * <현 문제점> columnNames 에 대해 for 문 돌면서 호출됨. 해당 컬럼의 타입이 무엇인지 판단 근데 typecheck 는 모든 레코드에 대해서 하는데
@@ -324,6 +330,21 @@ public class ProfileService {
                     throw new CustomException(FILE_NOT_FOUND);
                 }
             }
+
+            /* dependency analysis result */
+            dependencyAnalyses = profiles.getDependency_analysis();
+            if (dependencyAnalyses != null) {
+                List<DependencyAnalysisResult> dependencyAnalysisResults = new ArrayList<>();
+                dependencyAnalyses.forEach(dependencyAnalysis -> {
+                    try {
+                        dependencyAnalysisResults.add(dependencyAnalysis(dependencyAnalysis));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+                profileTableResult.setDependency_analysis_results(dependencyAnalysisResults);
+            }
+
             System.out.println("파일 크기 : "+profileTableResult.getDataset_size());
             System.out.println("타입 판단 제한 개수 : "+cntDetactType);
             System.out.println("설정한 타입구분시간 : "+detactingtime);
@@ -348,11 +369,11 @@ public class ProfileService {
         //CsvDatastore
         // 헤더가 있으면 original path
         if (type.equals("path") && isHeader) {
-            DataStoreService.createLocalDataStore(path);
+            filePath = path;
         } else if (type.equals("url") || !isHeader) { // url이거나, 헤더가 없으면 targetfiles~
-            path = targetFolderPath + filename + ".csv";
-            DataStoreService.createLocalDataStore(path);
+            filePath = targetFolderPath + filename + ".csv";
         }
+        DataStoreService.createLocalDataStore(filePath);
 
         profileTableResult.setDataset_name(filename);
         profileTableResult.setDataset_type("csv");
@@ -1119,5 +1140,63 @@ public class ProfileService {
         }
 
         return header;
+    }
+
+    public DependencyAnalysisResult dependencyAnalysis(DependencyAnalysis dependencyAnalysis)
+            throws IOException {
+
+        // request
+        int determinantIdx;
+        int dependencyIdx;
+        List<String> determinantRowValues = new ArrayList<>();
+        List<String> dependencyRowValues = new ArrayList<>();
+
+        // result
+        DependencyAnalysisResult dependencyAnalysisResult = new DependencyAnalysisResult();
+        Boolean isValid = true;
+        List<String> inValidValues = new ArrayList<>();
+
+        /* column 은 인덱스 번호이거나 column 이름이므로 이를 구분 */
+
+        // request : column name
+        if (dependencyAnalysis.getDeterminant().getClass().getName().equals("java.lang.String") && dependencyAnalysis.getDependency().getClass().getName().equals("java.lang.String")) {
+            determinantIdx = header.indexOf((String) dependencyAnalysis.getDeterminant());
+            dependencyIdx = header.indexOf((String) dependencyAnalysis.getDependency());
+        }
+        // request : column index
+        else if (dependencyAnalysis.getDeterminant().getClass().getName().equals("java.lang.Integer") && dependencyAnalysis.getDependency().getClass().getName().equals("java.lang.Integer")) {
+            determinantIdx = Integer.parseInt((String) dependencyAnalysis.getDeterminant());
+            dependencyIdx = Integer.parseInt((String) dependencyAnalysis.getDependency());
+        } else {
+            throw new CustomException(BAD_JSON_REQUEST);
+        }
+
+        /* 각 column values 읽는 작업 */
+        CSVReader csvReader = new CSVReader(new FileReader(filePath));
+        String[] nextLine;
+        while ((nextLine = csvReader.readNext()) != null) {
+            if (nextLine.length == header.size()) {
+                determinantRowValues.add(nextLine[determinantIdx]);
+                dependencyRowValues.add(nextLine[dependencyIdx]);
+            }
+        }
+
+        // 오름차순으로 정렬
+        Collections.sort(determinantRowValues);
+        Collections.sort(dependencyRowValues);
+
+        for (int i = 0; i < dependencyRowValues.size(); i++) {
+            if (!determinantRowValues.get(i).equals(dependencyRowValues.get(i))) {
+                isValid = false;
+                inValidValues.add(determinantRowValues.get(i));
+            }
+        }
+
+        dependencyAnalysisResult.setDeterminant(dependencyAnalysis.getDeterminant());
+        dependencyAnalysisResult.setDependency(dependencyAnalysis.getDependency());
+        dependencyAnalysisResult.setIs_valid(isValid);
+        dependencyAnalysisResult.setInvalid_values(inValidValues);
+
+        return dependencyAnalysisResult;
     }
 }

@@ -1,6 +1,9 @@
 package com.QuFa.profiler.model.request;
 
+import lombok.Getter;
+
+@Getter
 public class DependencyAnalysis {
-    Object determinant;
-    Object dependency;
+    private Object determinant;
+    private Object dependency;
 }
