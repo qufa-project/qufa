@@ -1,7 +1,7 @@
 package com.QuFa.profiler.controller;
 
 import com.QuFa.profiler.model.Local;
-import com.QuFa.profiler.model.profile.ProfileTableResult;
+import com.QuFa.profiler.model.response.ProfileTableResult;
 import com.QuFa.profiler.service.DataStoreService;
 import com.QuFa.profiler.service.ProfileService;
 import org.springframework.beans.factory.annotation.Autowired;

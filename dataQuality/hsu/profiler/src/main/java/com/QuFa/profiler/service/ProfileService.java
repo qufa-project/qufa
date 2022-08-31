@@ -8,13 +8,14 @@ import static com.QuFa.profiler.controller.exception.ErrorCode.INTERNAL_ERROR;
 import com.QuFa.profiler.config.ActiveProfileProperty;
 import com.QuFa.profiler.controller.exception.CustomException;
 import com.QuFa.profiler.model.Local;
-import com.QuFa.profiler.model.profile.BasicProfile;
-import com.QuFa.profiler.model.profile.DateProfile;
-import com.QuFa.profiler.model.profile.NumberProfile;
-import com.QuFa.profiler.model.profile.ProfileColumnResult;
-import com.QuFa.profiler.model.profile.ProfileTableResult;
-import com.QuFa.profiler.model.profile.StringProfile;
-import com.QuFa.profiler.model.profile.VdModel;
+import com.QuFa.profiler.model.request.Profiles;
+import com.QuFa.profiler.model.response.BasicProfile;
+import com.QuFa.profiler.model.response.DateProfile;
+import com.QuFa.profiler.model.response.NumberProfile;
+import com.QuFa.profiler.model.response.ProfileColumnResult;
+import com.QuFa.profiler.model.response.ProfileTableResult;
+import com.QuFa.profiler.model.response.StringProfile;
+import com.QuFa.profiler.model.response.VdModel;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import java.io.BufferedReader;
@@ -90,7 +91,8 @@ public class ProfileService {
     private ProfileColumnResult profileColumnResult = new ProfileColumnResult();
 
     /* 컬럼별 프로파일 */
-    Map<String, List<Object>> profiles = null;
+    private Profiles profiles;
+    Map<String, List<Object>> profileTypes = null;
     private Map<Object, List<String>> requestColumnAndType;
     private HashSet<Object> requestColumnSet;
     private boolean headerExist;
@@ -244,6 +246,7 @@ public class ProfileService {
     public ProfileTableResult profileLocalCSV(Local local) {
         /* 컬럼별 프로파일  */
         profiles = local.getProfiles();
+        profileTypes = profiles.getTypes();
         requestColumnAndType = new HashMap<>();
         requestColumnSet = new HashSet<>();
         t = 0;
@@ -274,7 +277,7 @@ public class ProfileService {
             try {
                 profileLocalColumns("path", path, header, local.isHeader());
             } catch (Exception e) {
-                if (profiles != null){
+                if (profileTypes != null){
                     throw new CustomException(BAD_JSON_REQUEST);
                 }
             }
@@ -314,9 +317,10 @@ public class ProfileService {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                if (profiles != null){
+                if (profileTypes != null){
                     throw new CustomException(BAD_JSON_REQUEST);
                 } else{
+                    System.out.println("profileLocalCSV() returned: " + profileTableResult);
                     throw new CustomException(FILE_NOT_FOUND);
                 }
             }
@@ -361,8 +365,8 @@ public class ProfileService {
 
 
         /* 컬럼별 프로파일  */
-        if (profiles != null) { // profiles가 있으면 칼럼 타입 판단 X
-            profiles.forEach((key, valueList) -> {
+        if (profileTypes != null) { // profiles가 있으면 칼럼 타입 판단 X
+            profileTypes.forEach((key, valueList) -> {
                 valueList.forEach(value -> {
                     if (headerExist) { // "header": true
                         if (value.getClass().getName().equals("java.lang.String")) {
@@ -1027,7 +1031,7 @@ public class ProfileService {
         }
 
         /* 컬럼별 프로파일  */
-        if (profiles != null) {
+        if (profileTypes != null) {
             int index = header.indexOf(columnName) + 1;
             List<String> typeList = requestColumnAndType.get(index);
 
