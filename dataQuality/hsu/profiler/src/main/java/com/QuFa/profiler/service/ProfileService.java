@@ -48,6 +48,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.datacleaner.api.AnalyzerResult;
 import org.datacleaner.api.InputColumn;
@@ -1159,12 +1160,11 @@ public class ProfileService {
         // request
         int determinantIdx;
         int dependencyIdx;
-        List<String> determinantRowValues = new ArrayList<>();
-        List<String> dependencyRowValues = new ArrayList<>();
+        Map<String, Set<String>> dependencySet = new HashMap<>();
 
         // result
         DependencyAnalysisResult dependencyAnalysisResult = new DependencyAnalysisResult();
-        Boolean isValid = true;
+        boolean isValid = true;
         List<String> inValidValues = new ArrayList<>();
 
         /* column 은 인덱스 번호이거나 column 이름이므로 이를 구분 */
@@ -1176,8 +1176,8 @@ public class ProfileService {
         }
         // request : column index
         else if (dependencyAnalysis.getDeterminant().getClass().getName().equals("java.lang.Integer") && dependencyAnalysis.getDependency().getClass().getName().equals("java.lang.Integer")) {
-            determinantIdx = Integer.parseInt((String) dependencyAnalysis.getDeterminant());
-            dependencyIdx = Integer.parseInt((String) dependencyAnalysis.getDependency());
+            determinantIdx = (int) dependencyAnalysis.getDeterminant() - 1;
+            dependencyIdx = (int) dependencyAnalysis.getDependency() - 1;
         } else {
             throw new CustomException(BAD_JSON_REQUEST);
         }
@@ -1187,27 +1187,30 @@ public class ProfileService {
         String[] nextLine;
         while ((nextLine = csvReader.readNext()) != null) {
             if (nextLine.length == header.size()) {
-                determinantRowValues.add(nextLine[determinantIdx]);
-                dependencyRowValues.add(nextLine[dependencyIdx]);
+                if (!dependencySet.containsKey(nextLine[determinantIdx])) {
+                    Set<String> set = new HashSet<>();
+                    set.add(nextLine[dependencyIdx]);
+                    dependencySet.put(nextLine[determinantIdx], set);
+                } else {
+                    dependencySet.get(nextLine[determinantIdx]).add(nextLine[dependencyIdx]);
+                }
             }
         }
 
-        // 오름차순으로 정렬
-        Collections.sort(determinantRowValues);
-        Collections.sort(dependencyRowValues);
-
-        for (int i = 0; i < dependencyRowValues.size(); i++) {
-            if (!determinantRowValues.get(i).equals(dependencyRowValues.get(i))) {
-                isValid = false;
-                inValidValues.add(determinantRowValues.get(i));
+        dependencySet.forEach((key, value) -> {
+            if (value.size() != 1) {
+                inValidValues.add(key);
             }
-        }
+        });
 
         dependencyAnalysisResult.setDeterminant(dependencyAnalysis.getDeterminant());
         dependencyAnalysisResult.setDependency(dependencyAnalysis.getDependency());
-        dependencyAnalysisResult.setIs_valid(isValid);
+        if (inValidValues.size() == 0) {
+            dependencyAnalysisResult.setIs_valid(true);
+        } else {
+            dependencyAnalysisResult.setIs_valid(false);
+        }
         dependencyAnalysisResult.setInvalid_values(inValidValues);
-
         return dependencyAnalysisResult;
     }
 }
