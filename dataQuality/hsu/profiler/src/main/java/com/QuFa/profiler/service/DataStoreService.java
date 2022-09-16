@@ -5,33 +5,19 @@ import com.opencsv.CSVWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
-import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.datacleaner.configuration.DataCleanerConfiguration;
 import org.datacleaner.configuration.DataCleanerConfigurationImpl;
-import org.datacleaner.configuration.JaxbConfigurationReader;
 import org.datacleaner.connection.CsvDatastore;
 import org.datacleaner.connection.Datastore;
 import org.datacleaner.connection.DatastoreCatalogImpl;
-import org.datacleaner.connection.JdbcDatastore;
 import org.datacleaner.job.builder.AnalysisJobBuilder;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 
 /**
  * 프로파일링을 위한 기본 설정 작업을 수행하는 클래스 <br> Configruation 파일 파싱, Datasource 연결, 프로파일 분석 작업 설정 등을 수행한다
@@ -39,20 +25,17 @@ import java.nio.file.StandardCopyOption;
 @Component
 public class DataStoreService {
 
-    public static char quote_char = '\"';
-    public static char separator_char = ',';
-    public static String csvEncoding = "UTF-8";
-    public static boolean fail_on_inconsistencies = true;
-    public static int header_line_number = 1;
-
-
-    public static final String DEFAULT_DB = "local";
-    public static final String PROD_DB = "prod";
-    public static final String TEST_DB = "test";
-
-    private static DataCleanerConfiguration configuration;
-    private static AnalysisJobBuilder builder;
-    private static Datastore dataStore;
+    public char quote_char = '\"';
+    public char separator_char = ',';
+    public String csvEncoding = "UTF-8";
+    public boolean fail_on_inconsistencies = true;
+    public int header_line_number = 1;
+    public final String DEFAULT_DB = "local";
+    public final String PROD_DB = "prod";
+    public final String TEST_DB = "test";
+    private DataCleanerConfiguration configuration;
+    private AnalysisJobBuilder builder;
+    private Datastore dataStore;
     String targetFolderPath;
 
     public void storeUrlFile(String url, Boolean isHeader) throws IOException {
@@ -110,7 +93,7 @@ public class DataStoreService {
     /**
      * Configuration파일을 파싱하여 DB를 연결하는 메소드
      */
-    public static void createDataStore(String fileName) {
+    public  void createDataStore(String fileName) {
         try {
 
             //JdbcDatastore datastore = new JdbcDatastore(dbName, url, driver, username, password, false);
@@ -129,7 +112,8 @@ public class DataStoreService {
         }
     }
 
-    public static void createLocalDataStore(String path) {
+    //TODO: fileName 파라미터 추가
+    public  void createLocalDataStore(String path) {
         try {
 
             //JdbcDatastore datastore = new JdbcDatastore(dbName, url, driver, username, password, false);
@@ -146,11 +130,11 @@ public class DataStoreService {
         }
     }
 
-    public static Datastore getDataStore() {
+    public Datastore getDataStore() {
         return dataStore;
     }
 
-    public static AnalysisJobBuilder setDataStore(String csvName) {
+    public AnalysisJobBuilder setDataStore(String csvName) {
         System.out.println("System.out for dataStore : " + configuration);
 
         dataStore = configuration.getDatastoreCatalog().getDatastore(csvName);
@@ -160,15 +144,15 @@ public class DataStoreService {
         return builder.setDatastore(dataStore);
     }
 
-    public static DataCleanerConfiguration getConfiguration() {
+    public DataCleanerConfiguration getConfiguration() {
         return configuration;
     }
 
-    public static AnalysisJobBuilder getBuilder() {
+    public AnalysisJobBuilder getBuilder() {
         return builder;
     }
 
-    public static void setDefault(String csvName) {
+    public void setDefault(String csvName) {
         try {
             builder = new AnalysisJobBuilder(configuration);
             if (configuration != null) {
@@ -181,24 +165,24 @@ public class DataStoreService {
         System.gc();
     }
 
-    public static void setQuote_char(char quote_char) {
-        DataStoreService.quote_char = quote_char;
+    public void setQuote_char(char quote_char) {
+        quote_char = quote_char;
     }
 
-    public static void setSeparator_char(char separator_char) {
-        DataStoreService.separator_char = separator_char;
+    public void setSeparator_char(char separator_char) {
+        separator_char = separator_char;
     }
 
-    public static void setCsvEncoding(String encoding) {
-        DataStoreService.csvEncoding = encoding;
+    public void setCsvEncoding(String encoding) {
+        csvEncoding = encoding;
     }
 
-    public static void setFail_on_inconsistencies(boolean fail_on_inconsistencies) {
-        DataStoreService.fail_on_inconsistencies = fail_on_inconsistencies;
+    public void setFail_on_inconsistencies(boolean fail_on_inconsistencies) {
+        fail_on_inconsistencies = fail_on_inconsistencies;
     }
 
-    public static void setHeader_line_number(int header_line_number) {
-        DataStoreService.header_line_number = header_line_number;
+    public void setHeader_line_number(int header_line_number) {
+        header_line_number = header_line_number;
     }
 
 

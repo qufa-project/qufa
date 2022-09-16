@@ -102,6 +102,7 @@ public class ProfileService {
     private HashSet<Object> requestColumnSet;
     private boolean headerExist;
 
+    //TODO: dataStoreService 객체 생성해서 사용하기
     @Autowired
     private final DataStoreService dataStoreService;
 
@@ -376,7 +377,8 @@ public class ProfileService {
         if (type.equals("url") || !isHeader) { // url이거나, 헤더가 없으면 targetfiles~
             filePath = targetFolderPath + filename + ".csv";
         }
-        DataStoreService.createLocalDataStore(filePath);
+        //TODO: fileName 파라미터 추가
+        dataStoreService.createLocalDataStore(filePath);
 
         profileTableResult.setDataset_name(filename);
         profileTableResult.setDataset_type("csv");
@@ -477,8 +479,10 @@ public class ProfileService {
         System.out.println("inputColumnName : " + inputColumnName);
         String type = profileColumnResult.getColumn_type();
 
-        DataStoreService.setDataStore("CSVDS");
-        AnalysisJobBuilder builder = DataStoreService.getBuilder();
+        //TODO: dataStoreService 객체 생성해서 사용하기
+        dataStoreService.setDataStore("CSVDS");
+        //TODO: dataStoreService 객체 생성해서 사용하기
+        AnalysisJobBuilder builder = dataStoreService.getBuilder();
         builder.addSourceColumns(columnName);
         InputColumn<?> targetInputColumn = builder.getSourceColumnByName(columnName);
         InputColumn<?> dateTargetInputColumn = null;
@@ -548,7 +552,8 @@ public class ProfileService {
 
         // job build run & result
         AnalysisJob analysisJob = builder.toAnalysisJob();
-        AnalysisRunner runner = new AnalysisRunnerImpl(DataStoreService.getConfiguration());
+        //TODO: dataStoreService 객체 생성해서 사용하기
+        AnalysisRunner runner = new AnalysisRunnerImpl(dataStoreService.getConfiguration());
         AnalysisResultFuture resultFuture = runner.run(analysisJob);
 
         resultFuture.await();
