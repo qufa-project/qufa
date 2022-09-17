@@ -1,12 +1,13 @@
 package com.QuFa.profiler.model.response;
 
-import java.util.ArrayList;
 import java.util.List;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@Builder
 public class ProfileTableResult {
     String dataset_name;
     String dataset_type;
@@ -17,7 +18,4 @@ public class ProfileTableResult {
     List<Object> key_analysis_results;
     List<DependencyAnalysisResult> dependency_analysis_results;
     List<FKAnalysisResult> FK_analysis_results;
-
-    public ProfileTableResult(){ single_column_results = new ArrayList<>();
-    }
 }

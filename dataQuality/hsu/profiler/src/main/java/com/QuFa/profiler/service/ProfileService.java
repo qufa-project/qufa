@@ -2,8 +2,6 @@ package com.QuFa.profiler.service;
 
 
 import static com.QuFa.profiler.controller.exception.ErrorCode.BAD_JSON_REQUEST;
-import static com.QuFa.profiler.controller.exception.ErrorCode.FILE_NOT_FOUND;
-import static com.QuFa.profiler.controller.exception.ErrorCode.INTERNAL_ERROR;
 
 import com.QuFa.profiler.config.ActiveProfileProperty;
 import com.QuFa.profiler.controller.exception.CustomException;
@@ -19,17 +17,10 @@ import com.QuFa.profiler.model.response.ProfileTableResult;
 import com.QuFa.profiler.model.response.StringProfile;
 import com.QuFa.profiler.model.response.VdModel;
 import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -47,7 +38,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.datacleaner.api.AnalyzerResult;
@@ -87,27 +77,21 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProfileService {
 
-    /**
-     *
-     */
     private final ActiveProfileProperty activeProfileProperty;
-    private ProfileTableResult profileTableResult = new ProfileTableResult();
-    private ProfileColumnResult profileColumnResult = new ProfileColumnResult();
+    private ProfileTableResult profileTableResult;
+    private ProfileColumnResult profileColumnResult;
+
+    private Profiles profiles = null;
+    private Map<String, List<Object>> profileTypes = null;
+    private Map<Object, List<String>> requestColumns;
 
     private List<DependencyAnalysis> dependencyAnalyses = null;
 
-    /* 컬럼별 프로파일 */
-    private Profiles profiles = null;
-    Map<String, List<Object>> profileTypes = null;
-    private Map<Object, List<String>> requestColumnAndType;
-    private HashSet<Object> requestColumnSet;
-    private boolean headerExist;
+    private ArrayList<Object> key_analysis_results; // 후보키 컬럼을 담는 배열
 
-    //TODO: dataStoreService 객체 생성해서 사용하기
     @Autowired
     private final DataStoreService dataStoreService;
-
-    private List<String> header;
+    private final FileService fileService = new FileService();
 
     private long t = 0;
     private long totalDetact = 0; // 총 판단하는 데이터 개수
@@ -115,11 +99,11 @@ public class ProfileService {
     private int detactingtime = 10000; // 전체 타입 판단 시간 설정 (1000 -> 1초)
     private boolean key_analysis; // 후보키를 찾을지 말지 판단
 
-    private ArrayList<Object> key_analysis_results; // 후보키 컬럼을 담는 배열
-
-
-    String targetFolderPath;
-    String filePath;
+    private List<String> header;
+    private String filePath;
+    private String fileName;
+    private String fileType;
+    private boolean isHeader;
 
     /**
      * <현 문제점> columnNames 에 대해 for 문 돌면서 호출됨. 해당 컬럼의 타입이 무엇인지 판단 근데 typecheck 는 모든 레코드에 대해서 하는데
@@ -146,22 +130,24 @@ public class ProfileService {
         }
         long afterTime1 = System.currentTimeMillis(); // 코드 실행 후에 시간 받아오기
         long secDiffTime1 = (afterTime1 - beforeTime1); //두 시간에 차 계산
-        System.out.println("시간차이(m) : "+secDiffTime1);
+        System.out.println("시간차이(m) : " + secDiffTime1);
 
-        if (cntDetactType == 0){
-            cntDetactType = (int)(detactingtime - (rowValues.size()*0.005* profileTableResult.getDataset_column_cnt()))/ profileTableResult.getDataset_column_cnt() * 20;
-            if (cntDetactType<1000) {
+        if (cntDetactType == 0) {
+            cntDetactType = (int) (detactingtime - (rowValues.size() * 0.005
+                                                            * profileTableResult.getDataset_column_cnt()))
+                                    / profileTableResult.getDataset_column_cnt() * 20;
+            if (cntDetactType < 1000) {
                 cntDetactType = 1000;
             }
         }
-        System.out.println("타입추출제한개수 : "+cntDetactType);
-        System.out.println("row size : "+rowValues.size());
+        System.out.println("타입추출제한개수 : " + cntDetactType);
+        System.out.println("row size : " + rowValues.size());
 
         if (rowValues.size() > cntDetactType) {
             Collections.shuffle(rowValues);
             rowValues = rowValues.subList(0, cntDetactType);
         }
-        totalDetact += rowValues.size()-1;
+        totalDetact += rowValues.size() - 1;
 
         int i = 0;
 
@@ -228,14 +214,14 @@ public class ProfileService {
             if (t.equals("number")) {
                 dateType = false;
             } else if (t.equals("date")) {
-                numberType= false;
+                numberType = false;
             } else if (t.equals("string")) {
                 dateType = false;
-                numberType= false;
+                numberType = false;
             }
         }
 
-        if(dateType) {
+        if (dateType) {
             typeValue = "date";
         } else if (numberType) {
             typeValue = "number";
@@ -245,25 +231,52 @@ public class ProfileService {
 
         long afterTime = System.currentTimeMillis(); // 코드 실행 후에 시간 받아오기
         long secDiffTime = (afterTime - beforeTime); //두 시간에 차 계산
-        System.out.println("시간차이(m) : "+secDiffTime);
-        t = t+secDiffTime;
-        System.out.println("타입구분시간 : "+t);
-        System.out.println("타입 : "+typeValue);
-
+        System.out.println("시간차이(m) : " + secDiffTime);
+        t = t + secDiffTime;
+        System.out.println("타입구분시간 : " + t);
+        System.out.println("타입 : " + typeValue);
 
         return typeValue;
     }
 
     public ProfileTableResult profileLocalCSV(Local local) {
-        /* 컬럼별 프로파일  */
-        profiles = local.getProfiles();
-        if (profiles != null)  {
-            if (profiles.getTypes() != null) profileTypes = profiles.getTypes();
-            if (profiles.getDependencied_analysis() != null ) dependencyAnalyses = profiles.getDependencied_analysis();
+
+        /* 파일 정보 설정 */
+        fileType = local.getSource().getType();
+        filePath = (fileType.equals("url")) ? local.getSource().getUrl() : local.getSource().getPath();
+        fileName = fileService.getFileName(fileType, filePath);
+        isHeader = local.isHeader();
+
+        try {
+
+            // url의 파일을 로컬에 복사
+            if (fileType.equals("url")) {
+                filePath = fileService.storeUrlFile(filePath);
+            }
+
+            // 헤더 새로 쓰기
+            if (!isHeader) {
+                filePath = fileService.writeHeader(fileName, filePath);
+            }
+
+            header = fileService.getHeader(filePath);
+            System.out.println("filePath = " + filePath);
+            System.out.println("header = " + header);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        requestColumnAndType = new HashMap<>();
-        requestColumnSet = new HashSet<>();
+        profiles = local.getProfiles();
+        if (profiles != null) {
+            if (profiles.getTypes() != null) {
+                profileTypes = profiles.getTypes();
+            }
+            if (profiles.getDependencied_analysis() != null) {
+                dependencyAnalyses = profiles.getDependencied_analysis();
+            }
+        }
+
         key_analysis_results = new ArrayList<>();
         key_analysis = false;
 
@@ -277,89 +290,33 @@ public class ProfileService {
         cntDetactType = 0;
         totalDetact = 0;
 
-        // 운영체제별로 targetfiles 다르게 설정
-        String os = System.getProperty("os.name").toLowerCase();
+        /* DataStoreService 생성 */
+        dataStoreService.createLocalDataStore(filePath);
 
-        if (os.contains("win")) {
-            targetFolderPath = "C://Temp/targetfiles/";
-            System.out.println("targetFolderPath = " + targetFolderPath);
-        } else if (os.contains("linux")) {
-            targetFolderPath = "~/tmp";
+        /* profileTableResult 설정 */
+        profileTableResult =
+                ProfileTableResult.builder()
+                        .dataset_name(fileName)
+                        .dataset_type("csv")
+                        .dataset_size(fileService.getFileLength(filePath))
+                        .dataset_column_cnt(header.size())
+                        .single_column_results(new ArrayList<>())
+                        .build();
+
+        /* profiles result */
+        try {
+            profileTableResult = profileLocalColumns(filePath, header);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        if (local.getSource().getType().equals("path")) {
-            String fileName = getFileName(local.getSource().getType(), local.getSource().getPath());
-            String path = local.getSource().getPath();
-            headerExist = local.isHeader();
-            try {
-                // header는 처음에 한번만 구하고, ProfileService 객체에 필드로 정의.
-                header = getHeader(path, local.isHeader(), fileName);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-//                throw new CustomException(INTERNAL_ERROR);
-            }
-            try {
-                profileTableResult = profileLocalColumns("path", path, header, local.isHeader());
-            } catch (Exception e) {
-                e.printStackTrace();
-//                if (profileTypes != null){
-//                    throw new CustomException(BAD_JSON_REQUEST);
-//                }
-            }
-            System.out.println("파일 크기 : "+profileTableResult.getDataset_size());
-            System.out.println("타입 판단 제한 개수 : "+cntDetactType);
-            System.out.println("설정한 타입구분시간 : "+detactingtime);
-            System.out.println("실제 타입구분시간 : "+t);
-            System.out.println("총 타입판단개수 : "+totalDetact);
-            System.out.println("총 데이터 수 : "+profileTableResult.getDataset_column_cnt()*profileTableResult.getDataset_row_cnt());
-            System.out.println("데이터당 걸린 시간 : "+(double)t/(double)totalDetact);
-
-        } else if (local.getSource().getType().equals("url")) {
-            String fileName = getFileName(local.getSource().getType(), local.getSource().getUrl());
-            String url = local.getSource().getUrl();
-            try {
-                dataStoreService.storeUrlFile(url, local.isHeader()); // url의 파일을 로컬에 복사
-                URL file = new URL(url);
-                BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(file.openStream()));
-
-                // header는 처음에 한번만 구하고, ProfileService 객체에 필드로 정의.
-                if (local.isHeader()) {
-                    header = Arrays.asList(reader.readLine().split(","));
-                }
-                else {
-                    int recordsCount = Arrays.asList(reader.readLine().split(",")).size();
-                    header = new ArrayList<>();
-                    for (int i = 1; i < recordsCount + 1; i++) {
-                        header.add(fileName + "_" + i);
-                    }
-                    System.out.println("!!!!!" + header);
-                }
-
-                profileTableResult = profileLocalColumns("url", url, header, local.isHeader());
-
-                reader.close();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-//                if (profileTypes != null){
-//                    throw new CustomException(BAD_JSON_REQUEST);
-//                } else{
-//                    System.out.println("profileLocalCSV() returned: " + profileTableResult);
-//                    throw new CustomException(FILE_NOT_FOUND);
-//                }
-            }
-
-            System.out.println("파일 크기 : "+profileTableResult.getDataset_size());
-            System.out.println("타입 판단 제한 개수 : "+cntDetactType);
-            System.out.println("설정한 타입구분시간 : "+detactingtime);
-            System.out.println("실제 타입구분시간 : "+t);
-            System.out.println("총 타입판단개수 : "+totalDetact);
-            System.out.println("데이터당 걸린 시간 : "+(double)t/(double)totalDetact);
-        } else {
-
-        }
+        System.out.println("파일 크기 : " + profileTableResult.getDataset_size());
+        System.out.println("타입 판단 제한 개수 : " + cntDetactType);
+        System.out.println("설정한 타입구분시간 : " + detactingtime);
+        System.out.println("실제 타입구분시간 : " + t);
+        System.out.println("총 타입판단개수 : " + totalDetact);
+        System.out.println("총 데이터 수 : " + profileTableResult.getDataset_column_cnt() * profileTableResult.getDataset_row_cnt());
+        System.out.println("데이터당 걸린 시간 : " + (double) t / (double) totalDetact);
 
         /* dependency analysis result */
         if (dependencyAnalyses != null) {
@@ -374,108 +331,77 @@ public class ProfileService {
             });
             profileTableResult.setDependency_analysis_results(dependencyAnalysisResults);
         }
+
         return profileTableResult;
+
     }
 
-    public ProfileTableResult profileLocalColumns(String type, String path, List<String> columnNames,
-            Boolean isHeader) {
-//        profileTableResult = new ProfileTableResult();
-        System.out.println(path);
+    /**
+     * 컬럼별 프로파일링 수행
+     */
+    public ProfileTableResult profileLocalColumns(String path, List<String> columnNames) {
 
-        String filename = getFileName(type, path);
-        System.out.println("filename:" + filename);
+        System.out.println("ProfileService.profileLocalColumns");
 
-        //CsvDatastore
-        filePath = path; // 헤더가 있으면 original path
-        if (type.equals("url") || !isHeader) { // url이거나, 헤더가 없으면 targetfiles~
-            filePath = targetFolderPath + filename + ".csv";
-        }
-        //TODO: fileName 파라미터 추가
-        dataStoreService.createLocalDataStore(filePath);
-
-        profileTableResult.setDataset_name(filename);
-        profileTableResult.setDataset_type("csv");
-
-        File file = new File(path);
-        profileTableResult.setDataset_size((int) file.length());
-        file = null;
-
-        profileTableResult.setDataset_column_cnt(columnNames.size());
-
-
-        /* 컬럼별 프로파일  */
-        if (profileTypes != null) { // profiles가 있으면 칼럼 타입 판단 X
+        // profileTypes가 있으면 requestColumns 생성
+        requestColumns = new HashMap<>();
+        if (profileTypes != null) {
+            /**
+             *  profileTypes 예시
+             *  key: "basic"
+             *  valueList: : [1, 2, 3, 4, 5, 6]
+             */
             profileTypes.forEach((key, valueList) -> {
                 valueList.forEach(value -> {
-                    if (headerExist) { // "header": true
-                        if (value.getClass().getName().equals("java.lang.String")) {
-                            for (String columnName : columnNames) {
-                                if (Objects.equals(String.valueOf(value), columnName)) {
-                                    value = columnNames.indexOf(String.valueOf(value)) + 1;
-                                }
-                            }
-                        } else {
-                            throw new CustomException(BAD_JSON_REQUEST);
-                        }
-                    } else { // "header": false
-                        if (!value.getClass().getName().equals("java.lang.Integer")) {
-                            throw new CustomException(BAD_JSON_REQUEST);
-                        }
-                    }
-                    List<String> keyList;
-                    if (requestColumnAndType.containsKey(value)) {
-                        keyList = requestColumnAndType.get(value);
-                    } else {
-                        keyList = new ArrayList<>();
+                    if (value.getClass().getName().equals("java.lang.String")) {
+                        value = columnNames.indexOf((String) value);
                     }
 
+                    List<String> keyList;
+                    keyList = (requestColumns.get(value) == null) ? new ArrayList<>()
+                                      : requestColumns.get(value);
                     keyList.add(key);
-                    requestColumnAndType.put(value, keyList);
-                    requestColumnSet.add(value);
+                    requestColumns.put(value, keyList);
                 });
             });
 
-            System.out.println("requestColumnAndType= "
-                                       + requestColumnAndType); // {1=[basic, number], 2=[basic, string]}
-            System.out.println("requestColumnSet= " + requestColumnSet); // [1, 2]
+            System.out.println("requestColumns = " + requestColumns);
 
-            for (String columnName : columnNames) {
-                if (columnName.isEmpty()) continue;
+        }
 
-                int index = columnNames.indexOf(columnName) + 1;
-                if (requestColumnSet.contains(index)) {
-                    profileColumnResult = new ProfileColumnResult();
-                    profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
-                    profileColumnResult.setColumn_name(columnName);
+        for (String columnName : columnNames) {
 
-                    List<String> typeList = requestColumnAndType.get(index);
-                    String valueType = "string";
-                    for (String x : typeList) {
-                        if (x != "basic") {
-                            valueType = x;
-                        }
-                    }
-                    profileColumnResult.setColumn_type(valueType);
-
-                    this.profileSingleColumn(filename, columnName);
-                    profileTableResult.getSingle_column_results().add(profileColumnResult);
-                }
+            if (columnName.isEmpty()) {
+                continue;
             }
-        } else { // profiles가 없으면 칼럼 타입 판단 O
-            for (String columnName : columnNames) {
-                if (columnName.isEmpty()) continue;
 
-                profileColumnResult = new ProfileColumnResult();
-                profileColumnResult.setColumn_id(columnNames.indexOf(columnName) + 1);
-                profileColumnResult.setColumn_name(columnName);
+            String valueType = "string";
+            int index = columnNames.indexOf(columnName) + 1;
+
+            if (profileTypes != null) {
+                if (requestColumns.get(index) == null) {
+                    continue;
+                }
+                valueType = requestColumns.get(index).stream()
+                        .filter(s -> !s.equals("basic"))
+                        .findFirst()
+                        .orElse("string");
+            }
+            else {
                 try {
-                    profileColumnResult.setColumn_type(typeDetection(path, columnName));
+                    valueType = typeDetection(path, columnName); // 컬럼 타입 판단
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                this.profileSingleColumn(filename, columnName);
-                profileTableResult.getSingle_column_results().add(profileColumnResult);
             }
+            profileColumnResult = new ProfileColumnResult();
+            profileColumnResult.setColumn_id(index);
+            profileColumnResult.setColumn_name(columnName);
+            profileColumnResult.setColumn_type(valueType);
+
+            profileSingleColumn(fileName, columnName);
+            profileTableResult.getSingle_column_results().add(profileColumnResult);
+
         }
         return profileTableResult;
     }
@@ -487,16 +413,16 @@ public class ProfileService {
      * @param columnName 타겟 테이블의 1개 컬럼
      */
     private void profileSingleColumn(String tableName, String columnName) {
+        System.out.println("ProfileService.profileSingleColumn");
 
         String inputColumnName = tableName + "." + columnName;
-        System.out.println("inputColumnName : " + inputColumnName);
         String type = profileColumnResult.getColumn_type();
 
-        //TODO: dataStoreService 객체 생성해서 사용하기
+        /* DataStoreService 설정 */
         dataStoreService.setDataStore("CSVDS");
-        //TODO: dataStoreService 객체 생성해서 사용하기
         AnalysisJobBuilder builder = dataStoreService.getBuilder();
         builder.addSourceColumns(columnName);
+
         InputColumn<?> targetInputColumn = builder.getSourceColumnByName(columnName);
         InputColumn<?> dateTargetInputColumn = null;
 
@@ -565,7 +491,7 @@ public class ProfileService {
 
         // job build run & result
         AnalysisJob analysisJob = builder.toAnalysisJob();
-        //TODO: dataStoreService 객체 생성해서 사용하기
+        /* DataStoreService 설정 */
         AnalysisRunner runner = new AnalysisRunnerImpl(dataStoreService.getConfiguration());
         AnalysisResultFuture resultFuture = runner.run(analysisJob);
 
@@ -836,9 +762,10 @@ public class ProfileService {
                         .setUnique_cnt(((ValueDistributionAnalyzerResult) result).getUniqueCount());
                 basicProfile.setDistinctness((double) distinct_cnt / row_cnt);
 
+                /* key analysis result */
                 /* 후보키 : 널값이 존재하지 않고  Distinct Count/Row Count 가 1인 경우*/
                 if (key_analysis) {
-                    if(basicProfile.getNull_cnt() == 0 && basicProfile.getDistinctness() == 1) {
+                    if (basicProfile.getNull_cnt() == 0 && basicProfile.getDistinctness() == 1) {
                         key_analysis_results.add(profileColumnResult.getColumn_id());
                     }
                 }
@@ -1088,7 +1015,7 @@ public class ProfileService {
         /* 컬럼별 프로파일  */
         if (profileTypes != null) {
             int index = header.indexOf(columnName) + 1;
-            List<String> typeList = requestColumnAndType.get(index);
+            List<String> typeList = requestColumns.get(index);
 
             if (typeList.contains("basic")) {
                 profileColumnResult.getProfiles().put("basic_profile", basicProfile);
@@ -1122,60 +1049,9 @@ public class ProfileService {
 
     }
 
-    public String getFileName(String type, String path) {
-        String[] split = null;
-        if (type.equals("path")) {
-            split = path.split("\\\\");
-        } else if (type.equals("url")) {
-            split = path.split("/");
-        }
-        return split[split.length - 1].split("\\.")[0];
-    }
-
-    public List<String> getHeader(String path, Boolean isHeader, String fileName)
-            throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader(path));
-        List<String> header = new ArrayList<>();
-
-        // 헤더가 있을 경우
-        if (isHeader) {
-            header = Arrays.asList(csvReader.readNext().clone());
-            csvReader.close();
-        } else { // 헤더가 없을 경우
-            csvReader = new CSVReader((new FileReader(path)));
-
-            // 컬럼 수에 따라 헤더 설정
-            int recordsCount = csvReader.readNext().length;
-            for (int i = 1; i < recordsCount + 1; i++) {
-                header.add(fileName + "_" + i);
-            }
-            csvReader.close();
-
-            csvReader = new CSVReader((new FileReader(path)));
-            List<Object> originData = new ArrayList<>();
-            String[] nextLine;
-            while ((nextLine = csvReader.readNext()) != null) {
-                originData.add(nextLine); // 원본 데이터 읽기
-            }
-
-            // 헤더가 없을 경우 targetfiles에 변형 파일 저장
-            boolean directoryCreated = new File(targetFolderPath).mkdir(); // 폴더 생성
-            String newFilePath = targetFolderPath + fileName + ".csv";
-            File newFile = new File(newFilePath);
-            CSVWriter csvWriter = new CSVWriter(new FileWriter(newFile));
-            csvWriter.writeNext(header.toArray(String[]::new)); // 헤더 작성
-
-            // 헤더 아랫줄부터 원본 데이터 쓰기
-            for (Object data : originData) {
-                csvWriter.writeNext((String[]) data);
-            }
-
-            csvWriter.close();
-        }
-
-        return header;
-    }
-
+    /**
+     * 함수적 종속(functiuonal dependency)을 검사
+     */
     public DependencyAnalysisResult dependencyAnalysis(DependencyAnalysis dependencyAnalysis)
             throws IOException {
 
@@ -1192,12 +1068,16 @@ public class ProfileService {
         /* column 은 인덱스 번호이거나 column 이름이므로 이를 구분 */
 
         // request : column name
-        if (dependencyAnalysis.getDeterminant().getClass().getName().equals("java.lang.String") && dependencyAnalysis.getDependency().getClass().getName().equals("java.lang.String")) {
+        if (dependencyAnalysis.getDeterminant().getClass().getName().equals("java.lang.String")
+                    && dependencyAnalysis.getDependency().getClass().getName()
+                .equals("java.lang.String")) {
             determinantIdx = header.indexOf((String) dependencyAnalysis.getDeterminant());
             dependencyIdx = header.indexOf((String) dependencyAnalysis.getDependency());
         }
         // request : column index
-        else if (dependencyAnalysis.getDeterminant().getClass().getName().equals("java.lang.Integer") && dependencyAnalysis.getDependency().getClass().getName().equals("java.lang.Integer")) {
+        else if (dependencyAnalysis.getDeterminant().getClass().getName()
+                .equals("java.lang.Integer") && dependencyAnalysis.getDependency().getClass()
+                .getName().equals("java.lang.Integer")) {
             determinantIdx = (int) dependencyAnalysis.getDeterminant() - 1;
             dependencyIdx = (int) dependencyAnalysis.getDependency() - 1;
         } else {
@@ -1235,4 +1115,7 @@ public class ProfileService {
         dependencyAnalysisResult.setInvalid_values(inValidValues);
         return dependencyAnalysisResult;
     }
+
+
+
 }
