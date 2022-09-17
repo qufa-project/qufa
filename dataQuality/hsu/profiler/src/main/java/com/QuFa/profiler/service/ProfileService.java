@@ -113,6 +113,9 @@ public class ProfileService {
     private long totalDetact = 0; // 총 판단하는 데이터 개수
     private int cntDetactType = 0; // row당 판단하는 최대 데이터 개수
     private int detactingtime = 10000; // 전체 타입 판단 시간 설정 (1000 -> 1초)
+    private boolean key_analysis; // 후보키를 찾을지 말지 판단
+
+    private ArrayList<Object> key_analysis_results; // 후보키 컬럼을 담는 배열
 
 
     String targetFolderPath;
@@ -261,6 +264,15 @@ public class ProfileService {
 
         requestColumnAndType = new HashMap<>();
         requestColumnSet = new HashSet<>();
+        key_analysis_results = new ArrayList<>();
+        key_analysis = false;
+
+        /* 후보키 요청이 왔는지 판단 */
+        assert profiles != null;
+        if (profiles.isKey_analysis()) {
+            key_analysis = true;
+        }
+
         t = 0;
         cntDetactType = 0;
         totalDetact = 0;
@@ -824,6 +836,13 @@ public class ProfileService {
                         .setUnique_cnt(((ValueDistributionAnalyzerResult) result).getUniqueCount());
                 basicProfile.setDistinctness((double) distinct_cnt / row_cnt);
 
+                /* 후보키 : 널값이 존재하지 않고  Distinct Count/Row Count 가 1인 경우*/
+                if (key_analysis) {
+                    if(basicProfile.getNull_cnt() == 0 && basicProfile.getDistinctness() == 1) {
+                        key_analysis_results.add(profileColumnResult.getColumn_id());
+                    }
+                }
+
                 Collection<ValueFrequency> vfList = ((ValueDistributionAnalyzerResult) result)
                         .getValueCounts();
                 for (ValueFrequency vf : vfList) {
@@ -1060,6 +1079,9 @@ public class ProfileService {
                 }
 
                 //basicProfile.setValue_distribution(vfModelList);
+            }
+            if (key_analysis) {
+                profileTableResult.setKey_analysis_results(key_analysis_results);
             }
         }
 
