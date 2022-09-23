@@ -30,12 +30,15 @@ public class FKDataStoreService {
             DatastoreCatalogImpl catalog = new DatastoreCatalogImpl(datastore);
 
             configuration = new DataCleanerConfigurationImpl(null, null, catalog, null);
+            dataStore = configuration.getDatastoreCatalog().getDatastore(name);
         } finally {
             System.gc();
         }
     }
 
     public Datastore getDataStore() {
+        System.out.println("FKDataStoreService.createLocalDataStore");
+        System.out.println("datastore = " + dataStore);
         return dataStore;
     }
 

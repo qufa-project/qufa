@@ -1,5 +1,10 @@
 package com.QuFa.profiler.model.request;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class FKAnalysis {
     private Object foreign_key;
     private String referenced_file;

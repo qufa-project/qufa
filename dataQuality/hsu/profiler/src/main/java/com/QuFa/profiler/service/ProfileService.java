@@ -7,10 +7,12 @@ import com.QuFa.profiler.config.ActiveProfileProperty;
 import com.QuFa.profiler.controller.exception.CustomException;
 import com.QuFa.profiler.model.Local;
 import com.QuFa.profiler.model.request.DependencyAnalysis;
+import com.QuFa.profiler.model.request.FKAnalysis;
 import com.QuFa.profiler.model.request.Profiles;
 import com.QuFa.profiler.model.response.BasicProfile;
 import com.QuFa.profiler.model.response.DateProfile;
 import com.QuFa.profiler.model.response.DependencyAnalysisResult;
+import com.QuFa.profiler.model.response.FKAnalysisResult;
 import com.QuFa.profiler.model.response.NumberProfile;
 import com.QuFa.profiler.model.response.ProfileColumnResult;
 import com.QuFa.profiler.model.response.ProfileTableResult;
@@ -48,6 +50,8 @@ import org.datacleaner.beans.NumberAnalyzer;
 import org.datacleaner.beans.NumberAnalyzerResult;
 import org.datacleaner.beans.StringAnalyzer;
 import org.datacleaner.beans.StringAnalyzerResult;
+import org.datacleaner.beans.referentialintegrity.ReferentialIntegrityAnalyzer;
+import org.datacleaner.beans.referentialintegrity.ReferentialIntegrityAnalyzerResult;
 import org.datacleaner.beans.valuedist.MonthDistributionAnalyzer;
 import org.datacleaner.beans.valuedist.ValueDistributionAnalyzer;
 import org.datacleaner.beans.valuedist.ValueDistributionAnalyzerResult;
@@ -86,12 +90,15 @@ public class ProfileService {
     private Map<Object, List<String>> requestColumns;
 
     private List<DependencyAnalysis> dependencyAnalyses = null;
-
     private ArrayList<Object> key_analysis_results; // 후보키 컬럼을 담는 배열
+    private ArrayList<Object> fk_analysis_results;
+    private List<FKAnalysis> fkAnalyses;
 
     @Autowired
     private final DataStoreService dataStoreService;
     private final FileService fileService = new FileService();
+
+    private AnalysisJobBuilder builder;
 
     private long t = 0;
     private long totalDetact = 0; // 총 판단하는 데이터 개수
@@ -243,7 +250,8 @@ public class ProfileService {
 
         /* 파일 정보 설정 */
         fileType = local.getSource().getType();
-        filePath = (fileType.equals("url")) ? local.getSource().getUrl() : local.getSource().getPath();
+        filePath =
+                (fileType.equals("url")) ? local.getSource().getUrl() : local.getSource().getPath();
         fileName = fileService.getFileName(fileType, filePath);
         isHeader = local.isHeader();
 
@@ -275,6 +283,18 @@ public class ProfileService {
             if (profiles.getDependencied_analysis() != null) {
                 dependencyAnalyses = profiles.getDependencied_analysis();
             }
+            if (profiles.getFk_analysis() != null) {
+                local.getProfiles().getFk_analysis().stream().map(fkAnalysis -> {
+                    String referencedFile = fkAnalysis.getReferenced_file().substring(0, 4);
+                    if ((referencedFile).equals("file")) {
+                        fkAnalysis.setReferenced_file(
+                                referencedFile.substring(8).replace('/', '\\'));
+                    }
+                    return fkAnalysis;
+                });
+                System.out.println(local.getProfiles().getFk_analysis());
+                fkAnalyses = profiles.getFk_analysis();
+            }
         }
 
         key_analysis_results = new ArrayList<>();
@@ -292,6 +312,8 @@ public class ProfileService {
 
         /* DataStoreService 생성 */
         dataStoreService.createLocalDataStore(filePath);
+        dataStoreService.setDataStore("CSVDS");
+        builder = dataStoreService.getBuilder();
 
         /* profileTableResult 설정 */
         profileTableResult =
@@ -315,7 +337,8 @@ public class ProfileService {
         System.out.println("설정한 타입구분시간 : " + detactingtime);
         System.out.println("실제 타입구분시간 : " + t);
         System.out.println("총 타입판단개수 : " + totalDetact);
-        System.out.println("총 데이터 수 : " + profileTableResult.getDataset_column_cnt() * profileTableResult.getDataset_row_cnt());
+        System.out.println("총 데이터 수 : " + profileTableResult.getDataset_column_cnt()
+                                                  * profileTableResult.getDataset_row_cnt());
         System.out.println("데이터당 걸린 시간 : " + (double) t / (double) totalDetact);
 
         /* dependency analysis result */
@@ -330,6 +353,19 @@ public class ProfileService {
                 }
             });
             profileTableResult.setDependency_analysis_results(dependencyAnalysisResults);
+        }
+
+        /* referential integrity analysis result */
+        if (fkAnalyses != null) {
+            List<FKAnalysisResult> referentialIntegrityAnalyzerResults = new ArrayList<>();
+            for (FKAnalysis fkAnalysis : fkAnalyses) {
+                referentialIntegrityAnalyzerResults.add(referentialIntegrity(fkAnalysis));
+
+            }
+            System.out.println(
+                    "referentialIntegrityAnalyzerResults = " + referentialIntegrityAnalyzerResults);
+            System.out.println("referentialIntegrityAnalyzerResults = " + referentialIntegrityAnalyzerResults.size());
+            profileTableResult.setFk_analysis_results(referentialIntegrityAnalyzerResults);
         }
 
         return profileTableResult;
@@ -386,8 +422,7 @@ public class ProfileService {
                         .filter(s -> !s.equals("basic"))
                         .findFirst()
                         .orElse("string");
-            }
-            else {
+            } else {
                 try {
                     valueType = typeDetection(path, columnName); // 컬럼 타입 판단
                 } catch (IOException e) {
@@ -418,9 +453,6 @@ public class ProfileService {
         String inputColumnName = tableName + "." + columnName;
         String type = profileColumnResult.getColumn_type();
 
-        /* DataStoreService 설정 */
-        dataStoreService.setDataStore("CSVDS");
-        AnalysisJobBuilder builder = dataStoreService.getBuilder();
         builder.addSourceColumns(columnName);
 
         InputColumn<?> targetInputColumn = builder.getSourceColumnByName(columnName);
@@ -1116,6 +1148,126 @@ public class ProfileService {
         return dependencyAnalysisResult;
     }
 
+    /**
+     * 현재 테이블의 컬럼과 타 테이블의 컬럼간 참조무결성의 유효성 여부를 검사
+     */
+    private FKAnalysisResult referentialIntegrity(FKAnalysis fkAnalysis) {
+        //TODO: 상위 폴더 이름 GET
+        //TODO: 외래키 컬럼번호, 컬럼명
+        FKAnalysisResult fkAnalysisResult = null;
+        Boolean is_valid = Boolean.FALSE;
+        List<String> invalid_values = new ArrayList<>();
 
+        List<String> refFileHeader;
+        String foreignKey = fkAnalysis.getForeign_key().toString(); // 외래키 후보 컬럼
+        String refColumn = fkAnalysis.getReferenced_column().toString(); // 참조되는 컬럼명
+        String refFilePath = fkAnalysis.getReferenced_file(); // 참조되는 원격 파일 경로에 대한 URL
+        String refFileType = refFilePath.substring(0, 4);
+
+        // 파일 경로 재설정
+        if (refFileType.equals("file")) {
+            refFileType = "path";
+            refFilePath = refFilePath.substring(8).replace('/', '\\');
+        } else {
+            refFileType = "url";
+        }
+        try {
+            // url의 파일을 로컬에 복사
+            if (refFileType.equals("url")) {
+                refFilePath = fileService.storeUrlFile(refFilePath);
+            }
+
+            refFileHeader = fileService.getHeader(refFilePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String refFileName = fileService.getFileName(refFileType, refFilePath) + ".csv";
+        System.out.println("referencedFileName = " + refFileName);
+        System.out.println("refFilePath = " + refFilePath);
+
+        // 기존 파일(프로파일링 대상) builder 재시작
+        builder.reset();
+        // builder에 프로파일링 할 외래키 후보 컬럼 add
+        builder.addSourceColumns(foreignKey);
+        InputColumn<?> fkInputColumn = builder.getSourceColumnByName(foreignKey);
+
+        // 참조되는 원격 파일의 DataStore 생성
+        FKDataStoreService refDataStoreService = new FKDataStoreService();
+        refDataStoreService.createLocalDataStore(refFileName, refFilePath);
+
+        // Schema name : 상위 폴더 이름
+        String schemaName = refFilePath.split("\\\\")[0];
+        System.out.println("Schema name = " + schemaName);
+
+        // builder에 Analyzer add
+        AnalyzerComponentBuilder<ReferentialIntegrityAnalyzer> referentialIntegrityAnalyzer = builder.addAnalyzer(
+                ReferentialIntegrityAnalyzer.class);
+        referentialIntegrityAnalyzer.addInputColumn(fkInputColumn);
+        referentialIntegrityAnalyzer.setConfiguredProperty("Datastore",
+                refDataStoreService.getDataStore());
+        referentialIntegrityAnalyzer.setConfiguredProperty("Schema name",
+                schemaName);
+        referentialIntegrityAnalyzer.setConfiguredProperty("Table name", refFileName);
+        referentialIntegrityAnalyzer.setConfiguredProperty("Column name", refColumn);
+
+        // Job Builder로 프로파일링을 수행
+        AnalysisJob analysisJob = builder.toAnalysisJob();
+        AnalysisRunner runner = new AnalysisRunnerImpl(dataStoreService.getConfiguration());
+        AnalysisResultFuture resultFuture = runner.run(analysisJob);
+
+        resultFuture.await();
+
+        System.out.println("==========run===========");
+        // 에러 발생 혹은 취소시,
+        if (resultFuture.isCancelled() || resultFuture.isErrornous()) {
+            System.out.println("referentialIntegrityAnalyzer error !");
+            List<Throwable> errors = resultFuture.getErrors();
+            System.out.println(errors.toString());
+
+            resultFuture.cancel();
+            resultFuture = null;
+
+            //TODO: 에러처리 필요
+        } else {
+            // 성공시 결과 저장.
+            AnalysisResult analysisResult = resultFuture;
+            List<AnalyzerResult> results = analysisResult.getResults();
+
+            for (AnalyzerResult result : results) {
+                if (result instanceof ReferentialIntegrityAnalyzerResult) {
+                    String string = Arrays.toString(
+                            ((ReferentialIntegrityAnalyzerResult) result).getRows());
+                    System.out.println("ReferentialIntegrityAnalyzerResult = " + string);
+                    if (string == "[]") {
+                        is_valid = Boolean.TRUE;
+                    } else {
+                        String[] split1 = string.split(",");
+                        for (String s : split1) {
+                            String temp = s.split("MetaModelInputRow\\[Row\\[values=\\[")[1];
+                            invalid_values.add(temp.split("]]]")[0]);
+                        }
+                    }
+                }
+            }
+
+            System.out.println(
+                    " ============ referentialIntegrityAnalyzer  RESULTS ============= ");
+
+            System.out.println("====== extract Results ========");
+
+        }
+        fkAnalysisResult = FKAnalysisResult.builder()
+                .foreign_key(foreignKey)
+                .referenced_table(refFileName)
+                .referenced_column(refColumn)
+                .is_valid(is_valid)
+                .invalid_values(invalid_values)
+                .build();
+
+        System.out.println(fkAnalysisResult.toString());
+
+        return fkAnalysisResult;
+    }
 
 }
