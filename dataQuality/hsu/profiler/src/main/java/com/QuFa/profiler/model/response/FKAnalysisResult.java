@@ -1,18 +1,24 @@
 package com.QuFa.profiler.model.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.util.List;
-import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
-@Builder
+@Getter
+@Setter
 public class FKAnalysisResult {
-    String foreign_key;
+
+    Object foreign_key;
     String referenced_table;
     String referenced_column;
     Boolean is_valid;
+    @JsonInclude(Include.NON_EMPTY)
     List<String> invalid_values;
 
     @Override
-    public String toString(){
+    public String toString() {
         System.out.println("<FKAnalysisResult>");
         System.out.println("foreign_key = " + foreign_key);
         System.out.println("referenced_table = " + referenced_table);
