@@ -359,12 +359,16 @@ public class ProfileService {
         if (fkAnalyses != null) {
             List<FKAnalysisResult> referentialIntegrityAnalyzerResults = new ArrayList<>();
             for (FKAnalysis fkAnalysis : fkAnalyses) {
-                referentialIntegrityAnalyzerResults.add(referentialIntegrity(fkAnalysis));
-
+                try {
+                    referentialIntegrityAnalyzerResults.add(referentialIntegrity(fkAnalysis));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             System.out.println(
                     "referentialIntegrityAnalyzerResults = " + referentialIntegrityAnalyzerResults);
-            System.out.println("referentialIntegrityAnalyzerResults = " + referentialIntegrityAnalyzerResults.size());
+            System.out.println("referentialIntegrityAnalyzerResults = "
+                                       + referentialIntegrityAnalyzerResults.size());
             profileTableResult.setFk_analysis_results(referentialIntegrityAnalyzerResults);
         }
 
@@ -1151,18 +1155,18 @@ public class ProfileService {
     /**
      * 현재 테이블의 컬럼과 타 테이블의 컬럼간 참조무결성의 유효성 여부를 검사
      */
-    private FKAnalysisResult referentialIntegrity(FKAnalysis fkAnalysis) {
+    private FKAnalysisResult referentialIntegrity(FKAnalysis fkAnalysis) throws IOException {
         //TODO: 상위 폴더 이름 GET
-        //TODO: 외래키 컬럼번호, 컬럼명
-        FKAnalysisResult fkAnalysisResult = null;
+
         Boolean is_valid = Boolean.FALSE;
         List<String> invalid_values = new ArrayList<>();
 
-        List<String> refFileHeader;
-        String foreignKey = fkAnalysis.getForeign_key().toString(); // 외래키 후보 컬럼
-        String refColumn = fkAnalysis.getReferenced_column().toString(); // 참조되는 컬럼명
         String refFilePath = fkAnalysis.getReferenced_file(); // 참조되는 원격 파일 경로에 대한 URL
-        String refFileType = refFilePath.substring(0, 4);
+        String refFileType = refFilePath.substring(0, 4); // 참조되는 원격 파일 type(url | path)
+        String foreignKey; // 외래키 후보 컬럼
+        String refColumn; // 참조되는 컬럼명
+        String refFileName; // 참조되는 원격 파일 이름
+        List<String> refFileHeader;
 
         // 파일 경로 재설정
         if (refFileType.equals("file")) {
@@ -1177,14 +1181,39 @@ public class ProfileService {
                 refFilePath = fileService.storeUrlFile(refFilePath);
             }
 
-            refFileHeader = fileService.getHeader(refFilePath);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        String refFileName = fileService.getFileName(refFileType, refFilePath) + ".csv";
-        System.out.println("referencedFileName = " + refFileName);
-        System.out.println("refFilePath = " + refFilePath);
+        refFileHeader = fileService.getHeader(refFilePath);
+        refFileName = fileService.getFileName(refFileType, refFilePath) + ".csv";
+
+        FKAnalysisResult fkAnalysisResult = new FKAnalysisResult();
+        fkAnalysisResult.setForeign_key(fkAnalysis.getForeign_key());
+
+        /**
+         * foreignKey
+         */
+        // 컬럼번호로 올 때
+        if (fkAnalysis.getForeign_key().getClass().getName().equals("java.lang.Integer")) {
+            foreignKey = header.get((int) fkAnalysis.getForeign_key() - 1);
+        }
+        // 컬럼명으로 올 때
+        else {
+            foreignKey = fkAnalysis.getForeign_key().toString();
+        }
+
+        /**
+         * refColumn
+         */
+        // 컬럼번호로 올 때
+        if (fkAnalysis.getReferenced_column().getClass().getName().equals("java.lang.Integer")) {
+            refColumn = refFileHeader.get((int) fkAnalysis.getReferenced_column() - 1);
+        }
+        // 컬럼명으로 올 때
+        else {
+            refColumn = fkAnalysis.getReferenced_column().toString();
+        }
 
         // 기존 파일(프로파일링 대상) builder 재시작
         builder.reset();
@@ -1228,8 +1257,9 @@ public class ProfileService {
             resultFuture.cancel();
             resultFuture = null;
 
-            //TODO: 에러처리 필요
         } else {
+            System.out.println("referentialIntegrityAnalyzer success !");
+
             // 성공시 결과 저장.
             AnalysisResult analysisResult = resultFuture;
             List<AnalyzerResult> results = analysisResult.getResults();
@@ -1238,8 +1268,7 @@ public class ProfileService {
                 if (result instanceof ReferentialIntegrityAnalyzerResult) {
                     String string = Arrays.toString(
                             ((ReferentialIntegrityAnalyzerResult) result).getRows());
-                    System.out.println("ReferentialIntegrityAnalyzerResult = " + string);
-                    if (string == "[]") {
+                    if (string.equals("[]")) {
                         is_valid = Boolean.TRUE;
                     } else {
                         String[] split1 = string.split(",");
@@ -1250,22 +1279,15 @@ public class ProfileService {
                     }
                 }
             }
-
-            System.out.println(
-                    " ============ referentialIntegrityAnalyzer  RESULTS ============= ");
-
-            System.out.println("====== extract Results ========");
-
         }
-        fkAnalysisResult = FKAnalysisResult.builder()
-                .foreign_key(foreignKey)
-                .referenced_table(refFileName)
-                .referenced_column(refColumn)
-                .is_valid(is_valid)
-                .invalid_values(invalid_values)
-                .build();
 
-        System.out.println(fkAnalysisResult.toString());
+        // 응답 데이터에 결과 입력
+        fkAnalysisResult.setReferenced_table(refFileName);
+        fkAnalysisResult.setReferenced_column(refColumn);
+        fkAnalysisResult.setIs_valid(is_valid);
+        if (!is_valid) {
+            fkAnalysisResult.setInvalid_values(invalid_values);
+        }
 
         return fkAnalysisResult;
     }
