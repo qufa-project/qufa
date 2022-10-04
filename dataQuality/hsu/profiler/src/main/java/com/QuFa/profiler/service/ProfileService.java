@@ -1226,7 +1226,19 @@ public class ProfileService {
         refDataStoreService.createLocalDataStore(refFileName, refFilePath);
 
         // Schema name : 상위 폴더 이름
-        String schemaName = refFilePath.split("\\\\")[0];
+        String schemaName = "";
+        String[] array = refFilePath.split("\\\\");
+        if (refFileType.equals("path")) {
+            if (array.length == 2) {
+                schemaName = array[0].split(":")[0];
+            }
+            else {
+                schemaName = array[array.length - 2];
+            }
+        }
+        else {
+            schemaName = array[array.length - 1];
+        }
         System.out.println("Schema name = " + schemaName);
 
         // builder에 Analyzer add
