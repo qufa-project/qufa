@@ -779,12 +779,14 @@ public class ProfileService {
         stringProfile.setBlank_cnt(0);
 
         for (AnalyzerResult result : results) {
+            int nullCnt = 0;
             //System.out.println(result.getClass());
             if (result instanceof ValueDistributionAnalyzerResult) {
-                if (((ValueDistributionAnalyzerResult) result).getNullCount() > 0) {
-                    basicProfile
-                            .setNull_cnt(((ValueDistributionAnalyzerResult) result).getNullCount());
-                }
+                /* 데이터 클리너가 csv파일의 ""을 NULL값으로 판별하지 못함 */
+//                if (((ValueDistributionAnalyzerResult) result).getNullCount() > 0) {
+//                    basicProfile
+//                            .setNull_cnt(((ValueDistributionAnalyzerResult) result).getNullCount());
+//                }
 
                 int distinct_cnt = ((ValueDistributionAnalyzerResult) result).getDistinctCount();
                 int row_cnt = ((ValueDistributionAnalyzerResult) result).getTotalCount();
@@ -809,10 +811,23 @@ public class ProfileService {
                 Collection<ValueFrequency> vfList = ((ValueDistributionAnalyzerResult) result)
                         .getValueCounts();
                 for (ValueFrequency vf : vfList) {
+                    /* NULL 값 처리 */
+                    if (vf.getValue() != null) {
+                        if (vf.getValue().isBlank()) {
+                            nullCnt += vf.getCount();
+                        }
+                    }
+
+
                     if (vf.getChildren() != null) {
                         Collection<ValueFrequency> vfChildren = vf.getChildren();
                         for (ValueFrequency vfChild : vfChildren) {
                             if (vfChild.getValue() != null) {
+                                /* NULL 값 처리 */
+                                if (vfChild.getValue().isBlank()) {
+                                    nullCnt += vfChild.getCount();
+                                }
+
                                 vfModelList.put(vfChild.getValue(), vfChild.getCount());
                             }
                         }
@@ -821,6 +836,12 @@ public class ProfileService {
                             vfModelList.put(vf.getValue(), vf.getCount());
                         }
                     }
+                }
+
+                /* NULL값 처리 */
+                if (nullCnt > 0) {
+                    basicProfile
+                           .setNull_cnt(nullCnt);
                 }
 
                 vfModelList = valueSortByDesc(vfModelList);
