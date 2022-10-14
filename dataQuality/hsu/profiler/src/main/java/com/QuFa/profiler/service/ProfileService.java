@@ -800,13 +800,6 @@ public class ProfileService {
                         .setUnique_cnt(((ValueDistributionAnalyzerResult) result).getUniqueCount());
                 basicProfile.setDistinctness((double) distinct_cnt / row_cnt);
 
-                /* key analysis result */
-                /* 후보키 : 널값이 존재하지 않고  Distinct Count/Row Count 가 1인 경우*/
-                if (key_analysis) {
-                    if (basicProfile.getNull_cnt() == 0 && basicProfile.getDistinctness() == 1) {
-                        key_analysis_results.add(profileColumnResult.getColumn_id());
-                    }
-                }
 
                 Collection<ValueFrequency> vfList = ((ValueDistributionAnalyzerResult) result)
                         .getValueCounts();
@@ -842,6 +835,14 @@ public class ProfileService {
                 if (nullCnt > 0) {
                     basicProfile
                            .setNull_cnt(nullCnt);
+                }
+
+                /* key analysis result */
+                /* 후보키 : 널값이 존재하지 않고  Distinct Count/Row Count 가 1인 경우*/
+                if (key_analysis) {
+                    if (basicProfile.getNull_cnt() == 0 && basicProfile.getDistinctness() == 1) {
+                        key_analysis_results.add(profileColumnResult.getColumn_id());
+                    }
                 }
 
                 vfModelList = valueSortByDesc(vfModelList);
