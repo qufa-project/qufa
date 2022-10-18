@@ -254,7 +254,8 @@ public class ProfileService {
                 (fileType.equals("url")) ? local.getSource().getUrl() : local.getSource().getPath();
         fileName = fileService.getFileName(fileType, filePath);
         isHeader = local.isHeader();
-
+        System.out.println("filePath!!!! = " + filePath);
+        System.out.println("fileName = " + fileName);
         try {
 
             // url의 파일을 로컬에 복사
@@ -1241,20 +1242,29 @@ public class ProfileService {
         // 참조되는 원격 파일의 DataStore 생성
         FKDataStoreService refDataStoreService = new FKDataStoreService();
         refDataStoreService.createLocalDataStore(refFileName, refFilePath);
-
+        System.out.println("refFilePath!!! = " + refFilePath);
         // Schema name : 상위 폴더 이름
         String schemaName = "";
         String[] array = refFilePath.split("\\\\");
-        if (refFileType.equals("path")) {
-            if (array.length == 2) {
-                schemaName = array[0].split(":")[0];
-            }
-            else {
+        String os = System.getProperty("os.name").toLowerCase();
+        System.out.println("os!!! = " + os);
+        // windows 이면
+        if (os.contains("win")) {
+            if (refFileType.equals("path")) {
                 schemaName = array[array.length - 2];
             }
+            else {
+                schemaName = "targetfiles";
+            }
         }
+        // linux 이면
         else {
-            schemaName = array[array.length - 1];
+            if (refFileType.equals("path")) {
+                schemaName = array[array.length - 2];
+            }
+            else {
+                schemaName = "tmp";
+            }
         }
         System.out.println("Schema name = " + schemaName);
 

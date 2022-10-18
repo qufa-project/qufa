@@ -13,6 +13,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+
 import lombok.Getter;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Component;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Component;
 public class FileService {
 
     private String targetFolderPath;
+    private String osType;
 
     public FileService() {
         String os = System.getProperty("os.name").toLowerCase();
@@ -29,8 +32,10 @@ public class FileService {
         // 운영체제별로 targetfiles 다르게 설정
         if (os.contains("win")) {
             targetFolderPath = "C://Temp/targetfiles/";
-        } else if (os.contains("linux")) {
-            targetFolderPath = "~/tmp";
+            osType = "win";
+        } else {
+            targetFolderPath = "~/tmp/";
+            osType = "linux";
         }
 
         System.out.println("targetFolderPath = " + targetFolderPath);
@@ -38,11 +43,17 @@ public class FileService {
 
     public String getFileName(String type, String path) {
         String[] split = null;
-        if (type.equals("path")) {
-            split = path.split("\\\\");
-        } else if (type.equals("url")) {
+        if (Objects.equals(osType, "win")) {
+            if (type.equals("path")) {
+                split = path.split("\\\\");
+            } else if (type.equals("url")) {
+                split = path.split("/");
+            }
+        }
+        else {
             split = path.split("/");
         }
+
         return split[split.length - 1].split("\\.")[0];
     }
 

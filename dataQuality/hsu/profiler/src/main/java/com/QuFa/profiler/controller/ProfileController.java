@@ -40,7 +40,11 @@ public class ProfileController {
         String type = url.substring(0, 4);
         if (type.equals("file")) {
             local.getSource().setType("path");
-            local.getSource().setPath( url.substring(8).replace('/','\\'));
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("win"))
+                local.getSource().setPath( url.substring(8).replace('/','\\'));
+            else
+                local.getSource().setPath( url.substring(7));
         } else {
             local.getSource().setType("url");
         }
