@@ -14,25 +14,25 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class ExceptionController {
 
-//    @ExceptionHandler(value = {FileNotFoundException.class})
-//    public ResponseEntity<ErrorResponse> handleFileNotFoundException() {
-//        log.error("handleFileNotFoundException throw FileNotFoundException : {}",
-//                FILE_NOT_FOUND);
-//        return ErrorResponse.toResponseEntity(FILE_NOT_FOUND);
-//    }
-//
-//    @ExceptionHandler(value = {RuntimeException.class, IOException.class})
-//    public ResponseEntity<ErrorResponse> handleRuntimeException() {
-//        log.error("handleRuntimeException throw RuntimeException : {}",
-//                FILE_NOT_FOUND);
-//        return ErrorResponse.toResponseEntity(INTERNAL_ERROR);
-//    }
+    @ExceptionHandler(value = {FileNotFoundException.class})
+    public ResponseEntity<ErrorResponse> handleFileNotFoundException() {
+        log.error("handleFileNotFoundException throw FileNotFoundException : {}",
+                FILE_NOT_FOUND);
+        return ErrorResponse.toResponseEntity(FILE_NOT_FOUND);
+    }
+
+    @ExceptionHandler(value = {RuntimeException.class, IOException.class})
+    public ResponseEntity<ErrorResponse> handleRuntimeException() {
+        log.error("handleRuntimeException throw RuntimeException : {}",
+                INTERNAL_ERROR);
+        return ErrorResponse.toResponseEntity(INTERNAL_ERROR);
+    }
 
 
-//    @ExceptionHandler(value = CustomException.class)
-//    public ResponseEntity<ErrorResponse> handleCustomException(CustomException e) {
-//        log.error("handleCustomException throw CustomException : {}", e.getErrorCode());
-//        return ErrorResponse.toResponseEntity(e.getErrorCode());
-//    }
+    @ExceptionHandler(value = CustomException.class)
+    public ResponseEntity<ErrorResponse> handleCustomException(CustomException e) {
+        log.error("handleCustomException throw CustomException : {}", e.getErrorCode());
+        return ErrorResponse.toResponseEntity(e.getErrorCode());
+    }
 
 }

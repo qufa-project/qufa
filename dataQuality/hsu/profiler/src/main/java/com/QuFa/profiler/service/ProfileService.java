@@ -1197,14 +1197,9 @@ public class ProfileService {
         } else {
             refFileType = "url";
         }
-        try {
-            // url의 파일을 로컬에 복사
-            if (refFileType.equals("url")) {
-                refFilePath = fileService.storeUrlFile(refFilePath);
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
+        // url의 파일을 로컬에 복사
+        if (refFileType.equals("url")) {
+            refFilePath = fileService.storeUrlFile(refFilePath);
         }
 
         refFileHeader = fileService.getHeader(refFilePath);

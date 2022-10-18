@@ -1,8 +1,11 @@
 package com.QuFa.profiler.service;
 
+import com.QuFa.profiler.controller.exception.CustomException;
+import com.QuFa.profiler.controller.exception.ErrorCode;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -49,7 +52,12 @@ public class FileService {
     }
 
     public String writeHeader(String fileName, String path) throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader(path));
+        CSVReader csvReader = null;
+        try {
+            csvReader = new CSVReader(new FileReader(path));
+        } catch (FileNotFoundException e) {
+            throw new CustomException(ErrorCode.FILE_NOT_FOUND);
+        }
         List<String> header = new ArrayList<>();
 
         // 컬럼 수에 따라 헤더 설정
@@ -90,11 +98,15 @@ public class FileService {
         return header;
     }
 
-    public String storeUrlFile(String url) throws IOException {
+    public String storeUrlFile(String url){
         String type = "url";
         String filePath = targetFolderPath + getFileName(type, url) + ".csv";
         File f = new File(filePath);
-        FileUtils.copyURLToFile(new URL(url), f);
+        try {
+            FileUtils.copyURLToFile(new URL(url), f);
+        } catch (IOException e) {
+            throw new CustomException(ErrorCode.REQUEST_DATA_MALFORMED);
+        }
 
         return filePath;
     }
