@@ -41,6 +41,13 @@ public class FileService {
         System.out.println("targetFolderPath = " + targetFolderPath);
     }
 
+    public String seperate_file(String url){
+        if (osType.equals("win"))
+            return url.substring(8).replace('/','\\');
+        else
+            return url.substring(7);
+    }
+
     public String getFileName(String type, String path) {
         String[] split = null;
         if (Objects.equals(osType, "win")) {

@@ -1194,7 +1194,7 @@ public class ProfileService {
         // 파일 경로 재설정
         if (refFileType.equals("file")) {
             refFileType = "path";
-            refFilePath = refFilePath.substring(8).replace('/', '\\');
+            refFilePath = fileService.seperate_file(refFilePath);
         } else {
             refFileType = "url";
         }

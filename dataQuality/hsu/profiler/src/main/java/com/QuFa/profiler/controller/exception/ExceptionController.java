@@ -21,12 +21,12 @@ public class ExceptionController {
         return ErrorResponse.toResponseEntity(FILE_NOT_FOUND);
     }
 
-//    @ExceptionHandler(value = {RuntimeException.class, IOException.class})
-//    public ResponseEntity<ErrorResponse> handleRuntimeException() {
-//        log.error("handleRuntimeException throw RuntimeException : {}",
-//                INTERNAL_ERROR);
-//        return ErrorResponse.toResponseEntity(INTERNAL_ERROR);
-//    }
+    @ExceptionHandler(value = {IOException.class})
+    public ResponseEntity<ErrorResponse> handleRuntimeException() {
+        log.error("handleRuntimeException throw RuntimeException : {}",
+                INTERNAL_ERROR);
+        return ErrorResponse.toResponseEntity(INTERNAL_ERROR);
+    }
 
 
     @ExceptionHandler(value = CustomException.class)
