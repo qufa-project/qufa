@@ -92,7 +92,12 @@ public class FileService {
     }
 
     public List<String> getHeader(String path) throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader(path));
+        CSVReader csvReader = null;
+        try {
+            csvReader = new CSVReader(new FileReader(path));
+        } catch (FileNotFoundException e) {
+            throw new CustomException(ErrorCode.FILE_NOT_FOUND);
+        }
         List<String> header = Arrays.asList(csvReader.readNext().clone());
         csvReader.close();
         return header;
