@@ -86,7 +86,7 @@ public class ProfileService {
     private ProfileColumnResult profileColumnResult;
 
     private Profiles profiles = null;
-    private Map<String, List<Object>> profileTypes = null;
+    private Map<String, List<Object>> column_analysis = null;
     private Map<Object, List<String>> requestColumns;
 
     private List<DependencyAnalysis> dependencyAnalyses = null;
@@ -277,8 +277,8 @@ public class ProfileService {
 
         profiles = local.getProfiles();
         if (profiles != null) {
-            if (profiles.getTypes() != null) {
-                profileTypes = profiles.getTypes();
+            if (profiles.getColumn_analysis() != null) {
+                column_analysis = profiles.getColumn_analysis();
             }
             if (profiles.getDependencied_analysis() != null) {
                 dependencyAnalyses = profiles.getDependencied_analysis();
@@ -385,13 +385,13 @@ public class ProfileService {
 
         // profileTypes가 있으면 requestColumns 생성
         requestColumns = new HashMap<>();
-        if (profileTypes != null) {
+        if (column_analysis != null) {
             /**
              *  profileTypes 예시
              *  key: "basic"
              *  valueList: : [1, 2, 3, 4, 5, 6]
              */
-            profileTypes.forEach((key, valueList) -> {
+            column_analysis.forEach((key, valueList) -> {
                 valueList.forEach(value -> {
                     if (value.getClass().getName().equals("java.lang.String")) {
                         value = columnNames.indexOf((String) value);
@@ -418,7 +418,7 @@ public class ProfileService {
             String valueType = "string";
             int index = columnNames.indexOf(columnName) + 1;
 
-            if (profileTypes != null) {
+            if (column_analysis != null) {
                 if (requestColumns.get(index) == null) {
                     continue;
                 }
@@ -1071,7 +1071,7 @@ public class ProfileService {
         }
 
         /* 컬럼별 프로파일  */
-        if (profileTypes != null) {
+        if (column_analysis != null) {
             int index = header.indexOf(columnName) + 1;
             List<String> typeList = requestColumns.get(index);
 
