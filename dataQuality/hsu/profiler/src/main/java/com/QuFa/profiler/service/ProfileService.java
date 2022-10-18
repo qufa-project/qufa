@@ -1250,11 +1250,10 @@ public class ProfileService {
         System.out.println("refFilePath!!! = " + refFilePath);
         // Schema name : 상위 폴더 이름
         String schemaName = "";
-        String[] array = refFilePath.split("\\\\");
         String os = System.getProperty("os.name").toLowerCase();
-        System.out.println("os!!! = " + os);
         // windows 이면
         if (os.contains("win")) {
+            String[] array = refFilePath.split("\\\\");
             if (refFileType.equals("path")) {
                 schemaName = array[array.length - 2];
             }
@@ -1264,6 +1263,7 @@ public class ProfileService {
         }
         // linux 이면
         else {
+            String[] array = refFilePath.split("/");
             if (refFileType.equals("path")) {
                 schemaName = array[array.length - 2];
             }
@@ -1310,8 +1310,15 @@ public class ProfileService {
 
             for (AnalyzerResult result : results) {
                 if (result instanceof ReferentialIntegrityAnalyzerResult) {
+<<<<<<< Updated upstream
                     List<InputRow> resultList = ((ReferentialIntegrityAnalyzerResult) result).getSampleRows();
                     if (resultList.isEmpty()){
+=======
+                    String string = Arrays.toString(
+                            ((ReferentialIntegrityAnalyzerResult) result).getRows());
+                    System.out.println("string = " + string);
+                    if (string.equals("[]")) {
+>>>>>>> Stashed changes
                         is_valid = Boolean.TRUE;
                     } else{
                         for (InputRow inputRow : resultList) {
