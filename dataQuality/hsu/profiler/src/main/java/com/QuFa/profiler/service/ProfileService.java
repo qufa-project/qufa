@@ -3,7 +3,6 @@ package com.QuFa.profiler.service;
 
 import static com.QuFa.profiler.controller.exception.ErrorCode.BAD_JSON_REQUEST;
 
-import com.QuFa.profiler.config.ActiveProfileProperty;
 import com.QuFa.profiler.controller.exception.CustomException;
 import com.QuFa.profiler.model.Local;
 import com.QuFa.profiler.model.request.DependencyAnalysis;
@@ -82,12 +81,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProfileService {
 
-    private final ActiveProfileProperty activeProfileProperty;
     private ProfileTableResult profileTableResult;
     private ProfileColumnResult profileColumnResult;
 
     private Profiles profiles = null;
-    private Map<String, List<Object>> column_analysis = null;
+    private Map<String, List<Object>> column_analysis;
     private Map<Object, List<String>> requestColumns;
 
     private List<DependencyAnalysis> dependencyAnalyses;
@@ -254,8 +252,7 @@ public class ProfileService {
                 (fileType.equals("url")) ? local.getSource().getUrl() : local.getSource().getPath();
         fileName = fileService.getFileName(fileType, filePath);
         isHeader = local.isHeader();
-        System.out.println("filePath!!!! = " + filePath);
-        System.out.println("fileName = " + fileName);
+
         try {
 
             // url의 파일을 로컬에 복사
@@ -269,47 +266,40 @@ public class ProfileService {
             }
 
             header = fileService.getHeader(filePath);
-            System.out.println("filePath = " + filePath);
-            System.out.println("header = " + header);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         profiles = local.getProfiles();
+
+
         if (profiles != null) {
+
             if (profiles.getColumn_analysis() != null) {
                 column_analysis = profiles.getColumn_analysis();
+            } else {
+                column_analysis = null;
             }
+
+            if (profiles.isKey_analysis()) {
+                key_analysis = true;
+            } else {
+                key_analysis = false;
+            }
+
             if (profiles.getDependencied_analysis() != null) {
                 dependencyAnalyses = profiles.getDependencied_analysis();
             } else {
                 dependencyAnalyses = null;
             }
+
             if (profiles.getFk_analysis() != null) {
-//                local.getProfiles().getFk_analysis().stream().map(fkAnalysis -> {
-//                    String referencedFile = fkAnalysis.getReferenced_file().substring(0, 4);
-//                    if ((referencedFile).equals("file")) {
-//                        fkAnalysis.setReferenced_file(
-//                                referencedFile.substring(8).replace('/', '\\'));
-//                    }
-//                    return fkAnalysis;
-//                });
-//                System.out.println(local.getProfiles().getFk_analysis());
                 fkAnalyses = profiles.getFk_analysis();
             } else {
                 fkAnalyses = null;
             }
-        }
 
-        key_analysis_results = new ArrayList<>();
-        key_analysis = false;
-
-        /* 후보키 요청이 왔는지 판단 */
-        if (profiles != null) {
-            if (profiles.isKey_analysis()) {
-                key_analysis = true;
-            }
         }
 
         t = 0;
@@ -331,12 +321,10 @@ public class ProfileService {
                         .single_column_results(new ArrayList<>())
                         .build();
 
-        /* profiles result */
-        try {
-            profileTableResult = profileLocalColumns(filePath, header);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        /**
+         * single column results 생성
+         */
+        profileTableResult = profileLocalColumns(filePath, header);
 
         System.out.println("파일 크기 : " + profileTableResult.getDataset_size());
         System.out.println("타입 판단 제한 개수 : " + cntDetactType);
@@ -347,9 +335,13 @@ public class ProfileService {
                                                   * profileTableResult.getDataset_row_cnt());
         System.out.println("데이터당 걸린 시간 : " + (double) t / (double) totalDetact);
 
-        /* dependency analysis result */
+        /* key analysis result 생성*/
+        if (key_analysis) {
+            key_analysis_results = new ArrayList<>();
+        }
+
+        /* dependency analysis result 생성*/
         if (dependencyAnalyses != null) {
-            System.out.println("dependencyAnalyses = " + dependencyAnalyses.toString());
             List<DependencyAnalysisResult> dependencyAnalysisResults = new ArrayList<>();
             dependencyAnalyses.forEach(dependencyAnalysis -> {
                 try {
@@ -361,7 +353,7 @@ public class ProfileService {
             profileTableResult.setDependency_analysis_results(dependencyAnalysisResults);
         }
 
-        /* referential integrity analysis result */
+        /* fk analysis results 생성 */
         if (fkAnalyses != null) {
             List<FKAnalysisResult> referentialIntegrityAnalyzerResults = new ArrayList<>();
             for (FKAnalysis fkAnalysis : fkAnalyses) {
@@ -371,10 +363,6 @@ public class ProfileService {
                     e.printStackTrace();
                 }
             }
-            System.out.println(
-                    "referentialIntegrityAnalyzerResults = " + referentialIntegrityAnalyzerResults);
-            System.out.println("referentialIntegrityAnalyzerResults = "
-                                       + referentialIntegrityAnalyzerResults.size());
             profileTableResult.setFk_analysis_results(referentialIntegrityAnalyzerResults);
         }
 
@@ -383,17 +371,15 @@ public class ProfileService {
     }
 
     /**
-     * 컬럼별 프로파일링 수행
+     * single column results 생성
      */
     public ProfileTableResult profileLocalColumns(String path, List<String> columnNames) {
 
-        System.out.println("ProfileService.profileLocalColumns");
-
-        // profileTypes가 있으면 requestColumns 생성
+        // column_analysis 요청이 오면 requestColumns 생성
         requestColumns = new HashMap<>();
         if (column_analysis != null) {
             /**
-             *  profileTypes 예시
+             *  column_analysis 예시
              *  key: "basic"
              *  valueList: : [1, 2, 3, 4, 5, 6]
              */
@@ -411,7 +397,7 @@ public class ProfileService {
                 });
             });
 
-            System.out.println("requestColumns = " + requestColumns);
+            System.out.println("column_analysis = " + requestColumns);
 
         }
 
@@ -1076,7 +1062,7 @@ public class ProfileService {
             }
         }
 
-        /* 컬럼별 프로파일  */
+        /* 컬럼별 프로파일 결과 */
         if (column_analysis != null) {
             int index = header.indexOf(columnName) + 1;
             List<String> typeList = requestColumns.get(index);
@@ -1184,9 +1170,7 @@ public class ProfileService {
      * 현재 테이블의 컬럼과 타 테이블의 컬럼간 참조무결성의 유효성 여부를 검사
      */
     private FKAnalysisResult referentialIntegrity(FKAnalysis fkAnalysis) throws IOException {
-        //TODO: 상위 폴더 이름 GET
-
-        Boolean is_valid = Boolean.FALSE;
+        boolean is_valid = Boolean.FALSE;
         List<String> invalid_values = new ArrayList<>();
 
         String refFilePath = fkAnalysis.getReferenced_file(); // 참조되는 원격 파일 경로에 대한 URL
@@ -1194,7 +1178,7 @@ public class ProfileService {
         String foreignKey; // 외래키 후보 컬럼
         String refColumn; // 참조되는 컬럼명
         String refFileName; // 참조되는 원격 파일 이름
-        List<String> refFileHeader;
+        List<String> refFileHeader; // 참조되는 원격 파일 헤더
 
         // 파일 경로 재설정
         if (refFileType.equals("file")) {
@@ -1240,6 +1224,7 @@ public class ProfileService {
 
         // 기존 파일(프로파일링 대상) builder 재시작
         builder.reset();
+
         // builder에 프로파일링 할 외래키 후보 컬럼 add
         builder.addSourceColumns(foreignKey);
         InputColumn<?> fkInputColumn = builder.getSourceColumnByName(foreignKey);
@@ -1247,10 +1232,11 @@ public class ProfileService {
         // 참조되는 원격 파일의 DataStore 생성
         FKDataStoreService refDataStoreService = new FKDataStoreService();
         refDataStoreService.createLocalDataStore(refFileName, refFilePath);
-        System.out.println("refFilePath!!! = " + refFilePath);
+
         // Schema name : 상위 폴더 이름
         String schemaName = "";
         String os = System.getProperty("os.name").toLowerCase();
+
         // windows 이면
         if (os.contains("win")) {
             String[] array = refFilePath.split("\\\\");
