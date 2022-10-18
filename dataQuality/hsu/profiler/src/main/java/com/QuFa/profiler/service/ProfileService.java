@@ -90,9 +90,8 @@ public class ProfileService {
     private Map<String, List<Object>> column_analysis = null;
     private Map<Object, List<String>> requestColumns;
 
-    private List<DependencyAnalysis> dependencyAnalyses = null;
+    private List<DependencyAnalysis> dependencyAnalyses;
     private ArrayList<Object> key_analysis_results; // 후보키 컬럼을 담는 배열
-    private ArrayList<Object> fk_analysis_results;
     private List<FKAnalysis> fkAnalyses;
 
     @Autowired
@@ -284,18 +283,22 @@ public class ProfileService {
             }
             if (profiles.getDependencied_analysis() != null) {
                 dependencyAnalyses = profiles.getDependencied_analysis();
+            } else {
+                dependencyAnalyses = null;
             }
             if (profiles.getFk_analysis() != null) {
-                local.getProfiles().getFk_analysis().stream().map(fkAnalysis -> {
-                    String referencedFile = fkAnalysis.getReferenced_file().substring(0, 4);
-                    if ((referencedFile).equals("file")) {
-                        fkAnalysis.setReferenced_file(
-                                referencedFile.substring(8).replace('/', '\\'));
-                    }
-                    return fkAnalysis;
-                });
-                System.out.println(local.getProfiles().getFk_analysis());
+//                local.getProfiles().getFk_analysis().stream().map(fkAnalysis -> {
+//                    String referencedFile = fkAnalysis.getReferenced_file().substring(0, 4);
+//                    if ((referencedFile).equals("file")) {
+//                        fkAnalysis.setReferenced_file(
+//                                referencedFile.substring(8).replace('/', '\\'));
+//                    }
+//                    return fkAnalysis;
+//                });
+//                System.out.println(local.getProfiles().getFk_analysis());
                 fkAnalyses = profiles.getFk_analysis();
+            } else {
+                fkAnalyses = null;
             }
         }
 
@@ -458,7 +461,7 @@ public class ProfileService {
 
         String inputColumnName = tableName + "." + columnName;
         String type = profileColumnResult.getColumn_type();
-
+        System.out.println("columnName = " + columnName);
         builder.addSourceColumns(columnName);
 
         InputColumn<?> targetInputColumn = builder.getSourceColumnByName(columnName);
