@@ -119,46 +119,70 @@ is_valid가 false일 경우에만 해당 값들을 배열로 명시하고, true�
 ---
 
 * **URL**
+- **URL**
 
   /profile/local
 
-* **Method:**
+- **Method:**
 
   `POST`
-  
-*  **JSON Request Params**
 
-   **Required:**
+- **JSON Request Params**
 
-   `source:url=[string]`
+  **Required:**
 
-   **Optional:**
-   
-   `header=[boolean]` <br />
-   `profiles:basic=[integer array]` <br />
-   `profiles:number=[integer array]` <br />
-   `profiles:string=[integer array]` <br />
-   `profiles:date=[integer array]` <br />
-   
-* **Data Params**
+  `source:url=[string]`
 
-  - if source is local file <br />
-    ```
+  **Optional:**
+
+  `header=[boolean]` <br />
+  `profiles:column_analysis:basic=[integer array]` <br />
+  `profiles:column_analysis:number=[integer array]` <br />
+  `profiles:column_analysis:string=[integer array]` <br />
+  `profiles:column_analysis:date=[integer array]` <br />
+  `profiles:key_analysis=[boolean]` <br />
+  `profiles:dependencied_analysis=[object]` <br />
+  `profiles:fk_analysis=[object]` <br />
+
+- **Data Params**
+
+  - local file <br />
+
+    ```json
     {
-        "source": {
-          "url": "file:///C:/sample.csv",
+      "source": {
+        "url": "file:///C:/customers.csv"
+      },
+      "header": true,
+      "profiles": {
+        "column_analysis": {
+            "basic": [1, 2],
+            "string": [4, 5]
         },
-        "header": true,
-        "profiles: {
-          "basic": [1, 2, 3, 4, 5, 6],
-          "number": [1, 2],
-          "string": [3, 4],
-          "date": [5, 6],
-        }
+        "key_analysis": true,
+        "dependencied_analysis":[
+            {
+                "determinant":1,
+                "dependency":3
+            }
+        ],
+        "fk_analysis":[
+            {
+                "foreign_key":3,
+                "referenced_file":"file:///C:/customers.csv",
+                "referenced_column": 3
+            },
+                  {
+                "foreign_key": 2,
+                "referenced_file":"file:///C:/customers.csv",
+                "referenced_column":3
+            }
+            ]
+      }
     }
     ```
-    
-  - if source is remote file <br />
+
+  - remote file <br />
     ```
     {
         "source": {
@@ -168,126 +192,106 @@ is_valid가 false일 경우에만 해당 값들을 배열로 명시하고, true�
     }`
     ```
 
-* **Success Response:**
+- **Success Response:**
 
-  * **Code:** 200 OK <br />
+  - **Code:** 200 OK <br />
     **Content:** <br />
-    ```
-    {
-        "dataset_name": "sample",
-        "dataset_type": "csv",
-        "dataset_size": 30000,
-        "dataset_column_cnt": 1,
-        "dataset_row_cnt": 200,
-        "results": [
+    ```json
+      {
+      "dataset_name": "customers",
+      "dataset_type": "csv",
+      "dataset_size": 693430,
+      "dataset_column_cnt": 14,
+      "dataset_row_cnt": 5115,
+      "single_column_results": [
           {
-            "column_id": 1,
-            "column_name": "score",
-            "column_type": "number",
-            "profiles": {
-              "basic_profile": {
-                "row_cnt": 200,
-                "distinct_cnt": 120,
-                "null_cnt": 0,
-                "distinctness": 0.6,
-                "unique_cnt": 10,
-                "value_distribution": {
-                  "type": "top100",
-                  "value": [
-                    {
-                      "45": 10
-                    },
-                    {
-                      "12": 9
-                    },
-                    {
-                      "10": 8
-                    },
-                    ...,
-                    {
-                      "150": 1
-                    },
-                    {
-                      "149": 1
-                    }
-                  ],
-                  "range": [
-                    {
-                      "5": 19
-                    },
-                    {
-                      "19.5": 31
-                    },
-                    {
-                      "34": 15
-                    },
-                    {
-                      "48.5": 27
-                    },
-                    {
-                      "63": 18
-                    },
-                    {
-                      "77.5": 20
-                    },
-                    {
-                      "92": 22
-                    },
-                    {
-                      "106.5": 23
-                    },
-                    {
-                      "121": 23
-                    },
-                    {
-                      "135.5": 12
-                    },
-                    {
-                      "150": null
-                    }
-                  ]
-                }
-              },
-              "number_profile": {
-                "min": 5,
-                "max": 150,
-                "sum": 18512,
-                "mean": 92.56,
-                "median": 78,
-                "sd": 21.44,
-                "variance": 459.674,
-                "percentile_25th": 42,
-                "percentile_75th": 113,
-                "zero_cnt": 0
+              "column_id": 1,
+              "column_name": "id",
+              "column_type": "string",
+              "profiles": {
+                  "basic_profile": {
+                      "row_cnt": 5115,
+                      "distinct_cnt": 5107,
+                      "null_cnt": 0,
+                      "distinctness": 0.998435972629521,
+                      "unique_cnt": 5100,
+                      "value_distribution": {
+                          "type": "top100",
+                          "value": [
+                              {
+                                  "5091": 3
+                              },
+                              {
+                                  "1148": 2
+                              },
+                              ...
+                              ,
+                              {
+                                  "3652": 1
+                              }
+                          ],
+                          "range": "-"
+                      }
+                  },
+                  "string_profile": {
+                      "blank_cnt": 0,
+                      "min_len": 1,
+                      "max_len": 4,
+                      "avg_len": 3.784
+                  }
               }
-            }
           }
-        ]
+      ],
+      "key_analysis_results": [],
+      "dependency_analysis_results": [
+          {
+              "determinant": 1,
+              "dependency": 3,
+              "is_valid": false,
+              "invalid_values": [
+                  "1148",
+                  "1145",
+                  "1253",
+                  "1254",
+                  "988",
+                  "990"
+              ]
+          }
+      ],
+      "fk_analysis_results": [
+          {
+              "foreign_key": 3,
+              "referenced_table": "customers.csv",
+              "referenced_column": "family_name",
+              "is_valid": false
+          },
+          {
+              "foreign_key": 2,
+              "referenced_table": "customers.csv",
+              "referenced_column": "family_name",
+              "is_valid": false
+          }
+      ]
     }
     ```
-  <br />
-  
-* **Error Response:**
+    <br/>
 
-  * **Code:** 400 <br />
-    **Content:** "BAD_JSON_REQUEST"
+- **Error Response:**
 
-  OR
-
-  * **Code:** 404 <br />
-    **Content:** "FILE_NOT_FOUND"
+  - **Code:** 400 Bad Json Request <br />
+    **Content:** `{ status_code : "BAD_JSON_REQUEST" }`
 
   OR
 
-  * **Code:** 411 <br />
-    **Content:** "REQUEST_DATA_MALFORMED"
+  - **Code:** 411 Request Data Malformed <br />
+    **Content:** `{ status_code : "REQUEST_DATA_MALFORMED" }`
 
   OR
 
-  * **Code:** 500<br />
-    **Content:** "INTERNAL_ERROR"
+  - **Code:** 500 Internal Error <br />
+    **Content:** `{ status_code : "INTERNAL_ERROR" }`
     <br />
 
-* **Notes:**
+- **Notes:**
 
   - Swagger Hub Link : [https://app.swaggerhub.com/apis/QUFA/QuFaProjectAPI/v2](https://app.swaggerhub.com/apis/QUFA/QuFaProjectAPI/v2)
