@@ -1310,15 +1310,8 @@ public class ProfileService {
 
             for (AnalyzerResult result : results) {
                 if (result instanceof ReferentialIntegrityAnalyzerResult) {
-<<<<<<< Updated upstream
                     List<InputRow> resultList = ((ReferentialIntegrityAnalyzerResult) result).getSampleRows();
                     if (resultList.isEmpty()){
-=======
-                    String string = Arrays.toString(
-                            ((ReferentialIntegrityAnalyzerResult) result).getRows());
-                    System.out.println("string = " + string);
-                    if (string.equals("[]")) {
->>>>>>> Stashed changes
                         is_valid = Boolean.TRUE;
                     } else{
                         for (InputRow inputRow : resultList) {
