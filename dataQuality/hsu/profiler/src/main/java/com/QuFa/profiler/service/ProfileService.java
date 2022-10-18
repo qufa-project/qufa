@@ -302,9 +302,10 @@ public class ProfileService {
         key_analysis = false;
 
         /* 후보키 요청이 왔는지 판단 */
-        assert profiles != null;
-        if (profiles.isKey_analysis()) {
-            key_analysis = true;
+        if (profiles != null) {
+            if (profiles.isKey_analysis()) {
+                key_analysis = true;
+            }
         }
 
         t = 0;
