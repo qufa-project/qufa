@@ -38,3 +38,5 @@ out/
 
 ### Custom ###
 /src/main/resources/targetfiles/*
+
+../../.idea/

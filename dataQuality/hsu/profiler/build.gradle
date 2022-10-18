@@ -20,6 +20,7 @@ dependencies {
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
+	implementation 'commons-io:commons-io:2.11.0'
 }
 
 test {

@@ -19,10 +19,26 @@
 <tr><td colspan=4>header</td><td>헤더</td><td>0</td><td>true, false</td><td>csv 파일 헤더에 컬럼 이름의 존재 여부를 나타내는 boolean 값(default:true)<br />* 'header' 파라미터는 2022년 지원 예정</td><td></td></tr>
 <tr><td colspan=4>profiles</td><td>컬럼별 프로파일링 항목 정의</td><td>0</td><td>-</td><td>프로파일 종류별 프로파일링 대상이 되는 컬럼들을 컬럼번호나 컬럼이름 리스트로 표현. 생략될 경우 데이터 타입에 따라 가능한 프로파일링을 수행하며, 데이터 타입은 서버에서 자동으로 추정하여 실행함<br />(default:<br />　{<br />　　basic:[모든컬럼리스트],<br />　　number:[수치형 컬럼리스트],<br />　　string:[문자열 컬럼리스트],<br />　　date:[날짜형 컬럼리스트]<br />　}<br />)
 <br />* 'profiles'와 하위 파라미터는 2022년 지원 예정</td><td></td></tr>
-<tr><td colspan=1></td><td colspan=3>basic</td><td>기본 프로파일링 대상 컬럼 리스트</td><td>0..n</td><td>-</td><td>기본 프로파일링 대상되는 컬럼 리스트 (컬럼번호 또는 컬럼명)</td><td></td></tr>
-<tr><td colspan=1></td><td colspan=3>number</td><td>수치 프로파일링 대상 컬럼 리스트</td><td>0..n</td><td>-</td><td>수치 프로파일링 대상되는 컬럼 리스트 (컬럼번호 또는 컬럼명)</td><td></td></tr>
-<tr><td colspan=1></td><td colspan=3>string</td><td>문자열 프로파일링 대상 컬럼 리스트</td><td>0..n</td><td>-</td><td>문자열 프로파일링 대상되는 컬럼 리스트 (컬럼번호 또는 컬럼명)</td><td></td></tr>
-<tr><td colspan=1></td><td colspan=3>date</td><td>날짜 프로파일링 대상 컬럼 리스트</td><td>0..n</td><td>-</td><td>날짜 프로파일링 대상되는 컬럼 리스트 (컬럼번호 또는 컬럼명)</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=3>column_analysis</td><td>프로파일링 대상 컬럼 리스트</td><td>0</td><td>-</td><td>기본, 수치, 문자열, 날짜 프로파일링 컬럼 리스트</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=1></td><td colspan=2>basic</td><td>기본 프로파일링 대상 컬럼 리스트</td><td>0..n</td><td>-</td><td>기본 프로파일링 대상되는 컬럼 리스트 (컬럼번호 또는 컬럼명)</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=1></td><td colspan=2>number</td><td>수치 프로파일링 대상 컬럼 리스트</td><td>0..n</td><td>-</td><td>수치 프로파일링 대상되는 컬럼 리스트 (컬럼번호 또는 컬럼명)</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=1></td><td colspan=2>string</td><td>문자열 프로파일링 대상 컬럼 리스트</td><td>0..n</td><td>-</td><td>문자열 프로파일링 대상되는 컬럼 리스트 (컬럼번호 또는 컬럼명)</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=1></td><td colspan=2>date</td><td>날짜 프로파일링 대상 컬럼 리스트</td><td>0..n</td><td>-</td><td>기본키가 될 수 있는 후보키 컬럼을 탐색할지의 여부 결정하는 boolean값(default:false)</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=3>key_analysis</td><td>candidate key 분석</td><td>0</td><td>true, false</td><td>기본, 수치, 문자열, 날짜 프로파일링 컬럼 리스트</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=3>dependency_analysis</td><td>functiuonal dependency 분석을 위한 컬럼 쌍의 리스트</td><td>0..n</td><td>-</td><td>여러개의 함수적 종속을 동시에 검사할 수 있도록 결정자와 의존자 쌍의 배열형태로 명세함. 현 버전에서는 결정자와 의존자는 단일 컬럼만 지원
+(determinant->dependency 의 리스트)</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=1></td><td colspan=2>determinant</td><td>결정자 컬럼</td><td>0</td><td>1, 2 또는 “id”</td><td>컬럼번호 또는 컬럼명</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=1></td><td colspan=2>dependency</td><td>의존자 컬럼</td><td>0</td><td>1, 2 또는 “id”</td><td>컬럼번호 또는 컬럼명</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=3>fk_analysis</td><td>외래키의 유효성 검증을 위한 명세 리스트</td><td>0..n</td><td>-</td><td>현재 테이블의 컬럼과 타 테이블의 컬럼간 참조무결성의 유효성 여부를 검사. 배열 형식을 여러개의 무결성을 동시에 검사할 수 있도록 명세 지원</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=></td><td colspan=2>foreign_key</td><td>외래키 후보 컬럼</td><td>0</td><td>1, 2 또는 “id”</td><td>컬럼번호 또는 컬럼명</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=1></td><td colspan=2>referenced_file</td><td>참조되는 원격 파일 경로에 대한 URL</td><td>0</td><td>http://qufa.com/sample.csv</td><td>프로파일링 대상 파일의 URL 경로.
+원격 파일일 경우 "http://" + 파일 url
+로컬 파일일 경우 "file:///" + 파일 경로</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=1></td><td colspan=2>referenced_db</td><td>참조되는 데이터베이스 및 테이블 연결 정보</td><td>0</td><td>-</td><td>프로파일링 대상이 데이터베이스 테이블일 경우 연결 및 테이블 정보</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=1></td><td colspan=1></td><td colspan=1>database</td><td>DBMS명종류</td><td>0</td><td>mysql</td><td>DBMS 이름</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=1></td><td colspan=1></td><td colspan=1>conn</td><td>connection string</td><td>0</td><td>server=127.0.0.1;uid=root;pwd=12345;database=test</td><td>DB 연결을 위한 connection string</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=1></td><td colspan=1></td><td colspan=1>table</td><td>테이블명</td><td>0</td><td>customer</td><td>참조되는  테이블 이름</td><td></td></tr>
+<tr><td colspan=1></td><td colspan=1></td><td colspan=2>referenced_column</td><td>참조되는 컬럼명</td><td>0</td><td>1, 2 또는 “id”</td><td>참조되는  컴럼명 이름</td><td></td></tr>
 </tbody></table>
 
 ###### ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)
@@ -81,6 +97,20 @@
 <tr><td colspan=1></td><td colspan=1></td><td colspan=1></td><td colspan=2>percentile_75th</td><td>0</td><td>2021-04-01<br />12:00:00</td><td>3사분위 시간</td><td>O</td></tr>
 <tr><td colspan=1></td><td colspan=1></td><td colspan=1></td><td colspan=2>month_distribution</td><td>0</td><td>{<br />　January:7<br />},<br />{<br />　February:8<br />},<br />···,<br />{<br />　December:5<br />}</td><td>월별 분포</td><td>O</td></tr>
 <tr><td colspan=1></td><td colspan=1></td><td colspan=1></td><td colspan=2>year_distribution</td><td>0</td><td>{<br />　2010:20<br />},<br />{<br />　2011:10<br />}, ···</td><td>연도별 분포</td><td>O</td></tr>
+<tr><td colspan=5>key_analysis_results</td><td>0..n</td><td>[1, 3, 5] 또는 [“id”, “name”]</td><td>후보키 대상이 되는 컬럼 배열 (컬럼번호 또는 컬럼명)</td><td>O</td></tr>
+<tr><td colspan=5>dependency_analysis_results</td><td>0..n</td><td>-</td><td>후보키 대상이 되는 컬럼 배열 (컬럼번호 또는 컬럼명)</td><td>O</td></tr>
+<tr><td colspan=1></td><td colspan=4>determinant</td><td>0</td><td>1, 2 또는 “id”</td><td>결정자(컬럼번호 또는 컬럼명)</td><td>O</td></tr>
+<tr><td colspan=1></td><td colspan=4>dependency</td><td>0</td><td>1, 2 또는 “id”</td><td>의존자(컬럼번호 또는 컬럼명)</td><td>O</td></tr>
+<tr><td colspan=1></td><td colspan=4>is_valid</td><td>0</td><td>true or false</td><td>함수적 종속 만족여부</td><td>O</td></tr>
+<tr><td colspan=1></td><td colspan=4>invalid_values</td><td>0..n</td><td>[1, 4, 6]</td><td>결정자 컬럼 중 함수적 종속을 위배해는 컬럼값의 배열<br>
+is_valid가 false일 경우에만 해당 값들을 배열로 명시하고, true면 생략</td><td>O</td></tr>
+<tr><td colspan=5>fK_analysis_results</td><td>0..n</td><td>-</td><td></td><td></td></tr>
+<tr><td colspan=1></td><td colspan=4>foreign_key</td><td>0</td><td>1, 2 또는 “id”</td><td>참조하는 컬럼번호 또는 컬럼명</td><td>O</td></tr>
+<tr><td colspan=1></td><td colspan=4>referenced_table</td><td>0</td><td>“customer.csv”  또는 “customer”</td><td>참조되는 파일명 또는 테이블명</td><td>O</td></tr>
+<tr><td colspan=1></td><td colspan=4>referenced_column</td><td>0</td><td>“id”</td><td>참조되는 컬럼명(외부 테이블이므로 컬럼번호는 허용안함)</td><td>O</td></tr>
+<tr><td colspan=1></td><td colspan=4>is_valid</td><td>0</td><td>true or false</td><td>참조무결성 준수여부</td><td>O</td></tr>
+<tr><td colspan=1></td><td colspan=4>invalid_values</td><td>0..n</td><td>[1, 4, 6]</td><td>참조무결성을 위배하는(참조되는 값이 존재하지 않는) 컬럼 값들의 배열
+is_valid가 false일 경우에만 해당 값들을 배열로 명시하고, true면 생략</td><td>O</td></tr>
 </tbody></table>
 
 ###### ※ 항목구분 : 필수(1), 옵션(0), 1건 이상 복수건(1..n), 0건 또는 복수건(0..n)
@@ -89,174 +119,179 @@
 ---
 
 * **URL**
+- **URL**
 
   /profile/local
 
-* **Method:**
+- **Method:**
 
   `POST`
-  
-*  **JSON Request Params**
 
-   **Required:**
- 
-   `source:type=[string]`
+- **JSON Request Params**
 
-   **Optional:**
- 
-   `source:path=[string]` <br />
-   `source:url=[string]` <br />
-   `header=[boolean]` <br />
-   `profiles:basic=[integer array]` <br />
-   `profiles:number=[integer array]` <br />
-   `profiles:string=[integer array]` <br />
-   `profiles:date=[integer array]` <br />
+  **Required:**
 
-* **Data Params**
+  `source:url=[string]`
 
-  - if: type = path <br />
-    ```
+  **Optional:**
+
+  `header=[boolean]` <br />
+  `profiles:column_analysis:basic=[integer array]` <br />
+  `profiles:column_analysis:number=[integer array]` <br />
+  `profiles:column_analysis:string=[integer array]` <br />
+  `profiles:column_analysis:date=[integer array]` <br />
+  `profiles:key_analysis=[boolean]` <br />
+  `profiles:dependencied_analysis=[object]` <br />
+  `profiles:fk_analysis=[object]` <br />
+
+- **Data Params**
+
+  - local file <br />
+
+    ```json
     {
-        "source": {
-          "type": "path",
-          "path": "C:\QUFA\data\sample.csv"
+      "source": {
+        "url": "file:///C:/customers.csv"
+      },
+      "header": true,
+      "profiles": {
+        "column_analysis": {
+            "basic": [1, 2],
+            "string": [4, 5]
         },
-        "header": true,
-        "profiles: {
-          "basic": [1, 2, 3, 4, 5, 6],
-          "number": [1, 2],
-          "string": [3, 4],
-          "date": [5, 6],
-        }
+        "key_analysis": true,
+        "dependencied_analysis":[
+            {
+                "determinant":1,
+                "dependency":3
+            }
+        ],
+        "fk_analysis":[
+            {
+                "foreign_key":3,
+                "referenced_file":"file:///C:/customers.csv",
+                "referenced_column": 3
+            },
+                  {
+                "foreign_key": 2,
+                "referenced_file":"file:///C:/customers.csv",
+                "referenced_column":3
+            }
+            ]
+      }
     }
     ```
 
-  - if: type = "url" <br />
+  - remote file <br />
     ```
     {
         "source": {
-          "type": "url",
           "url": "http://qufa.com/sample.csv"
         }
         //param 'header', 'profiles' can use like above
     }`
     ```
 
-* **Success Response:**
+- **Success Response:**
 
-  * **Code:** 200 OK <br />
+  - **Code:** 200 OK <br />
     **Content:** <br />
-    ```
-    {
-        "dataset_name": "sample",
-        "dataset_type": "csv",
-        "dataset_size": 30000,
-        "dataset_column_cnt": 1,
-        "dataset_row_cnt": 200,
-        "results": [
+    ```json
+      {
+      "dataset_name": "customers",
+      "dataset_type": "csv",
+      "dataset_size": 693430,
+      "dataset_column_cnt": 14,
+      "dataset_row_cnt": 5115,
+      "single_column_results": [
           {
-            "column_id": 1,
-            "column_name": "score",
-            "column_type": "number",
-            "profiles": {
-              "basic_profile": {
-                "row_cnt": 200,
-                "distinct_cnt": 120,
-                "null_cnt": 0,
-                "distinctness": 0.6,
-                "unique_cnt": 10,
-                "value_distribution": {
-                  "type": "top100",
-                  "value": [
-                    {
-                      "45": 10
-                    },
-                    {
-                      "12": 9
-                    },
-                    {
-                      "10": 8
-                    },
-                    ...,
-                    {
-                      "150": 1
-                    },
-                    {
-                      "149": 1
-                    }
-                  ],
-                  "range": [
-                    {
-                      "5": 19
-                    },
-                    {
-                      "19.5": 31
-                    },
-                    {
-                      "34": 15
-                    },
-                    {
-                      "48.5": 27
-                    },
-                    {
-                      "63": 18
-                    },
-                    {
-                      "77.5": 20
-                    },
-                    {
-                      "92": 22
-                    },
-                    {
-                      "106.5": 23
-                    },
-                    {
-                      "121": 23
-                    },
-                    {
-                      "135.5": 12
-                    },
-                    {
-                      "150": null
-                    }
-                  ]
-                }
-              },
-              "number_profile": {
-                "min": 5,
-                "max": 150,
-                "sum": 18512,
-                "mean": 92.56,
-                "median": 78,
-                "sd": 21.44,
-                "variance": 459.674,
-                "percentile_25th": 42,
-                "percentile_75th": 113,
-                "zero_cnt": 0
+              "column_id": 1,
+              "column_name": "id",
+              "column_type": "string",
+              "profiles": {
+                  "basic_profile": {
+                      "row_cnt": 5115,
+                      "distinct_cnt": 5107,
+                      "null_cnt": 0,
+                      "distinctness": 0.998435972629521,
+                      "unique_cnt": 5100,
+                      "value_distribution": {
+                          "type": "top100",
+                          "value": [
+                              {
+                                  "5091": 3
+                              },
+                              {
+                                  "1148": 2
+                              },
+                              ...
+                              ,
+                              {
+                                  "3652": 1
+                              }
+                          ],
+                          "range": "-"
+                      }
+                  },
+                  "string_profile": {
+                      "blank_cnt": 0,
+                      "min_len": 1,
+                      "max_len": 4,
+                      "avg_len": 3.784
+                  }
               }
-            }
           }
-        ]
+      ],
+      "key_analysis_results": [],
+      "dependency_analysis_results": [
+          {
+              "determinant": 1,
+              "dependency": 3,
+              "is_valid": false,
+              "invalid_values": [
+                  "1148",
+                  "1145",
+                  "1253",
+                  "1254",
+                  "988",
+                  "990"
+              ]
+          }
+      ],
+      "fk_analysis_results": [
+          {
+              "foreign_key": 3,
+              "referenced_table": "customers.csv",
+              "referenced_column": "family_name",
+              "is_valid": false
+          },
+          {
+              "foreign_key": 2,
+              "referenced_table": "customers.csv",
+              "referenced_column": "family_name",
+              "is_valid": false
+          }
+      ]
     }
     ```
-  <br />
+    <br/>
 
-* **Error Response:**
+- **Error Response:**
 
-  * **Code:** 400 Bad Json Request <br />
+  - **Code:** 400 Bad Json Request <br />
     **Content:** `{ status_code : "BAD_JSON_REQUEST" }`
 
   OR
 
-  * **Code:** 411 Request Data Malformed <br />
+  - **Code:** 411 Request Data Malformed <br />
     **Content:** `{ status_code : "REQUEST_DATA_MALFORMED" }`
 
   OR
 
-  * **Code:** 500 Internal Error <br />
+  - **Code:** 500 Internal Error <br />
     **Content:** `{ status_code : "INTERNAL_ERROR" }`
-  <br />
+    <br />
 
-* **Notes:**
+- **Notes:**
 
-  - Swagger Hub Link : https://app.swaggerhub.com/apis/jee101kr/QuFa/1.0.0
+  - Swagger Hub Link : [https://app.swaggerhub.com/apis/QUFA/QuFaProjectAPI/v2](https://app.swaggerhub.com/apis/QUFA/QuFaProjectAPI/v2)
