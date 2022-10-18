@@ -44,6 +44,7 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.datacleaner.api.AnalyzerResult;
 import org.datacleaner.api.InputColumn;
+import org.datacleaner.api.InputRow;
 import org.datacleaner.beans.DateAndTimeAnalyzer;
 import org.datacleaner.beans.DateAndTimeAnalyzerResult;
 import org.datacleaner.beans.NumberAnalyzer;
@@ -1306,14 +1307,12 @@ public class ProfileService {
 
             for (AnalyzerResult result : results) {
                 if (result instanceof ReferentialIntegrityAnalyzerResult) {
-                    String string = Arrays.toString(
-                            ((ReferentialIntegrityAnalyzerResult) result).getRows());
-                    if (string.equals("[]")) {
+                    List<InputRow> resultList = ((ReferentialIntegrityAnalyzerResult) result).getSampleRows();
+                    if (resultList.isEmpty()){
                         is_valid = Boolean.TRUE;
-                    } else {
-                        String[] split1 = string.split(",");
-                        for (String s : split1) {
-                            String temp = s.split("MetaModelInputRow\\[Row\\[values=\\[")[1];
+                    } else{
+                        for (InputRow inputRow : resultList) {
+                            String temp = inputRow.toString().split("MetaModelInputRow\\[Row\\[values=\\[")[1];
                             invalid_values.add(temp.split("]]]")[0]);
                         }
                     }
