@@ -138,9 +138,7 @@ public class ProfileService {
         System.out.println("시간차이(m) : " + secDiffTime1);
 
         if (cntDetactType == 0) {
-            cntDetactType = (int) (detactingtime - (rowValues.size() * 0.005
-                                                            * profileTableResult.getDataset_column_cnt()))
-                                    / profileTableResult.getDataset_column_cnt() * 20;
+            cntDetactType = (int) ((Math.log(rowValues.size() * profileTableResult.getDataset_column_cnt())/Math.log(1.0001))/profileTableResult.getDataset_column_cnt());
             if (cntDetactType < 1000) {
                 cntDetactType = 1000;
             }
