@@ -28,6 +28,7 @@ public class ProfileController {
         System.out.println("Local Profiling");
         System.out.println("===================");
 
+        // url이 로컬파일의 url인지 외부 url인지 구분
         String url = local.getSource().getUrl();
         String type = url.substring(0, 4);
         if (type.equals("file")) {

@@ -138,7 +138,8 @@ public class ProfileService {
         System.out.println("시간차이(m) : " + secDiffTime1);
 
         if (cntDetactType == 0) {
-            cntDetactType = (int) ((Math.log(rowValues.size() * profileTableResult.getDataset_column_cnt())/Math.log(1.0001))/profileTableResult.getDataset_column_cnt());
+            cntDetactType = (int) ((Math.log(rowValues.size() * profileTableResult.getDataset_column_cnt())/Math.log(1.0001))/
+                    profileTableResult.getDataset_column_cnt());
             if (cntDetactType < 1000) {
                 cntDetactType = 1000;
             }
@@ -197,16 +198,15 @@ public class ProfileService {
             }
         }
 
-        /*
-         * 해당 컬럼의 100개의 값에 대한 type 을 검사해서
-         * 그중 가장 많이 나온 값으로 리턴
-         * date, number, number, string -> type: number
-         *
-         * ->> 고쳐야 할 부분f
-         */
         i = 0;
         int n;
 
+        /*
+          컬럼의 샘플링 데이터 중
+          모든 type이 number면 컬럼의 type은 number
+          모든 type이 date면 컬럼의 type은 date
+           그렇지 않으면 컬럼의 type은 string
+         */
         String typeValue;
 
         boolean dateType;
