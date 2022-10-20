@@ -1058,17 +1058,13 @@ public class ProfileService {
                 profileColumnResult.getProfiles().put("basic_profile", basicProfile);
             }
             if (typeList.contains("number")) {
-                if (profileColumnResult.getColumn_type().equals("number")) {
-                    profileColumnResult.getProfiles().put("number_profile", numberProfile);
-                }
-            } else if (typeList.contains("string")) {
-                if (profileColumnResult.getColumn_type().equals("string")) {
-                    profileColumnResult.getProfiles().put("string_profile", stringProfile);
-                }
-            } else if (typeList.contains("date")) {
-                if (profileColumnResult.getColumn_type().equals("date")) {
-                    profileColumnResult.getProfiles().put("date_profile", dateProfile);
-                }
+                profileColumnResult.getProfiles().put("number_profile", numberProfile);
+            }
+            if (typeList.contains("string")) {
+                profileColumnResult.getProfiles().put("string_profile", stringProfile);
+            }
+            if (typeList.contains("date")) {
+                profileColumnResult.getProfiles().put("date_profile", dateProfile);
             }
         } else {
             profileColumnResult.getProfiles().put("basic_profile", basicProfile);

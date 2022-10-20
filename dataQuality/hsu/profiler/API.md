@@ -282,18 +282,23 @@ is_valid가 false일 경우에만 해당 값들을 배열로 명시하고, true�
 
 - **Error Response:**
 
-  - **Code:** 400 Bad Json Request <br />
-    **Content:** `{ status_code : "BAD_JSON_REQUEST" }`
+  - **content:** `FILE_NOT_FOUND` <br />
+    **code:** `404`
 
   OR
 
-  - **Code:** 411 Request Data Malformed <br />
-    **Content:** `{ status_code : "REQUEST_DATA_MALFORMED" }`
+  - **content:** `BAD_JSON_REQUEST` <br />
+    **code:** `400`
 
   OR
 
-  - **Code:** 500 Internal Error <br />
-    **Content:** `{ status_code : "INTERNAL_ERROR" }`
+  - **content:** `REQUEST_DATA_MALFORMED` <br />
+    **code:** `411`
+
+  OR
+
+  - **content:** `INTERNAL_ERROR` <br />
+    **code:** `500`
     <br />
 
 - **Notes:**
