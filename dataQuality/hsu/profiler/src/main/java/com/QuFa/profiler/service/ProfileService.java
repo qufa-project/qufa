@@ -89,12 +89,14 @@ public class ProfileService {
     private Map<Object, List<String>> requestColumns;
 
     private List<DependencyAnalysis> dependencyAnalyses;
-    private ArrayList<Object> key_analysis_results; // 후보키 컬럼을 담는 배열
+//    private ArrayList<Object> key_analysis_results; // 후보키 컬럼을 담는 배열
     private List<FKAnalysis> fkAnalyses;
 
     @Autowired
     private final DataStoreService dataStoreService;
     private final FileService fileService = new FileService();
+
+    private final CandidateKeyService candidateKeyService = new CandidateKeyService();
 
     private AnalysisJobBuilder builder;
 
@@ -102,7 +104,7 @@ public class ProfileService {
     private long totalDetact = 0; // 총 판단하는 데이터 개수
     private int cntDetactType = 0; // row당 판단하는 최대 데이터 개수
     private int detactingtime = 10000; // 전체 타입 판단 시간 설정 (1000 -> 1초)
-    private boolean key_analysis; // 후보키를 찾을지 말지 판단
+//    private boolean key_analysis; // 후보키를 찾을지 말지 판단
 
     private List<String> header;
     private String filePath;
@@ -280,11 +282,7 @@ public class ProfileService {
                 column_analysis = null;
             }
 
-            if (profiles.isKey_analysis()) {
-                key_analysis = true;
-            } else {
-                key_analysis = false;
-            }
+            candidateKeyService.setKey_analysis(profiles.isKey_analysis());
 
             if (profiles.getDependencied_analysis() != null) {
                 dependencyAnalyses = profiles.getDependencied_analysis();
@@ -332,11 +330,6 @@ public class ProfileService {
         System.out.println("총 데이터 수 : " + profileTableResult.getDataset_column_cnt()
                                                   * profileTableResult.getDataset_row_cnt());
         System.out.println("데이터당 걸린 시간 : " + (double) t / (double) totalDetact);
-
-        /* key analysis result 생성*/
-        if (key_analysis) {
-            key_analysis_results = new ArrayList<>();
-        }
 
         /* dependency analysis result 생성*/
         if (dependencyAnalyses != null) {
@@ -769,7 +762,6 @@ public class ProfileService {
         stringProfile.setBlank_cnt(0);
 
         for (AnalyzerResult result : results) {
-            int nullCnt = 0;
             //System.out.println(result.getClass());
             if (result instanceof ValueDistributionAnalyzerResult) {
                 /* 데이터 클리너가 csv파일의 ""을 NULL값으로 판별하지 못함 */
@@ -797,7 +789,7 @@ public class ProfileService {
                     /* NULL 값 처리 */
                     if (vf.getValue() != null) {
                         if (vf.getValue().isBlank()) {
-                            nullCnt += vf.getCount();
+                            candidateKeyService.addNullCnt(vf.getCount());
                         }
                     }
 
@@ -808,7 +800,7 @@ public class ProfileService {
                             if (vfChild.getValue() != null) {
                                 /* NULL 값 처리 */
                                 if (vfChild.getValue().isBlank()) {
-                                    nullCnt += vfChild.getCount();
+                                    candidateKeyService.addNullCnt(vfChild.getCount());
                                 }
 
                                 vfModelList.put(vfChild.getValue(), vfChild.getCount());
@@ -822,17 +814,14 @@ public class ProfileService {
                 }
 
                 /* NULL값 처리 */
-                if (nullCnt > 0) {
+                if (candidateKeyService.getNullCnt() > 0) {
                     basicProfile
-                           .setNull_cnt(nullCnt);
+                           .setNull_cnt(candidateKeyService.getNullCnt());
                 }
 
                 /* key analysis result */
-                /* 후보키 : 널값이 존재하지 않고  Distinct Count/Row Count 가 1인 경우*/
-                if (key_analysis) {
-                    if (basicProfile.getNull_cnt() == 0 && basicProfile.getDistinctness() == 1) {
-                        key_analysis_results.add(profileColumnResult.getColumn_id());
-                    }
+                if (candidateKeyService.isKey_analysis()) {
+                    candidateKeyService.CheckCandidateKey(basicProfile.getDistinctness(), profileColumnResult.getColumn_id());
                 }
 
                 vfModelList = valueSortByDesc(vfModelList);
@@ -1055,8 +1044,8 @@ public class ProfileService {
 
                 //basicProfile.setValue_distribution(vfModelList);
             }
-            if (key_analysis) {
-                profileTableResult.setKey_analysis_results(key_analysis_results);
+            if (candidateKeyService.isKey_analysis()) {
+                profileTableResult.setKey_analysis_results(candidateKeyService.getKey_analysis_results());
             }
         }
 
